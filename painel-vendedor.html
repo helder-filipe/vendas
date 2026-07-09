@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Painel do Vendedor - Cadastro de Produtos</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; color: #333; }
+        .admin-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); max-width: 700px; margin: 0 auto; }
+        h1, h2 { color: #111; }
+        .form-section { margin-bottom: 25px; padding-bottom: 20px; border-bottom: 1px solid #eee; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-group input, .form-group textarea, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
+        .form-row { display: flex; gap: 15px; }
+        .form-row .form-group { flex: 1; }
+        
+        /* Estilo para especificações dinâmicas chave-valor */
+        .dinamico-row { display: flex; gap: 10px; margin-bottom: 10px; }
+        
+        button { background: #ff9900; color: #111; border: 1px solid #a88734; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; transition: background 0.2s; }
+        button:hover { background: #e68a00; }
+        .btn-secundario { background: #e7e9ec; border: 1px solid #adb1b8; color: #111; width: auto; padding: 8px 15px; font-size: 14px; margin-top: 5px; }
+        .btn-secundario:hover { background: #dbdee3; }
+        .btn-voltar { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 14px; text-decoration: none; display: inline-block; margin-bottom: 20px; cursor: pointer; }
+        .btn-voltar:hover { background: #5a6268; }
+    </style>
+</head>
+<body>
+
+    <div style="max-width: 700px; margin: 0 auto;">
+        <button class="btn-voltar" onclick="window.history.back()">◀ Voltar para a Loja</button>
+    </div>
+
+    <div class="admin-container">
+        <h1>Painel Vendedor - Cadastro de Produto</h1>
+        <form id="form-cadastro" onsubmit="cadastrarProduto(event)">
+            
+            <div class="form-section">
+                <h2>1. Informações Básicas</h2>
+                <div class="form-group">
+                    <label for="nome">Nome do Produto (Título Comercial):</label>
+                    <input type="text" id="nome" required placeholder="Ex: Apple iPhone 15 Pro (128 GB) - Titânio Natural">
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="categoria">Categoria:</label>
+                        <select id="categoria" required>
+                            <option value="">Selecione uma categoria...</option>
+                            <option value="Eletrónicos">Eletrónicos e Informática</option>
+                            <option value="Casa e Cozinha">Casa e Cozinha</option>
+                            <option value="Vestuário">Vestuário e Acessórios</option>
+                            <option value="Desporto">Desporto e Lazer</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="imagem_url">URL da Imagem Principal:</label>
+                        <input type="url" id="imagem_url" placeholder="https://exemplo.com/imagem.jpg">
+                    </div>
+                </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preco">Preço de Venda (€):</label>
+                        <input type="number" id="preco" step="0.01" required placeholder="0.00">
+                    </div>
+                    <div class="form-group">
+                        <label for="stock">Stock Inicial:</label>
+                        <input type="number" id="stock" required placeholder="0">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="descricao">Descrição do Produto (Sobre este artigo):</label>
+                    <textarea id="descricao" rows="4" required placeholder="Detalhes descritivos do produto..."></textarea>
+                </div>
+            </div>
+
+            <div class="form-section">
+                <h2>2. Detalhes Técnicos (Especificações)</h2>
+                <p style="font-size: 13px; color: #666;">Adicione características personalizadas (Ex: Marca -> Apple, Cor -> Preto, Memória -> 256GB).</p>
+                <div id="container-detalhes">
+                    <div class="dinamico-row">
+                        <input type="text" placeholder="Propriedade" class="detalhe-chave" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        <input type="text" placeholder="Valor" class="detalhe-valor" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                    </div>
+                </div>
+                <button type="button" class="btn-secundario" onclick="adicionarLinhaDetalhe()">+ Adicionar Especificação</button>
+            </div>
+
+            <div class="form-section">
+                <h2>3. Informações Adicionais e Logística</h2>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="fabricante">Fabricante/Marca:</label>
+                        <input type="text" id="fabricante" placeholder="Ex: Samsung, Nike">
+                    </div>
+                    <div class="form-group">
+                        <label for="peso">Peso do Produto (kg):</label>
+                        <input type="text" id="peso" placeholder="Ex: 0.250">
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="dimensoes">Dimensões (Comprimento x Largura x Altura cm):</label>
+                    <input type="text" id="dimensoes" placeholder="Ex: 15 x 7.5 x 0.8 cm">
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submeter">Publicar Produto na Loja</button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
+
+        // Tenta capturar o email do utilizador logado para auditoria. 
+        // Se o browser bloquear devido ao ambiente local, enviamos um email genérico de testes.
+        let emailVendedor = "teste_local@vendedor.com";
+        try {
+            const usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
+            if (usuarioLogado && usuarioLogado.email) {
+                emailVendedor = usuarioLogado.email;
+            } else {
+                // Tenta extrair da URL se o localStorage falhar
+                const urlParams = new URLSearchParams(window.location.search);
+                if (urlParams.get('email')) emailVendedor = urlParams.get('email');
+            }
+        } catch(e) {
+            console.log("A correr em ambiente local isolado.");
+        }
+
+        function adicionarLinhaDetalhe() {
+            const container = document.getElementById("container-detalhes");
+            const novaLinha = document.createElement("div");
+            novaLinha.className = "dinamico-row";
+            novaLinha.innerHTML = `
+                <input type="text" placeholder="Propriedade" class="detalhe-chave" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                <input type="text" placeholder="Valor" class="detalhe-valor" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+            `;
+            container.appendChild(novaLinha);
+        }
+
+        async function cadastrarProduto(event) {
+            event.preventDefault();
+            const botao = document.getElementById("btn-submeter");
+
+            const chaves = document.querySelectorAll(".detalhe-chave");
+            const valores = document.querySelectorAll(".detalhe-valor");
+            let detalhesTecnicosObj = {};
+            
+            chaves.forEach((chaveElemento, index) => {
+                const chave = chaveElemento.value.trim();
+                const valor = valores[index].value.trim();
+                if (chave && valor) { detalhesTecnicosObj[chave] = valor; }
+            });
+
+            const informacoesObj = {
+                fabricante: document.getElementById("fabricante").value,
+                peso: document.getElementById("peso").value,
+                dimensoes: document.getElementById("dimensoes").value
+            };
+
+            const payload = {
+                acao: "cadastrar_produto",
+                vendedor_email: emailVendedor, // Usa o email detetado ou o de fallback
+                nome: document.getElementById("nome").value,
+                categoria: document.getElementById("categoria").value,
+                imagem_url: document.getElementById("imagem_url").value,
+                preco: document.getElementById("preco").value,
+                stock: document.getElementById("stock").value,
+                descricao: document.getElementById("descricao").value,
+                detalhes_tecnicos: detalhesTecnicosObj,
+                informacoes: informacoesObj
+            };
+
+            try {
+                botao.disabled = true;
+                botao.innerText = "A publicar artigo...";
+
+                const resposta = await fetch(API_URL, {
+                    method: "POST",
+                    mode: "cors",
+                    headers: { "Content-Type": "text/plain" },
+                    body: JSON.stringify(payload)
+                });
+
+                const resultado = await resposta.json();
+                alert(resultado.mensagem);
+
+                if (resultado.status === "sucesso") {
+                    document.getElementById("form-cadastro").reset();
+                    document.getElementById("container-detalhes").innerHTML = `
+                        <div class="dinamico-row">
+                            <input type="text" placeholder="Propriedade" class="detalhe-chave" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                            <input type="text" placeholder="Valor" class="detalhe-valor" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
+                        </div>
+                    `;
+                }
+            } catch (erro) {
+                console.error(erro);
+                alert("Erro ao enviar o produto para o servidor.");
+            } finally {
+                botao.disabled = false;
+                botao.innerText = "Publicar Produto na Loja";
+            }
+        }
+    </script>
+</body>
+</html>
