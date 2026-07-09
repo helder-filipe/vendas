@@ -3,21 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Minha Loja Digital</title>
+    <title>OmniMarket</title>
+    
+    <link rel="icon" type="image/x-icon" href="omni-logo.ico">
+
     <style>
-        body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; color: #333; }
+        html, body { height: 100%; margin: 0; display: flex; flex-direction: column; }
+        body { font-family: Arial, sans-serif; background: #f4f4f4; color: #333; }
         
-        /* Top Bar e Linha de Pesquisa */
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 10px 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); gap: 15px; flex-wrap: wrap; }
+        .wrapper { padding: 20px; flex: 1 0 auto; box-sizing: border-box; }
+        
+        /* Top Bar / Cabeçalho Adaptado para Logos Grandes */
+        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; background: white; padding: 15px 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); gap: 25px; flex-wrap: wrap; }
+        
+        /* 🟩 LOGÓTIPO XL (Mínimo 150px de altura) */
+        .logo-container { display: flex; align-items: center; min-width: 200px; }
+        .logo-container img { height: 100px; width: auto; display: block; object-fit: contain; } /* Fixado em 150px de altura */
+        .logo-placeholder { font-size: 28px; font-weight: bold; color: #ff9900; text-transform: uppercase; letter-spacing: 1px; line-height: 150px; }
+
+        /* Linha de Pesquisa */
         .search-container { flex: 1; max-width: 500px; min-width: 250px; position: relative; }
-        .search-container input { width: 100%; padding: 10px 15px; border: 1px solid #ccc; border-radius: 25px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .search-container input { width: 100%; padding: 12px 20px; border: 1px solid #ccc; border-radius: 25px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
         .search-container input:focus { border-color: #ff9900; box-shadow: 0 0 5px rgba(255,153,0,0.3); }
         
-        /* Menu do Utilizador no Cabeçalho */
+        /* Menu do Utilizador */
         .user-menu { display: flex; align-items: center; gap: 15px; }
         .saudacao-user { font-size: 14px; font-weight: bold; color: #555; }
         
-        /* Navegação por Categorias */
+        /* Categorias */
         .nav-categorias { display: flex; gap: 10px; margin-bottom: 20px; background: #232f3e; padding: 10px; border-radius: 6px; overflow-x: auto; }
         .btn-cat { background: transparent; color: white; border: 1px solid transparent; padding: 6px 12px; font-size: 14px; white-space: nowrap; cursor: pointer; }
         .btn-cat:hover, .btn-cat.active { border-color: white; border-radius: 4px; background: rgba(255,255,255,0.1); }
@@ -33,7 +46,7 @@
         .produto-card img { max-width: 100%; height: 160px; object-fit: cover; border-radius: 4px; }
         .produto-card h3 { font-size: 16px; margin: 10px 0 5px 0; height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         
-        /* Secção Lateral do Carrinho */
+        /* Carrinho */
         .carrinho-seccao { flex: 1; min-width: 280px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); height: fit-content; transition: all 0.3s ease; }
         .carrinho-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; cursor: pointer; user-select: none; }
         .carrinho-titulo { display: flex; align-items: center; font-size: 18px; font-weight: bold; margin: 0; }
@@ -53,6 +66,23 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
         .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #f9f9f9; }
         
+        /* Rodapé Compacto */
+        footer { background: #131a22; color: #a6b1bb; font-size: 12px; flex-shrink: 0; margin-top: 30px; }
+        .footer-container { max-width: 1200px; margin: 0 auto; padding: 15px 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; }
+        .footer-col { flex: 1; min-width: 200px; }
+        .footer-col h3 { color: #eaeded; font-size: 13px; margin-top: 0; margin-bottom: 8px; border-bottom: 1px solid #232f3e; padding-bottom: 3px; }
+        .footer-col p { line-height: 1.5; color: #96a2af; margin: 3px 0; }
+        .footer-col a { color: #96a2af; text-decoration: none; display: block; margin-bottom: 4px; }
+        .footer-col a:hover { color: #ff9900; text-decoration: underline; }
+        
+        .payment-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
+        .badge-pay { background: #232f3e; color: #bdc4c9; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; border: 1px solid #3a4553; }
+
+        .footer-bottom { background: #19222d; text-align: center; padding: 10px 20px; font-size: 11px; color: #8492a0; border-top: 1px solid #232f3e; }
+        .footer-bottom-links { margin-top: 3px; }
+        .footer-bottom-links a { color: #8492a0; text-decoration: none; margin: 0 8px; }
+        .footer-bottom-links a:hover { color: white; text-decoration: underline; }
+        
         /* Janela Modal */
         .modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background-color: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
         .modal-content { background-color: white; padding: 25px; border-radius: 8px; max-width: 650px; width: 90%; max-height: 85vh; overflow-y: auto; position: relative; box-shadow: 0 5px 15px rgba(0,0,0,0.3); }
@@ -67,7 +97,6 @@
         .amazon-table td { padding: 6px 10px; border: 1px solid #e2e2e2; }
         .amazon-table td.tech-label { font-weight: bold; color: #555; width: 40%; }
 
-        /* Botões */
         button { background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #0056b3; }
         button:disabled { background: #cccccc; cursor: not-allowed; }
@@ -83,61 +112,66 @@
 </head>
 <body>
 
-    <div class="top-bar">
-        <h1>Marketplace</h1>
-        
-        <div class="search-container">
-            <input type="text" id="input-pesquisa" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
-        </div>
-
-        <div class="user-menu">
-            <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
-            <button id="btn-painel-vendedor" class="btn-vendedor" onclick="abrirPainelVendedor()">Painel do Vendedor ⚙️</button>
-            <button class="btn-logout" onclick="terminarSessao()">Sair</button>
-        </div>
-    </div>
-
-    <div class="nav-categorias">
-        <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
-        <button class="btn-cat" onclick="filtrarCategoria('Eletrónicos', this)">Eletrónicos</button>
-        <button class="btn-cat" onclick="filtrarCategoria('Casa e Cozinha', this)">Casa e Cozinha</button>
-        <button class="btn-cat" onclick="filtrarCategoria('Vestuário', this)">Vestuário</button>
-        <button class="btn-cat" onclick="filtrarCategoria('Desporto', this)">Desporto</button>
-        <button class="btn-cat" onclick="filtrarCategoria('Livros', this)">Livros</button>
-        <button class="btn-cat" onclick="filtrarCategoria('Ferramentas', this)">Ferramentas</button>
-    </div>
-    
-    <div class="content-container">
-        <div class="vitrine-seccao">
-            <h2 id="titulo-montra">Todos os Artigos</h2>
-            <div id="produtos-content" class="vitrine">A carregar produtos...</div>
-        </div>
-        
-        <div id="carrinho-container" class="carrinho-seccao">
-            <div class="carrinho-header" onclick="toggleCarrinho()">
-                <div class="carrinho-titulo">
-                    Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
-                </div>
-                <button id="btn-esvaziar-tudo" class="btn-esvaziar" onclick="event.stopPropagation(); esvaziarCarrinho();" style="display: none;">Esvaziar</button>
-                <span class="seta-toggle">▼</span>
+    <div class="wrapper">
+        <div class="top-bar">
+            <div class="logo-container">
+                <img src="omni logo.png" alt="OmniMarket" onerror="this.style.display='none'; document.getElementById('placeholder-txt').style.display='block';">
+                <div id="placeholder-txt" class="logo-placeholder" style="display: none;">OmniMarket</div>
             </div>
             
-            <div class="carrinho-conteudo">
-                <div id="carrinho-itens">O carrinho está vazio.</div>
-                <h3 style="margin-top: 20px; text-align: right;">Total: <span id="carrinho-total">0.00</span>€</h3>
-                
-                <form id="formulario-checkout" class="checkout-form" onsubmit="finalizarCompra(event)">
-                    <h3>Dados de Envio</h3>
-                    <div class="form-group"><label>Nome Completo:</label><input type="text" id="nome" required readonly></div>
-                    <div class="form-group"><label>E-mail:</label><input type="email" id="email" required readonly></div>
-                    <div class="form-group"><label>Morada de Entrega:</label><input type="text" id="morada" required readonly></div>
-                    <div style="display:flex; gap:10px;">
-                        <div class="form-group" style="flex:2;"><label>Localidade:</label><input type="text" id="localidade" required readonly></div>
-                        <div class="form-group" style="flex:1;"><label>Cód. Postal:</label><input type="text" id="cp" required readonly></div>
+            <div class="search-container">
+                <input type="text" id="input-pesquisa" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
+            </div>
+
+            <div class="user-menu">
+                <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
+                <button id="btn-painel-vendedor" class="btn-vendedor" onclick="abrirPainelVendedor()">Painel do Vendedor ⚙️</button>
+                <button class="btn-logout" onclick="terminarSessao()">Sair</button>
+            </div>
+        </div>
+
+        <div class="nav-categorias">
+            <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Eletrónicos', this)">Eletrónicos</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Casa e Cozinha', this)">Casa e Cozinha</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Vestuário', this)">Vestuário</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Desporto', this)">Desporto</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Vestuário', this)">Vestuário</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Livros', this)">Livros</button>
+        </div>
+        
+        <div class="content-container">
+            <div class="vitrine-seccao">
+                <h2 id="titulo-montra">Todos os Artigos</h2>
+                <div id="produtos-content" class="vitrine">A carregar produtos...</div>
+            </div>
+            
+            <div id="carrinho-container" class="carrinho-seccao">
+                <div class="carrinho-header" onclick="toggleCarrinho()">
+                    <div class="carrinho-titulo">
+                        Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
                     </div>
-                    <div style="text-align: right; color:#555; font-size:12px; margin-bottom:10px;">*Dados gerados automaticamente a partir do perfil</div>
-                    <button type="submit" id="btn-finalizar" class="btn-checkout">Finalizar Encomenda</button>
-                </form>
+                    <button id="btn-esvaziar-tudo" class="btn-esvaziar" onclick="event.stopPropagation(); esvaziarCarrinho();" style="display: none;">Esvaziar</button>
+                    <span class="seta-toggle">▼</span>
+                </div>
+                
+                <div class="carrinho-conteudo">
+                    <div id="carrinho-itens">O carrinho está vazio.</div>
+                    <h3 style="margin-top: 20px; text-align: right;">Total: <span id="carrinho-total">0.00</span>€</h3>
+                    
+                    <form id="formulario-checkout" class="checkout-form" onsubmit="finalizarCompra(event)">
+                        <h3>Dados de Envio</h3>
+                        <div class="form-group"><label>Nome Completo:</label><input type="text" id="nome" required readonly></div>
+                        <div class="form-group"><label>E-mail:</label><input type="email" id="email" required readonly></div>
+                        <div class="form-group"><label>Morada de Entrega:</label><input type="text" id="morada" required readonly></div>
+                        <div style="display:flex; gap:10px;">
+                            <div class="form-group" style="flex:2;"><label>Localidade:</label><input type="text" id="localidade" required readonly></div>
+                            <div class="form-group" style="flex:1;"><label>Cód. Postal:</label><input type="text" id="cp" required readonly></div>
+                        </div>
+                        <div style="text-align: right; color:#555; font-size:12px; margin-bottom:10px;">*Dados gerados automaticamente a partir do perfil</div>
+                        <button type="submit" id="btn-finalizar" class="btn-checkout">Finalizar Encomenda</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
@@ -161,8 +195,48 @@
         </div>
     </div>
 
+    <footer>
+        <div class="footer-container">
+            <div class="footer-col">
+                <h3>A Nossa Sede</h3>
+                <p><strong>AlphaMarket S.A.</strong></p>
+                <p>Parque Empresarial do Infante, Lote 14-B</p>
+                <p>8125-401 Quarteira, Portugal</p>
+                <p>NIF: 509 123 456 | suporte@alphamarket.pt</p>
+            </div>
+
+            <div class="footer-col">
+                <h3>Métodos de Pagamento</h3>
+                <div class="payment-badges">
+                    <div class="badge-pay">Multibanco</div>
+                    <div class="badge-pay">MB Way</div>
+                    <div class="badge-pay">Visa</div>
+                    <div class="badge-pay">Mastercard</div>
+                    <div class="badge-pay">PayPal</div>
+                </div>
+            </div>
+
+            <div class="footer-col">
+                <h3>Deixa-nos Ajudar-te</h3>
+                <a href="#ajuda">Centro de Apoio ao Cliente</a>
+                <a href="#vendas">Como vender no Marketplace</a>
+                <a href="#devolucoes">Políticas de Devolução</a>
+            </div>
+        </div>
+
+        <div class="footer-bottom">
+            <p>&copy; 2026 AlphaMarket S.A. Todos os direitos reservados.</p>
+            <div class="footer-bottom-links">
+                <a href="#privacidade">Política de Privacidade</a> | 
+                <a href="#cookies">Definições de Cookies</a> | 
+                <a href="#acessibilidade">Acessibilidade</a> | 
+                <a href="#termos">Condições de Uso</a>
+            </div>
+        </div>
+    </footer>
+
     <script>
-        // --- 🟩 CONTROLO DE ACESSO E SESSÃO ---
+        // --- CONTROLO DE ACESSO E SESSÃO ---
         let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
         if (!usuarioLogado) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -176,16 +250,13 @@
             }
         }
         
-        // Se após a verificação continuar sem utilizador, expulsa para o login
         if (!usuarioLogado) { 
             alert("Acesso restrito."); 
             window.location.href = "autenticacao.html"; 
         } else {
-            // Injeta dinamicamente a saudação no cabeçalho
             document.getElementById("saudacao-texto").innerText = `Olá, ${usuarioLogado.nome}!`;
         }
 
-        // Configuração condicional do painel de vendedor
         if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
             document.getElementById("btn-painel-vendedor").style.display = "inline-block";
         }
@@ -267,12 +338,10 @@
             executarFiltros();
         }
 
-        // --- MINI / EXPANDIR CARRINHO ---
         function toggleCarrinho() {
             document.getElementById("carrinho-container").classList.toggle("minimizado");
         }
 
-        // --- MODAL DETALHES ---
         function abrirModalDetalhes(produto) {
             document.getElementById("modal-img").src = produto.imagem_url || 'https://via.placeholder.com/150';
             document.getElementById("modal-nome").innerText = produto.nome;
@@ -305,7 +374,6 @@
         function fecharModal() { document.getElementById("modal-detalhes").style.display = "none"; }
         function fecharModalExterno(e) { if (e.target.id === "modal-detalhes") fecharModal(); }
 
-        // --- GESTÃO DO CARRINHO ---
         function prepararAdicao(id, nome, preco, stockMaximo) {
             const inputQtd = document.getElementById(`qtd-${id}`);
             const quantidade = parseInt(inputQtd.value) || 1;
