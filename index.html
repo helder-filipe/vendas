@@ -13,6 +13,10 @@
         .search-container input { width: 100%; padding: 10px 15px; border: 1px solid #ccc; border-radius: 25px; box-sizing: border-box; font-size: 14px; outline: none; transition: border-color 0.2s; }
         .search-container input:focus { border-color: #ff9900; box-shadow: 0 0 5px rgba(255,153,0,0.3); }
         
+        /* Menu do Utilizador no Cabeçalho */
+        .user-menu { display: flex; align-items: center; gap: 15px; }
+        .saudacao-user { font-size: 14px; font-weight: bold; color: #555; }
+        
         /* Navegação por Categorias */
         .nav-categorias { display: flex; gap: 10px; margin-bottom: 20px; background: #232f3e; padding: 10px; border-radius: 6px; overflow-x: auto; }
         .btn-cat { background: transparent; color: white; border: 1px solid transparent; padding: 6px 12px; font-size: 14px; white-space: nowrap; cursor: pointer; }
@@ -29,14 +33,13 @@
         .produto-card img { max-width: 100%; height: 160px; object-fit: cover; border-radius: 4px; }
         .produto-card h3 { font-size: 16px; margin: 10px 0 5px 0; height: 40px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
         
-        /* Secção Lateral do Carrinho Avançado e Retrátil */
+        /* Secção Lateral do Carrinho */
         .carrinho-seccao { flex: 1; min-width: 280px; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); height: fit-content; transition: all 0.3s ease; }
         .carrinho-header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 10px; margin-bottom: 10px; cursor: pointer; user-select: none; }
         .carrinho-titulo { display: flex; align-items: center; font-size: 18px; font-weight: bold; margin: 0; }
         .badge-contador { background: #e52f2f; color: white; border-radius: 50%; padding: 3px 8px; font-size: 12px; font-weight: bold; margin-left: 8px; }
         .seta-toggle { font-size: 14px; color: #666; transition: transform 0.3s; margin-left: auto; }
         
-        /* Elementos que colapsam */
         .carrinho-conteudo { transition: max-height 0.3s ease-out, opacity 0.2s ease; overflow: hidden; }
         .carrinho-seccao.minimizado .carrinho-conteudo { display: none; }
         .carrinho-seccao.minimizado .seta-toggle { transform: rotate(-90deg); }
@@ -64,7 +67,7 @@
         .amazon-table td { padding: 6px 10px; border: 1px solid #e2e2e2; }
         .amazon-table td.tech-label { font-weight: bold; color: #555; width: 40%; }
 
-        /* Botões Gerais */
+        /* Botões */
         button { background: #007bff; color: white; border: none; padding: 10px; border-radius: 5px; cursor: pointer; transition: background 0.2s; }
         button:hover { background: #0056b3; }
         button:disabled { background: #cccccc; cursor: not-allowed; }
@@ -75,27 +78,25 @@
         .btn-checkout { background: #28a745; width: 100%; margin-top: 15px; font-size: 16px; border-radius: 20px; }
         .btn-checkout:hover { background: #218838; }
         .btn-logout { background: #6c757d; padding: 8px 15px; font-size: 13px; }
-        .btn-vendedor { background: #ff9900; color: #111; font-weight: bold; display: none; margin-right: 10px; }
+        .btn-vendedor { background: #ff9900; color: #111; font-weight: bold; display: none; }
     </style>
 </head>
 <body>
 
-    <!-- Top Bar com Caixa de Pesquisa Integrada -->
     <div class="top-bar">
         <h1>Marketplace</h1>
         
-        <!-- 🟩 CAIXA DE PESQUISA -->
         <div class="search-container">
             <input type="text" id="input-pesquisa" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
         </div>
 
-        <div>
+        <div class="user-menu">
+            <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
             <button id="btn-painel-vendedor" class="btn-vendedor" onclick="abrirPainelVendedor()">Painel do Vendedor ⚙️</button>
             <button class="btn-logout" onclick="terminarSessao()">Sair</button>
         </div>
     </div>
 
-    <!-- Categorias -->
     <div class="nav-categorias">
         <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
         <button class="btn-cat" onclick="filtrarCategoria('Eletrónicos', this)">Eletrónicos</button>
@@ -107,15 +108,12 @@
     </div>
     
     <div class="content-container">
-        <!-- Montra -->
         <div class="vitrine-seccao">
             <h2 id="titulo-montra">Todos os Artigos</h2>
             <div id="produtos-content" class="vitrine">A carregar produtos...</div>
         </div>
         
-        <!-- Carrinho Modernizado e Retrátil -->
         <div id="carrinho-container" class="carrinho-seccao">
-            <!-- 🟩 Cabeçalho clicável para Minimizar/Expandir -->
             <div class="carrinho-header" onclick="toggleCarrinho()">
                 <div class="carrinho-titulo">
                     Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
@@ -124,7 +122,6 @@
                 <span class="seta-toggle">▼</span>
             </div>
             
-            <!-- Conteúdo que encolhe/desaparece -->
             <div class="carrinho-conteudo">
                 <div id="carrinho-itens">O carrinho está vazio.</div>
                 <h3 style="margin-top: 20px; text-align: right;">Total: <span id="carrinho-total">0.00</span>€</h3>
@@ -138,13 +135,13 @@
                         <div class="form-group" style="flex:2;"><label>Localidade:</label><input type="text" id="localidade" required readonly></div>
                         <div class="form-group" style="flex:1;"><label>Cód. Postal:</label><input type="text" id="cp" required readonly></div>
                     </div>
+                    <div style="text-align: right; color:#555; font-size:12px; margin-bottom:10px;">*Dados gerados automaticamente a partir do perfil</div>
                     <button type="submit" id="btn-finalizar" class="btn-checkout">Finalizar Encomenda</button>
                 </form>
             </div>
         </div>
     </div>
 
-    <!-- Janela Modal -->
     <div id="modal-detalhes" class="modal" onclick="fecharModalExterno(event)">
         <div class="modal-content">
             <span class="close-modal" onclick="fecharModal()">&times;</span>
@@ -165,7 +162,7 @@
     </div>
 
     <script>
-        // --- CONTROLO DE ACESSO ---
+        // --- 🟩 CONTROLO DE ACESSO E SESSÃO ---
         let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
         if (!usuarioLogado) {
             const urlParams = new URLSearchParams(window.location.search);
@@ -178,8 +175,17 @@
                 try { localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado)); } catch(e){}
             }
         }
-        if (!usuarioLogado) { alert("Acesso restrito."); window.location.href = "autenticacao.html"; }
+        
+        // Se após a verificação continuar sem utilizador, expulsa para o login
+        if (!usuarioLogado) { 
+            alert("Acesso restrito."); 
+            window.location.href = "autenticacao.html"; 
+        } else {
+            // Injeta dinamicamente a saudação no cabeçalho
+            document.getElementById("saudacao-texto").innerText = `Olá, ${usuarioLogado.nome}!`;
+        }
 
+        // Configuração condicional do painel de vendedor
         if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
             document.getElementById("btn-painel-vendedor").style.display = "inline-block";
         }
@@ -193,7 +199,7 @@
         // --- LÓGICA DE PRODUTOS, FILTROS E PESQUISA ---
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
         let todosProdutos = []; 
-        let categoriaAtual = "Todas"; // Guarda a categoria ativa
+        let categoriaAtual = "Todas"; 
         let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
 
         async function carregarProdutos() {
@@ -232,50 +238,38 @@
             });
         }
 
-        // 🟩 CONTROLADOR DE FILTROS UNIFICADO (Combina Categoria + Caixa de Pesquisa)
         function executarFiltros() {
             const termoPesquisa = document.getElementById("input-pesquisa").value.toLowerCase().trim();
-            
             let resultado = todosProdutos;
 
-            // 1. Filtra primeiro por categoria, se não for "Todas"
             if (categoriaAtual !== "Todas") {
                 resultado = resultado.filter(p => p.categoria === categoriaAtual);
             }
 
-            // 2. Filtra a seguir pelo termo da barra de pesquisa
             if (termoPesquisa !== "") {
                 resultado = resultado.filter(p => {
                     const nome = (p.nome || "").toLowerCase();
                     const desc = (p.descricao || "").toLowerCase();
                     const cat = (p.categoria || "").toLowerCase();
-                    // Pesquisa também dentro das propriedades técnicas em formato string
                     const tech = (p.detalhes_tecnicos || "").toLowerCase(); 
 
-                    return nome.includes(termoPesquisa) || 
-                           desc.includes(termoPesquisa) || 
-                           cat.includes(termoPesquisa) ||
-                           tech.includes(termoPesquisa);
+                    return nome.includes(termoPesquisa) || desc.includes(termoPesquisa) || cat.includes(termoPesquisa) || tech.includes(termoPesquisa);
                 });
             }
-
             renderizarVitrine(resultado);
         }
 
         function filtrarCategoria(categoria, botao) {
             document.querySelectorAll(".btn-cat").forEach(btn => btn.classList.remove("active"));
             botao.classList.add("active");
-            
-            categoriaAtual = categoria; // Atualiza o estado global
+            categoriaAtual = categoria;
             document.getElementById("titulo-montra").innerText = categoria === "Todas" ? "Todos os Artigos" : categoria;
-            
-            executarFiltros(); // Corre o motor de filtros unificado
+            executarFiltros();
         }
 
-        // --- 🟩 LÓGICA MINIMIZAR / EXPANDIR CARRINHO ---
+        // --- MINI / EXPANDIR CARRINHO ---
         function toggleCarrinho() {
-            const carrinhoBox = document.getElementById("carrinho-container");
-            carrinhoBox.classList.toggle("minimizado");
+            document.getElementById("carrinho-container").classList.toggle("minimizado");
         }
 
         // --- MODAL DETALHES ---
@@ -329,12 +323,10 @@
                 if (itemExistente.quantidade + quantidade > stockLimite) {
                     alert(`Não podes adicionar mais unidades. Limite: ${stockLimite} un.`);
                     itemExistente.quantidade = stockLimite;
-                } else { itemExistente.quantidade += quantity = quantidade; }
+                } else { itemExistente.quantidade += quantidade; }
             } else { carrinho.push({ id_produto: id, nome_produto: nome, preco_unitario: Number(preco), quantidade: quantidade }); }
             
-            // Força a expansão do carrinho ao adicionar um novo produto para dar feedback visual
             document.getElementById("carrinho-container").classList.remove("minimizado");
-            
             atualizarInterfaceCarrinho();
         }
 

@@ -139,7 +139,7 @@
 
                 if (resultado.status === "sucesso") {
                     localStorage.setItem("usuario_logado", JSON.stringify(resultado));
-                    alert(`Bem-vindo, ${resultado.nome}!`);
+                    // alert(`Bem-vindo, ${resultado.nome}!`);
                     
                     // Envia os dados e o TIPO pelo URL como segurança
                     window.location.href = `index.html?nome=${encodeURIComponent(resultado.nome)}&email=${encodeURIComponent(resultado.email)}&morada=${encodeURIComponent(resultado.morada)}&localidade=${encodeURIComponent(resultado.localidade)}&cp=${encodeURIComponent(resultado.codigo_postal)}&tipo=${encodeURIComponent(resultado.tipo)}`;
