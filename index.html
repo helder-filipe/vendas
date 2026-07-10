@@ -35,9 +35,30 @@
         .btn-cat { background: transparent; color: white; border: 1px solid transparent; padding: 6px 12px; font-size: 14px; white-space: nowrap; cursor: pointer; }
         .btn-cat:hover, .btn-cat.active { border-color: white; border-radius: 4px; background: rgba(255,255,255,0.1); }
         
-        /* Layout Principal */
-        .content-container { display: flex; gap: 30px; flex-wrap: wrap; align-items: flex-start; }
-        .vitrine-seccao { flex: 2; min-width: 300px; }
+        /* Layout Principal (Computador) */
+        .content-container { 
+            display: flex; 
+            gap: 30px; 
+            flex-wrap: wrap; 
+            align-items: flex-start; 
+        }
+
+        /* 🟩 ADICIONA ESTE BLOCO REVOLUCIONÁRIO PARA TELEMÓVEIS (Ecrãs até 768px) */
+        @media (max-width: 768px) {
+            .content-container {
+                flex-direction: column-reverse; /* Inverte a ordem visual: Carrinho fica no Topo, Vitrine em Baixo */
+            }
+            
+            .carrinho-seccao {
+                width: 100%; /* Força o carrinho a ocupar a largura toda no telemóvel */
+                box-sizing: border-box;
+                margin-bottom: 10px;
+            }
+            
+            .vitrine-seccao {
+                width: 100%;
+            }
+        }
         .vitrine { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 20px; }
         
         /* Cartão de Produto */
@@ -149,7 +170,7 @@
             <div id="carrinho-container" class="carrinho-seccao">
                 <div class="carrinho-header" onclick="toggleCarrinho()">
                     <div class="carrinho-titulo">
-                        Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
+                       🛒 Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
                     </div>
                     <button id="btn-esvaziar-tudo" class="btn-esvaziar" onclick="event.stopPropagation(); esvaziarCarrinho();" style="display: none;">Esvaziar</button>
                     <span class="seta-toggle">▼</span>
