@@ -103,22 +103,36 @@
         <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
         
-        // 🟩 SEGURANÇA REFORÇADA: Procura pelas duas chaves possíveis de sessão para evitar incompatibilidade
-        let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado")) || JSON.parse(localStorage.getItem("usuarioLogado"));
+        // --- CONTROLO DE ACESSO E SESSÃO EM ENCOMENDAS.HTML ---
+        let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
 
-        // Se não encontrou no localStorage, tenta verificar se os dados vieram na barra de endereço (URL)
-        if (!usuarioLogado) {
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.get('email')) {
-                usuarioLogado = {
-                    nome: urlParams.get('nome'), 
-                    email: urlParams.get('email'),
-                    morada: urlParams.get('morada'), 
-                    localidade: urlParams.get('localidade'),
-                    codigo_postal: urlParams.get('cp'), 
-                    tipo: urlParams.get('tipo')
-                };
-                try { localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado)); } catch(e){}
+        // Captura os dados vindos da URL para garantir sincronização total
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailURL = urlParams.get('email');
+
+        if (emailURL) {
+            // Se veio um e-mail na URL, reconstrói o objeto do utilizador com segurança
+            usuarioLogado = {
+                nome: urlParams.get('nome') || (usuarioLogado ? usuarioLogado.nome : ""),
+                email: emailURL,
+                morada: urlParams.get('morada') || (usuarioLogado ? usuarioLogado.morada : ""),
+                localidade: urlParams.get('localidade') || (usuarioLogado ? usuarioLogado.localidade : ""),
+                codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || (usuarioLogado ? usuarioLogado.codigo_postal : ""),
+                tipo: urlParams.get('tipo') || (usuarioLogado ? usuarioLogado.tipo : "comprador")
+            };
+            // Grava imediatamente no localStorage para fixar a sessão correta!
+            localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
+        }
+
+        // Se mesmo assim não houver utilizador, reencaminha para o login
+        if (!usuarioLogado || !usuarioLogado.email) {
+            alert("Sessão expirada ou utilizador não identificado. Por favor, faça login.");
+            window.location.href = "autenticacao.html";
+        } else {
+            // Exibe o nome correto do utilizador logado no teu cabeçalho (ajusta o ID se necessário)
+            const saudacao = document.getElementById("saudacao-texto");
+            if (saudacao) {
+                saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
             }
         }
 
