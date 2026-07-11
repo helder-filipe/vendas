@@ -714,15 +714,29 @@ async function processarFluxoPagamento() {
 
     container.innerHTML = `<div style="text-align:center; padding:20px; font-weight:bold; color:#28a745;">Pagamento Confirmado! A registar encomenda...</div>`;
 
-    const dadosEncomenda = {
-        acao: "comprar",
-        cliente_nome: usuarioLogado.nome,
-        cliente_email: usuarioLogado.email,
-        total: totalCarrinho,
-        metodo_pagamento: nomeMetodo,
-        detalhe_pagamento: detalhePagamento,
-        itens: carrinho // 🟩 Envia diretamente o array limpo e mapeado
-    };
+    // 🟩 MAPEAMENTO ULTRA-SEGURO DOS ITENS A ENVIAR PARA O SCRIPT
+      const itensParaEnviar = carrinho.map(item => {
+          // Força a captura do ID testando todas as chaves em que ele possa estar guardado
+          const idRealDoProduto = item.id_produto || item.id || "";
+          
+          return {
+              id_produto: idRealDoProduto, // Bate certo com o que o Apps Script vai ler para o stock
+              id: idRealDoProduto,         // Redundância de segurança
+              nome_produto: item.nome_produto || item.nome || "Produto",
+              quantidade: Number(item.quantidade) || 1,
+              preco_unitario: Number(item.preco_unitario) || 0
+          };
+      });
+
+      const dadosEncomenda = {
+          acao: "comprar",
+          cliente_nome: usuarioLogado.nome,
+          cliente_email: usuarioLogado.email,
+          total: totalCarrinho,
+          metodo_pagamento: nomeMetodo,
+          detalhe_pagamento: detalhePagamento,
+          itens: itensParaEnviar // Envia a lista tratada e com IDs garantidos
+      };
 
     try {
         const response = await fetch(API_URL, { 
@@ -788,3 +802,4 @@ atualizarInterfaceCarrinho();
 
 </body>
 </html>
+

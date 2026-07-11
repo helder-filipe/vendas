@@ -44,7 +44,7 @@
         .encomenda-header strong { color: #111; }
         .encomenda-body { padding: 15px; }
         
-        /* Estados da Encomenda (Estilo Amazon/Badge) */
+        /* Estados da Encomenda */
         .status-badge { padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; text-transform: uppercase; display: inline-block; }
         .status-pendente { background: #fff3cd; color: #856404; border: 1px solid #ffeeba; }
         .status-processamento { background: #cce5ff; color: #004085; border: 1px solid #b8daff; }
@@ -74,9 +74,11 @@
             </div>
             <div class="user-menu">
                 <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
-                <button style="background:#232f3e; font-size:13px;" onclick="window.location.href='encomendas.html'">📦 As Minhas Encomendas</button>
-                <button id="btn-painel-vendedor" class="btn-vendedor" onclick="abrirPainelVendedor()">Painel do Vendedor ⚙️</button>
-                <button class="btn-logout" onclick="terminarSessao()">Sair</button>
+                <button class="btn-voltar" onclick="window.location.href='index.html'">🛒 Voltar à Loja</button>
+                <button id="btn-painel-vendedor" onclick="abrirPainelVendedor()" style="display: none; background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
+                    Painel de Vendedor
+                </button>
+                <button style="background: #cc0000;" onclick="terminarSessao()">Sair</button>
             </div>
         </div>
 
@@ -100,18 +102,16 @@
         </div>
     </footer>
 
-        <script>
+    <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
         
-        // --- CONTROLO DE ACESSO E SESSÃO EM ENCOMENDAS.HTML ---
+        // --- CONTROLO DE ACESSO E SESSÃO ---
         let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
 
-        // Captura os dados vindos da URL para garantir sincronização total
         const urlParams = new URLSearchParams(window.location.search);
         const emailURL = urlParams.get('email');
 
         if (emailURL) {
-            // Se veio um e-mail na URL, reconstrói o objeto do utilizador com segurança
             usuarioLogado = {
                 nome: urlParams.get('nome') || (usuarioLogado ? usuarioLogado.nome : ""),
                 email: emailURL,
@@ -120,73 +120,83 @@
                 codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || (usuarioLogado ? usuarioLogado.codigo_postal : ""),
                 tipo: urlParams.get('tipo') || (usuarioLogado ? usuarioLogado.tipo : "comprador")
             };
-            // Grava imediatamente no localStorage para fixar a sessão correta!
             localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
         }
 
-        // Se mesmo assim não houver utilizador, reencaminha para o login
         if (!usuarioLogado || !usuarioLogado.email) {
             alert("Sessão expirada ou utilizador não identificado. Por favor, faça login.");
             window.location.href = "autenticacao.html";
         } else {
-            // Exibe o nome correto do utilizador logado no teu cabeçalho (ajusta o ID se necessário)
             const saudacao = document.getElementById("saudacao-texto");
             if (saudacao) {
                 saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
             }
         }
 
-        // Validação final antes de iniciar a página
-        if (!usuarioLogado) {
-            // Exibe um alerta explicativo em vez de quebrar silenciosamente
-            alert("Sessão não detetada ou expirada. Por favor, faz login novamente.");
-            window.location.href = "autenticacao.html";
-        } else {
-            // Sessão confirmada com sucesso!
-            document.getElementById("saudacao-texto").innerText = `Olá, ${usuarioLogado.nome}!`;
-            carregarHistorico();
+        // 🟩 CONTROLO SEGURO DO PAINEL DE VENDEDOR
+        const btnVendedor = document.getElementById("btn-painel-vendedor");
+        if (btnVendedor) {
+            if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
+                btnVendedor.style.display = "inline-block";
+            } else {
+                btnVendedor.style.display = "none";
+            }
         }
 
+        function abrirPainelVendedor() {
+            if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
+                window.location.href = `painel-vendedor.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&tipo=vendedor`;
+            } else {
+                alert("Acesso negado.");
+            }
+        }
+
+        function terminarSessao() { 
+            localStorage.removeItem("usuario_logado"); 
+            localStorage.removeItem("carrinho"); 
+            window.location.href = "autenticacao.html"; 
+        }
+
+        // --- INICIALIZAÇÃO E CARREGAMENTO DO HISTÓRICO ---
         async function carregarHistorico() {
             const container = document.getElementById("lista-encomendas-content");
+            if (!usuarioLogado || !usuarioLogado.email) return;
+
             try {
-                // Fazemos um pedido GET à API passando o email codificado e o comando específico
                 const response = await fetch(`${API_URL}?acao=historico&email=${encodeURIComponent(usuarioLogado.email)}`);
                 const encomendas = await response.json();
 
-                if (encomendas.length === 0) {
+                if (!encomendas || encomendas.length === 0) {
                     container.innerHTML = "<p style='color:#666;'>Ainda não efetuaste nenhuma encomenda no nosso site.</p>";
                     return;
                 }
 
-                container.innerHTML = ""; // Limpa a mensagem de carregamento
+                container.innerHTML = ""; 
 
                 encomendas.forEach(enc => {
-                    // Determinar a classe CSS correta conforme o estado da encomenda
                     let statusClass = "status-pendente";
                     let estadoText = enc.estado || "Pendente";
                     if (estadoText.toLowerCase() === "em processamento") statusClass = "status-processamento";
                     if (estadoText.toLowerCase() === "enviado") statusClass = "status-enviado";
 
-                    const card = document.createElement("div");
-                    card.className = "encomenda-card";
-
-                    // Formatação da data para leitura humana
                     let dataFormatada = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
 
-                    // Gerar as linhas da tabela interna com os itens comprados nesta encomenda
                     let itensHTML = "";
-                    enc.itens.forEach(item => {
-                        itensHTML += `
-                            <tr>
-                                <td><strong>${item.nome_produto}</strong></td>
-                                <td style="text-align:center;">${item.quantidade}x</td>
-                                <td style="text-align:right;">${Number(item.preco_unitario).toFixed(2)}€</td>
-                                <td style="text-align:right;">${(item.quantidade * item.preco_unitario).toFixed(2)}€</td>
-                            </tr>
-                        `;
-                    });
+                    if (enc.itens && Array.isArray(enc.itens)) {
+                        enc.itens.forEach(item => {
+                            itensHTML += `
+                                <tr>
+                                    <td><strong>${item.nome_produto}</strong></td>
+                                    <td style="text-align:center;">${item.quantidade}x</td>
+                                    <td style="text-align:right;">${Number(item.preco_unitario).toFixed(2)}€</td>
+                                    <td style="text-align:right;">${(item.quantidade * item.preco_unitario).toFixed(2)}€</td>
+                                </tr>
+                            `;
+                        });
+                    }
 
+                    const card = document.createElement("div");
+                    card.className = "encomenda-card";
                     card.innerHTML = `
                         <div class="encomenda-header">
                             <div><strong>Encomenda Efetuada:</strong><br>${dataFormatada}</div>
@@ -206,7 +216,7 @@
                                         <th style="text-align:right;">Preço Un.</th>
                                         <th style="text-align:right;">Subtotal</th>
                                     </tr>
-                                </table>
+                                </thead>
                                 <tbody>
                                     ${itensHTML}
                                 </tbody>
@@ -220,6 +230,9 @@
                 container.innerHTML = "<p style='color:red;'>Erro ao carregar o histórico. Por favor tenta mais tarde.</p>";
             }
         }
+
+        // 🟩 TRIGER DA FUNÇÃO: Executa o carregamento assim que o script corre
+        carregarHistorico();
     </script>
 </body>
 </html>
