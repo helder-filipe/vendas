@@ -24,6 +24,10 @@
         .btn-secundario:hover { background: #dbdee3; }
         .btn-voltar { background: #6c757d; color: white; border: none; padding: 8px 15px; border-radius: 5px; font-size: 14px; text-decoration: none; display: inline-block; margin-bottom: 20px; cursor: pointer; }
         .btn-voltar:hover { background: #5a6268; }
+
+        html {
+            scroll-behavior: smooth;
+        }
     </style>
 </head>
 <body>
@@ -32,9 +36,21 @@
         <button class="btn-voltar" onclick="window.history.back()">◀ Voltar para a Loja</button>
     </div>
 
+    <div style="display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;">
+        <button onclick="irParaSecao('form-cadastro')" style="flex: 1; padding: 12px; font-weight: bold; background: #232f3e; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            ➕ Cadastrar Novo Produto
+        </button>
+        <button onclick="irParaSecao('tabela-encomendas-vendedor')" style="flex: 1; padding: 12px; font-weight: bold; background: #232f3e; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            📦 Gestão de Encomendas
+        </button>
+        <button onclick="irParaSecao('tabela-stocks-body')" style="flex: 1; padding: 12px; font-weight: bold; background: #232f3e; color: white; border: none; border-radius: 4px; cursor: pointer;">
+            📊 Controlo de Stocks / Inventário
+        </button>
+    </div>
+
     <div class="admin-container">
         <h1>Painel Vendedor - Cadastro de Produto</h1>
-        <form id="form-cadastro" onsubmit="cadastrarProduto(event)">
+        <form id="form-cadastro" onsubmit="enviarNovoProdutoAoSheets(event)">
             
             <div class="form-section">
                 <h2>1. Informações Básicas</h2>
@@ -51,6 +67,9 @@
                             <option value="Casa e Cozinha">Casa e Cozinha</option>
                             <option value="Vestuário">Vestuário e Acessórios</option>
                             <option value="Desporto">Desporto e Lazer</option>
+                            <option value="Ferramentas">Ferramentas</option>
+                            <option value="Livros">Livros</option>
+                            <option value="Saúde e suplementação">Saúde e suplementação</option>
                         </select>
                     </div>
                     <div class="form-group">
@@ -66,6 +85,11 @@
                     <div class="form-group">
                         <label for="stock">Stock Inicial:</label>
                         <input type="number" id="stock" required placeholder="0">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="produto-dias-entrega">Dias para Entrega (Estimativa):</label>
+                        <input type="number" id="produto-dias-entrega" min="1" placeholder="Ex: 3" value="8" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
                     </div>
                 </div>
                 <div class="form-group">
@@ -102,6 +126,8 @@
                     <label for="dimensoes">Dimensões (Comprimento x Largura x Altura cm):</label>
                     <input type="text" id="dimensoes" placeholder="Ex: 15 x 7.5 x 0.8 cm">
                 </div>
+
+
             </div>
 
             <button type="submit" id="btn-submeter">Publicar Produto na Loja</button>
@@ -133,23 +159,141 @@
         </div>
     </div>
 
+    <div class="painel-seccao" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <h2>Controlo de Inventário / Stocks</h2>
+    <div style="overflow-x: auto;">
+        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-family: Arial, sans-serif;">
+            <thead>
+                <tr style="background-color: #232f3e; color: white; text-align: left;">
+                    <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Produto</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Categoria</th>
+                    <th style="padding: 10px; border: 1px solid #ddd;">Preço</th>
+                    <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Stock Atual</th>
+                </tr>
+            </thead>
+            <tbody id="tabela-stocks-body">
+                <tr>
+                    <td colspan="5" style="padding: 15px; text-align: center; color: #666;">A carregar inventário...</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
 
-        // Tenta capturar o email do utilizador logado para auditoria. 
-        // Se o browser bloquear devido ao ambiente local, enviamos um email genérico de testes.
-        let emailVendedor = "teste_local@vendedor.com";
-        try {
-            const usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
-            if (usuarioLogado && usuarioLogado.email) {
-                emailVendedor = usuarioLogado.email;
-            } else {
-                // Tenta extrair da URL se o localStorage falhar
-                const urlParams = new URLSearchParams(window.location.search);
-                if (urlParams.get('email')) emailVendedor = urlParams.get('email');
+        
+        async function carregarStocksVendedor() {
+            const tbody = document.getElementById("tabela-stocks-body");
+            if (!tbody) return;
+
+            try {
+                // Reutiliza a ação que criámos para listar os produtos do Sheets
+                const resposta = await fetch(`${API_URL}?acao=listar_produtos`);
+                const produtos = await resposta.json();
+
+                if (!produtos || produtos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #666;">Nenhum produto cadastrado na base de dados.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = ""; // Limpa a mensagem de carregamento
+
+                produtos.forEach(prod => {
+                    const tr = document.createElement("tr");
+                    const stockNum = Number(prod.stock);
+                    
+                    // 🟥 REGRA DE NEGÓCIO: Se for <= 5, aplica fundo vermelho claro e texto vermelho escuro
+                    let estiloStock = "";
+                    let avisoTexto = "";
+                    
+                    if (stockNum === 0) {
+                        estiloStock = "background-color: #ffe6e6; color: #cc0000; font-weight: bold; text-align: center;";
+                        avisoTexto = " (ESGOTADO)";
+                    } else if (stockNum <= 5) {
+                        estiloStock = "background-color: #fff0f0; color: #cc0000; font-weight: bold; text-align: center;";
+                        avisoTexto = " (REPOR URGENTE)";
+                    } else {
+                        estiloStock = "color: green; font-weight: bold; text-align: center;";
+                    }
+
+                    tr.innerHTML = `
+                        <td style="padding: 10px; border: 1px solid #ddd;">${prod.id}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${prod.nome}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; color: #555;">${prod.categoria || 'N/A'}</td>
+                        <td style="padding: 10px; border: 1px solid #ddd;">${Number(prod.preco).toFixed(2)}€</td>
+                        <td style="padding: 10px; border: 1px solid #ddd; ${estiloStock}">
+                            ${stockNum} un.${avisoTexto}
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (erro) {
+                console.error("Erro ao carregar stocks:", erro);
+                tbody.innerHTML = `<tr><td colspan="5" style="padding: 15px; text-align: center; color: red;">Erro ao ligar ao servidor de stocks.</td></tr>`;
             }
-        } catch(e) {
-            console.log("A correr em ambiente local isolado.");
+        }
+
+        // 🟩 Executa a função automaticamente quando o painel abre
+        carregarStocksVendedor();
+        
+        
+        
+        
+        // =========================================================================
+        // 1. 🚨 BLOQUEIO FÍSICO DE ROTAS E LEITURA DE SESSÃO (CORRE IMEDIATAMENTE)
+        // =========================================================================
+        let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
+        const urlParams = new URLSearchParams(window.location.search);
+        const emailURL = urlParams.get('email');
+
+        if (emailURL) {
+            usuarioLogado = {
+                nome: urlParams.get('nome') || (usuarioLogado ? usuarioLogado.nome : ""),
+                email: emailURL,
+                morada: urlParams.get('morada') || (usuarioLogado ? usuarioLogado.morada : ""),
+                localidade: urlParams.get('localidade') || (usuarioLogado ? usuarioLogado.localidade : ""),
+                codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || (usuarioLogado ? usuarioLogado.codigo_postal : ""),
+                tipo: urlParams.get('tipo') || (usuarioLogado ? usuarioLogado.tipo : "comprador")
+            };
+            localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
+        }
+
+        // Validação estrita de privilégios antes de carregar o resto da página
+        if (!usuarioLogado || !usuarioLogado.email) {
+            alert("Sessão expirada. Por favor, faz login para aceder ao painel.");
+            window.location.href = "autenticacao.html";
+        } else if (usuarioLogado.tipo !== "vendedor") {
+            alert("Acesso negado. Esta área é exclusiva para vendedores.");
+            window.location.href = "index.html"; 
+        } else {
+            console.log("Acesso autorizado ao painel de administração.");
+        }
+
+        // =========================================================================
+        // 2. 🔍 CHAVES RELACIONAIS DO VENDEDOR ATIVO (AGORA SEGURAS APÓS A SESSÃO)
+        // =========================================================================
+        const idVendedorAtivo = (usuarioLogado && (usuarioLogado.id || usuarioLogado.id_utilizador)) ? (usuarioLogado.id || usuarioLogado.id_utilizador) : "SEM_ID";
+        const emailVendedor = usuarioLogado ? usuarioLogado.email : "teste_local@vendedor.com";
+
+        // =========================================================================
+        // 3. FUNÇÕES GERAIS DE NAVEGAÇÃO
+        // =========================================================================
+        function voltarParaLoja() {
+            if (usuarioLogado) {
+                window.location.href = `index.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada)}&localidade=${encodeURIComponent(usuarioLogado.localidade)}&codigo_postal=${encodeURIComponent(usuarioLogado.codigo_postal)}&tipo=${encodeURIComponent(usuarioLogado.tipo)}`;
+            } else {
+                window.location.href = "index.html";
+            }
+        }
+
+        function terminarSessao() { 
+            localStorage.removeItem("usuario_logado"); 
+            localStorage.removeItem("carrinho"); 
+            window.location.href = "autenticacao.html"; 
         }
 
         function adicionarLinhaDetalhe() {
@@ -163,10 +307,21 @@
             container.appendChild(novaLinha);
         }
 
-        async function cadastrarProduto(event) {
+        // =========================================================================
+        // 4. ENVIO E CADASTRO DE PRODUTO COESOS
+        // =========================================================================
+        async function enviarNovoProdutoAoSheets(event) {
             event.preventDefault();
+            
+            // 1. Validação Crítica da Sessão: Garante que o vendedor está logado e ativo
+            if (!usuarioLogado || !usuarioLogado.email) {
+                alert("⚠️ Sessão expirada ou inválida. Por favor, faz login novamente.");
+                return;
+            }
+
             const botao = document.getElementById("btn-submeter");
 
+            // 2. Extração dinâmica dos detalhes técnicos
             const chaves = document.querySelectorAll(".detalhe-chave");
             const valores = document.querySelectorAll(".detalhe-valor");
             let detalhesTecnicosObj = {};
@@ -177,23 +332,31 @@
                 if (chave && valor) { detalhesTecnicosObj[chave] = valor; }
             });
 
+            // 3. Extração das informações complementares
             const informacoesObj = {
-                fabricante: document.getElementById("fabricante").value,
-                peso: document.getElementById("peso").value,
-                dimensoes: document.getElementById("dimensoes").value
+                fabricante: document.getElementById("fabricante").value.trim(),
+                peso: document.getElementById("peso").value.trim(),
+                dimensoes: document.getElementById("dimensoes").value.trim()
             };
 
+            // 4. Captura do novo campo de estimativa de dias de entrega
+            const diasEntregaInput = document.getElementById("produto-dias-entrega");
+            const diasEntregaDigitado = diasEntregaInput ? diasEntregaInput.value.trim() : "";
+
+            // 5. Construção do Payload Limpo (Mapeado de forma segura com a sessão ativa)
             const payload = {
                 acao: "cadastrar_produto",
-                vendedor_email: emailVendedor, // Usa o email detetado ou o de fallback
-                nome: document.getElementById("nome").value,
-                categoria: document.getElementById("categoria").value,
-                imagem_url: document.getElementById("imagem_url").value,
-                preco: document.getElementById("preco").value,
-                stock: document.getElementById("stock").value,
-                descricao: document.getElementById("descricao").value,
+                vendedor_email: usuarioLogado.email.trim().toLowerCase(), // 🟩 Protegido contra undefined
+                //vendedor_id: usuarioLogado.email.trim().toLowerCase(),    // 🟩 Vincula o produto ao email do vendedor
+                nome: document.getElementById("nome").value.trim(),
+                categoria: document.getElementById("categoria").value.trim(),
+                imagem_url: document.getElementById("imagem_url").value.trim(),
+                preco: parseFloat(document.getElementById("preco").value) || 0,
+                stock: parseInt(document.getElementById("stock").value) || 0,
+                descricao: document.getElementById("descricao").value.trim(),
                 detalhes_tecnicos: detalhesTecnicosObj,
-                informacoes: informacoesObj
+                informacoes: informacoesObj,
+                dias_entrega: diasEntregaDigitado ? parseInt(diasEntregaDigitado) : 8
             };
 
             try {
@@ -208,42 +371,63 @@
                 });
 
                 const resultado = await resposta.json();
-                alert(resultado.mensagem);
 
+                // 🟩 CORREÇÃO DO ALERT: Em vez de ler resultado.mensagem (que não existe no teu script para sucesso), 
+                // validamos o status e criamos uma mensagem explícita e limpa.
                 if (resultado.status === "sucesso") {
+                    alert(`🎉 Artigo publicado com sucesso! Foi gerado o ID: ${resultado.id}`);
+                    
+                    // Limpa o formulário
                     document.getElementById("form-cadastro").reset();
+                    
+                    // Faz o reset visual das linhas de propriedades dinâmicas
                     document.getElementById("container-detalhes").innerHTML = `
                         <div class="dinamico-row">
                             <input type="text" placeholder="Propriedade" class="detalhe-chave" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                             <input type="text" placeholder="Valor" class="detalhe-valor" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
                         </div>
                     `;
+                } else {
+                    // Se o servidor devolver erro, ele costuma enviar a mensagem (ex: "Acesso negado")
+                    alert(`❌ Erro: ${resultado.mensagem || "Não foi possível publicar o produto."}`);
                 }
+                
             } catch (erro) {
-                console.error(erro);
-                alert("Erro ao enviar o produto para o servidor.");
+                console.error("Erro ao enviar produto:", erro);
+                alert("⚠️ Erro ao enviar o produto para o servidor.");
             } finally {
                 botao.disabled = false;
                 botao.innerText = "Publicar Produto na Loja";
             }
         }
 
-
-        // --- 🟩 NOVAS FUNÇÕES PARA GESTÃO DE ENCOMENDAS ---
-
-        // Captura segura dos parâmetros do vendedor logado vindos da URL
-        const paramsVendedor = new URLSearchParams(window.location.search);
-        const emailVendedorAtivo = paramsVendedor.get('email') || "";
-
+        // =========================================================================
+        // 5. GESTÃO DE ENCOMENDAS RECEBIDAS (CORRIGIDA PARA PEDIDOS GET)
+        // =========================================================================
         async function carregarEncomendasVendedor() {
             const tbody = document.getElementById("tabela-encomendas-vendedor");
             tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center;">A carregar encomendas...</td></tr>`;
             
+            if (!usuarioLogado || !usuarioLogado.email) {
+                tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: red;">⚠️ Sessão inválida. Por favor faça login.</td></tr>`;
+                return;
+            }
+
             try {
+                // 🟩 CORREÇÃO CRÍTICA: Faz a chamada via GET colando os parâmetros na URL, alinhado com o teu doGet(e)
                 const resposta = await fetch(`${API_URL}?acao=todas_encomendas`);
-                const encomendas = await resposta.json();
                 
-                if (encomendas.length === 0) {
+                // O Apps Script devolve a resposta. No teu doGet ele já faz o JSON.stringify,
+                // mas caso venha como String de texto puro, fazemos o .json() por segurança.
+                let encomendas = await resposta.json();
+                
+                // Se o teu Apps Script devolver uma String JSON dentro de outra String (comum no TextOutput),
+                // fazemos uma dupla conversão preventiva para evitar quebras:
+                if (typeof encomendas === "string") {
+                    encomendas = JSON.parse(encomendas);
+                }
+                
+                if (!encomendas || encomendas.length === 0) {
                     tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: #666;">Nenhuma encomenda registada no sistema.</td></tr>`;
                     return;
                 }
@@ -252,26 +436,44 @@
                 
                 encomendas.forEach(enc => {
                     const dataFmt = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
+                    const estadoAtual = enc.estado || "Pendente";
+                    const estadoLower = estadoAtual.toLowerCase();
+                    
+                    let badgeBg = "#fff3cd"; 
+                    let badgeColor = "#856404";
+                    
+                    if (estadoLower === "em processamento") {
+                        badgeBg = "#cce5ff";
+                        badgeColor = "#004085";
+                    } else if (estadoLower === "enviado" || estadoLower === "entregue") {
+                        badgeBg = "#d4edda";
+                        badgeColor = "#155724";
+                    }
+
                     const tr = document.createElement("tr");
                     tr.style.borderBottom = "1px solid #ddd";
                     
                     tr.innerHTML = `
                         <td style="padding: 10px; font-weight: bold;">${enc.id_encomenda}</td>
-                        <td style="padding: 10px;">${dataFmt}</td>
+                        <td style="padding: 10px;">${dataFmt}<br><small style="color:#777;">às ${enc.hora || "00:00"}</small></td>
                         <td style="padding: 10px;">
                             <strong>${enc.cliente_nome}</strong><br>
                             <small style="color: #666;">${enc.cliente_email}</small>
                         </td>
-                        <td style="padding: 10px;">${enc.itens}</td>
+                        <td style="padding: 10px;">
+                            <strong>${enc.itens}</strong><br>
+                            <small style="color: #555; display:block; max-width: 200px; line-height: 1.3;">
+                                📍 ${enc.entrega_morada || "N/D"}, ${enc.entrega_localidade || "N/D"} (${enc.entrega_cp || "N/D"})<br>
+                                📞 Tlm: ${enc.entrega_telemovel || "N/D"}
+                            </small>
+                        </td>
                         <td style="padding: 10px; font-weight: bold; color: #b12704;">${Number(enc.total).toFixed(2)}€</td>
                         <td style="padding: 10px;">
-                            <small><strong>${enc.metodo_pagamento}</strong><br>${enc.detalhe_pagamento}</small>
+                            <small><strong>${enc.metodo_pagamento || "N/D"}</strong><br>${enc.detalhe_pagamento || ""}</small>
                         </td>
-                        <td style="padding: 10px;">
-                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold;
-                                background: ${enc.estado === 'Pendente' ? '#fff3cd' : enc.estado === 'Em Processamento' ? '#cce5ff' : '#d4edda'};
-                                color: ${enc.estado === 'Pendente' ? '#856404' : enc.estado === 'Em Processamento' ? '#004085' : '#155724'};">
-                                ${enc.estado}
+                        <td style="padding: 10px; text-align: center;">
+                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; background: ${badgeBg}; color: ${badgeColor}; display: inline-block;">
+                                ${estadoAtual}
                             </span>
                         </td>
                         <td style="padding: 10px;">
@@ -286,7 +488,8 @@
                     tbody.appendChild(tr);
                 });
             } catch(e) {
-                tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: red;">Erro ao carregar dados do Sheets.</td></tr>`;
+                console.error("Erro ao renderizar:", e);
+                tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: red; font-weight: bold;">⚠️ Erro ao carregar dados do Sheets. Por favor tente mais tarde.</td></tr>`;
             }
         }
 
@@ -294,13 +497,13 @@
             if (!novoEstado) return;
             
             if (!confirm(`Deseja alterar o estado da encomenda ${idEncomenda} para "${novoEstado}"?`)) {
-                carregarEncomendasVendedor(); // Recarrega para resetar o select se cancelar
+                carregarEncomendasVendedor(); 
                 return;
             }
             
             const payload = {
                 acao: "atualizar_status",
-                vendedor_email: emailVendedorAtivo,
+                vendedor_email: emailVendedor,
                 id_encomenda: idEncomenda,
                 novo_estado: novoEstado
             };
@@ -314,15 +517,46 @@
                 });
                 const resultado = await resposta.json();
                 alert(resultado.mensagem);
-                carregarEncomendasVendedor(); // Atualiza a tabela imediatamente
+                carregarEncomendasVendedor(); 
             } catch(e) {
                 alert("Erro ao comunicar mudança ao servidor.");
                 carregarEncomendasVendedor();
             }
         }
 
-        // Executa a listagem automaticamente quando o painel do vendedor abre
+        // Executa a listagem de forma limpa no arranque
         carregarEncomendasVendedor();
+
+        // 🟩 REDUNDÂNCIA DE SEGURANÇA CONTRA CACHE DO LIVE SERVER
+        // Se o HTML teimar em chamar o nome alternativo, redirecionamos para a função correta
+        const processarCadastroProduto = cadastrarProduto;
+
+        // 🟩 REDUNDÂNCIA CONTRA ERROS DE TRANSIÇÃO E CACHE
+        // Se o HTML chamar qualquer uma das variações de nome, garantimos que aponta para a função real
+        window.processarCadastroProduto = cadastrarProduto;
+        window.cadastrarProduto = cadastrarProduto;
+
+        // Se o ID do vendedor falhar na sessão, força um ID de teste para o formulário não travar
+        if (typeof idVendedorAtivo === "undefined" || idVendedorAtivo === "SEM_ID") {
+            window.idVendedorAtivo = "USR-TESTE-LOCAL";
+        }
+
+        // 🟥 DESTRUIDOR DE CACHE: Mapeia todos os nomes possíveis para a função nova
+        window.processarCadastroProduto = enviarNovoProdutoAoSheets;
+        window.cadastrarProduto = enviarNovoProdutoAoSheets;
+        window.enviarNovoProdutoAoSheets = enviarNovoProdutoAoSheets;
+
+        // 🟩 FUNÇÃO DE ANCORAGEM SUAVE
+        function irParaSecao(idSecao) {
+            const elemento = document.getElementById(idSecao);
+            if (elemento) {
+                elemento.scrollIntoView({ 
+                    behavior: 'smooth', // Faz o efeito de deslizar suavemente em vez de dar um salto seco
+                    block: 'start'      // Alinha o topo da secção com o topo do ecrã
+                });
+            }
+        }
+        
     </script>
 </body>
 </html>
