@@ -213,6 +213,7 @@
             <button class="btn-cat" onclick="filtrarCategoria('Desporto', this)">Desporto</button>
             <button class="btn-cat" onclick="filtrarCategoria('Ferramentas', this)">Ferramentas</button>
             <button class="btn-cat" onclick="filtrarCategoria('Livros', this)">Livros</button>
+            <button class="btn-cat" onclick="filtrarCategoria('Saúde e suplementação', this)">Saúde e suplementação</button>
         </div>
         
         <div class="content-grid">
@@ -236,15 +237,19 @@
                     
                     <form id="formulario-checkout" class="checkout-form" onsubmit="finalizarCompra(event)">
                         <h3>Dados de Envio</h3>
-                        <div class="form-group"><label>Nome Completo:</label><input type="text" id="nome" required readonly></div>
-                        <div class="form-group"><label>E-mail:</label><input type="email" id="email" required readonly></div>
-                        <div class="form-group"><label>Morada de Entrega:</label><input type="text" id="morada" required readonly></div>
+                        <div class="form-group"><label>Nome Completo:</label><input type="text" id="nome" required></div>
+                        <div class="form-group"><label>E-mail:</label><input type="email" id="email" required readonly style="background: #f5f5f5; color: #777;"></div>
+                        <div class="form-group"><label>Morada de Entrega:</label><input type="text" id="morada" required></div>
                         <div style="display:flex; gap:10px;">
-                            <div class="form-group" style="flex:2;"><label>Localidade:</label><input type="text" id="localidade" required readonly></div>
-                            <div class="form-group" style="flex:1;"><label>Cód. Postal:</label><input type="text" id="cp" required readonly></div>
+                            <div class="form-group" style="flex:2;"><label>Localidade:</label><input type="text" id="localidade" required></div>
+                            <div class="form-group" style="flex:1;"><label>Cód. Postal:</label><input type="text" id="cp" placeholder="XXXX-XXX" required></div>
                         </div>
+                        <div class="form-group">
+                            <label>Telemóvel de Contacto:</label>
+                            <input type="tel" id="telemovel-entrega" placeholder="9XXXXXXXX" required>
+                        </div>
+                        
                         <button type="button" onclick="finalizarCompra()" class="btn-checkout">Finalizar Encomenda</button>
-                        <!--<button type="submit" id="btn-finalizar" class="btn-checkout">Finalizar Encomenda</button>-->
                     </form>
                 </div>
             </div>
@@ -366,18 +371,31 @@ let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
 let metodoSelecionado = 'mbway';
 let referenciaGeradaParaEnvio = "";
 
+
+
 async function carregarProdutos() {
     try {
-        const resposta = await fetch(API_URL);
+        // 🟩 APENAS ADICIONÁMOS O PARÂMETRO DA AÇÃO À TUA API_URL
+        const resposta = await fetch(`${API_URL}?acao=listar_produtos`);
+        
+        // Mantém rigorosamente a tua variável global original para os filtros funcionarem!
         todosProdutos = await resposta.json();
+        
+        // Chama a tua função original que já funciona às mil maravilhas
         renderizarVitrine(todosProdutos);
-    } catch (erro) { document.getElementById("produtos-content").innerText = "Erro ao carregar produtos."; }
+    } catch (erro) { 
+        document.getElementById("produtos-content").innerText = "Erro ao carregar produtos."; 
+    }
 }
+
 
 function renderizarVitrine(lista) {
     const vitrine = document.getElementById("produtos-content");
     vitrine.innerHTML = "";
     if (lista.length === 0) { vitrine.innerText = "Nenhum produto corresponde aos critérios."; return; }
+
+    // Sincroniza a lista global com o Sheets para as outras funções (detalhes/carrinho)
+    window.produtos = lista; 
 
     lista.forEach(produto => {
         const card = document.createElement("div");
@@ -386,17 +404,29 @@ function renderizarVitrine(lista) {
             if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') abrirModalDetalhes(produto);
         };
         
-        const temStock = Number(produto.stock) > 0;
+        const stockNum = Number(produto.stock);
+        const temStock = stockNum > 0;
+        
+        // 🟩 ALTERAÇÃO AQUI: Define a cor vermelha se o stock for baixo (<= 5) ou esgotado
+        const corStock = (stockNum <= 5) ? 'red' : 'green';
+        
+        // 🟩 ALTERAÇÃO AQUI: Texto dinâmico com alerta visual de urgência
+        const textoStock = (stockNum > 0 && stockNum <= 5) 
+            ? `⚠️ ÚLTIMAS UNIDADES: ${stockNum} un.` 
+            : `Disponível: ${stockNum} un.`;
+
         card.innerHTML = `
             <img src="${produto.imagem_url || 'https://via.placeholder.com/150'}" alt="${produto.nome}">
             <h3>${produto.nome}</h3>
-            <p><small style="color: ${temStock ? 'green' : 'red'}">Disponível: ${produto.stock} un.</small></p>
+            <p><small style="color: ${corStock}; font-weight: ${stockNum <= 5 ? 'bold' : 'normal'}">${textoStock}</small></p>
             <p><strong>${Number(produto.preco).toFixed(2)}€</strong></p>
             <div style="margin-top: 10px; display:flex; gap:5px; ${!temStock ? 'display:none;' : ''}">
                 <input type="number" id="qtd-${produto.id}" value="1" min="1" max="${produto.stock}" style="width: 45px; text-align: center;">
-                <button style="flex:1; font-size:12px;" onclick="prepararAdicao('${produto.id}', '${produto.nome}', ${produto.preco}, ${produto.stock})">Adicionar</button>
+                <button onclick="prepararAdicao('${produto.id}', '${produto.nome.replace(/'/g, "\\'")}', ${produto.preco}, ${produto.stock})" style="flex:1; font-size:12px; background:#ffd814; color:#0f1111; border:1px solid #fcd200; border-radius:20px; font-weight:bold; padding: 6px; cursor: pointer;">
+                    Adicionar
+                </button>
             </div>
-            ${!temStock ? '<button disabled style="margin-top:10px;">Sem Stock</button>' : ''}
+            ${!temStock ? '<button disabled style="margin-top:10px; width:100%; border-radius:20px; padding: 6px;">Sem Stock</button>' : ''}
         `;
         vitrine.appendChild(card);
     });
@@ -581,6 +611,7 @@ function atualizarInterfaceCarrinho() {
     btnEsvaziar.style.display = "block";
 
     carrinho.forEach(item => {
+        // Mantém a tua conta exata com preco_unitario
         const custoItem = item.preco_unitario * item.quantidade;
         totalAcumulado += custoItem;
         const div = document.createElement("div");
@@ -602,31 +633,96 @@ function atualizarInterfaceCarrinho() {
         contentorItens.appendChild(div);
     });
 
-    elementoTotal.innerText = totalAcumulado.toFixed(2);
+    // 🟩 CÁLCULO LOGÍSTICO DO FRETE COM BASE NO TEU TOTAL ACUMULADO
+    const VALOR_MINIMO_PORTES_GRATIS = 50;
+    const TAXA_FRETE = 3.99;
+    
+    let valorFrete = (totalAcumulado >= VALOR_MINIMO_PORTES_GRATIS) ? 0 : TAXA_FRETE;
+    let totalFinal = totalAcumulado + valorFrete;
+
+    // 🟩 EXIBIÇÃO DOS VALORES ATUALIZADOS
+    // Mostra o total final com o frete incluído no teu elemento nativo
+    elementoTotal.innerText = totalFinal.toFixed(2);
+    
+    // Adiciona o valor à janela global para o script de finalização saber o total real
+    window.valorFinalEncomenda = totalFinal;
+
     formCheckout.style.display = "block";
     
+    // 🟩 INJEÇÃO INTELIGENTE DOS DADOS (Só preenche se os inputs estiverem vazios)
+    // Isto evita que o JavaScript limpe o que o utilizador acabou de digitar ao mudar as quantidades!
     if (usuarioLogado) {
-        document.getElementById("nome").value = usuarioLogado.nome;
-        document.getElementById("email").value = usuarioLogado.email;
-        document.getElementById("morada").value = usuarioLogado.morada || "";
-        document.getElementById("localidade").value = usuarioLogado.localidade || "";
-        document.getElementById("cp").value = usuarioLogado.codigo_postal || "";
+        const inputNome = document.getElementById("nome");
+        const inputEmail = document.getElementById("email");
+        const inputMorada = document.getElementById("morada");
+        const inputLocalidade = document.getElementById("localidade");
+        const inputCp = document.getElementById("cp");
+
+        if (!inputNome.value) inputNome.value = usuarioLogado.nome || "";
+        if (!inputEmail.value) inputEmail.value = usuarioLogado.email || "";
+        if (!inputMorada.value) inputMorada.value = usuarioLogado.morada || "";
+        if (!inputLocalidade.value) inputLocalidade.value = usuarioLogado.localidade || "";
+        if (!inputCp.value) inputCp.value = usuarioLogado.codigo_postal || "";
     }
 }
 
-// --- 🟩 NOVAS FUNÇÕES DO FLUXO DE PAGAMENTO SIMULADO ---
-function finalizarCompra(event) {
-    if (event) event.preventDefault();
-    if (!usuarioLogado) {
-        alert("Por favor, faz login para poderes finalizar a tua compra.");
-        window.location.href = "autenticacao.html";
+// VARIÁVEL GLOBAL (Coloca no topo do teu script ou deixa o JS criar)
+window.dadosEntregaTemporarios = null;
+
+async function finalizarCompra(event) {
+    if (event) event.preventDefault(); 
+
+    // 1. Captura os valores dos inputs editáveis do carrinho
+    const nomeDigitado = document.getElementById("nome").value.trim();
+    const emailDigitado = document.getElementById("email").value.trim();
+    const moradaDigitada = document.getElementById("morada").value.trim();
+    const localidadeDigitada = document.getElementById("localidade").value.trim();
+    const cpDigitado = document.getElementById("cp").value.trim();
+    
+    // 🟩 RECOLHA DO NOVO CAMPO DE TELEMÓVEL DA ENCOMENDA
+    const tlmEntregaInput = document.getElementById("telemovel-entrega");
+    const tlmEntrega = tlmEntregaInput ? tlmEntregaInput.value.trim() : "";
+
+    // 🟩 TRANCA 1: Validação do Nome Completo (Pelo menos primeiro e apelido)
+    const partesDoNome = nomeDigitado.split(/\s+/);
+    if (partesDoNome.length < 2 || partesDoNome[1] === "") {
+        alert("⚠️ Por favor, introduza o seu nome completo (pelo menos o primeiro nome e um apelido) para efeitos de envio.");
+        return; 
+    }
+
+    // 🟩 TRANCA 2: Validação do Código-Postal (Formato XXXX-XXX)
+    const cpRegex = /^\d{4}-\d{3}$/;
+    if (!cpRegex.test(cpDigitado)) {
+        alert("⚠️ O Código-Postal introduzido não é válido! Por favor, use o formato correto (Ex: 8125-401).");
+        return; 
+    }
+
+    // 🟩 TRANCA 3: Validação Obrigatória do Telemóvel para a Encomenda (9 dígitos)
+    if (tlmEntrega.length !== 9 || isNaN(tlmEntrega)) {
+        alert("⚠️ Por favor, introduza um número de telemóvel válido (9 dígitos) para coordenação da entrega.");
         return;
     }
-    if (carrinho.length === 0) {
-        alert("O teu carrinho está vazio!");
+
+    if (!carrinho || carrinho.length === 0) {
+        alert("⚠️ O seu carrinho está vazio.");
         return;
     }
+
+    // 🟩 ATUALIZAÇÃO: Guardamos todos os campos de forma desmembrada na janela global
+    // Isto permite que o processarFluxoPagamento leia os dados exatos introduzidos no momento!
+    window.dadosEntregaTemporarios = {
+        cliente_nome: nomeDigitado,
+        cliente_email: emailDigitado,
+        entrega_morada: moradaDigitada,
+        entrega_localidade: localidadeDigitada,
+        entrega_cp: cpDigitado,
+        entrega_telemovel: tlmEntrega
+    };
+
+    // 🟩 ABRIR VISUALMENTE O MODAL DE PAGAMENTO
     document.getElementById("modal-pagamento").style.display = "flex";
+    
+    // Força a renderização inicial do MB WAY para que o input do telemóvel passe a existir
     selecionarMetodo('mbway');
 }
 
@@ -639,53 +735,66 @@ function selecionarMetodo(metodo) {
     const container = document.getElementById("detalhes-pagamento");
     const btnMbway = document.getElementById("btn-opcao-mbway");
     const btnRef = document.getElementById("btn-opcao-ref");
-    
-    // 🟩 CORREÇÃO DO TOTAL: Mapeado com a chave correta (item.preco_unitario)
-    const totalCarrinho = carrinho.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
+    const btnConfirmar = document.getElementById("btn-confirmar-pagamento");
+
+    // Restaura estilos dos botões
+    btnMbway.style.background = "#f4f4f4"; btnMbway.style.color = "#333";
+    btnRef.style.background = "#f4f4f4"; btnRef.style.color = "#333";
+    btnConfirmar.style.display = "block"; // Garante que o botão de confirmar está visível
 
     if (metodo === 'mbway') {
-        btnMbway.style.background = "#0056b3"; btnMbway.style.color = "#ffffff"; btnMbway.style.border = "2px solid #0056b3";
-        btnRef.style.background = "#f4f4f4"; btnRef.style.color = "#333333"; btnRef.style.border = "1px solid #ccc";
+        btnMbway.style.background = "#007bff"; btnMbway.style.color = "white";
         
+        // 🟩 CAPTURA DINÂMICA: Lê o telemóvel que o utilizador acabou de digitar no carrinho
+        const tlmCarrinho = document.getElementById("telemovel-entrega") ? document.getElementById("telemovel-entrega").value.trim() : "";
+
+        // 🟩 INJEÇÃO AUTOMÁTICA: O valor vai direto para o input, mas está totalmente editável (sem readonly)
         container.innerHTML = `
-            <label style="display:block; margin-bottom:8px; font-weight:bold; font-size:14px; color:#333;">Número de Telemóvel:</label>
-            <input type="tel" id="pago-telemovel" placeholder="9xxxxxxxx" maxlength="9" style="width:100%; padding:10px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; font-size:16px;">
-            <p style="font-size:13px; color:#444; margin-top:10px; line-height:1.4;">Após clicar em Simular, receberá uma notificação de autorização de <strong>${totalCarrinho.toFixed(2)}€</strong> na sua app MB WAY.</p>
+            <div class="form-group" style="margin-top:10px;">
+                <label>Número de Telemóvel MB WAY:</label>
+                <input type="tel" id="pago-telemovel" value="${tlmCarrinho}" placeholder="9XXXXXXXX" maxlength="9" style="width:100%; padding:10px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+            </div>
         `;
     } else {
-        btnRef.style.background = "#0056b3"; btnRef.style.color = "#ffffff"; btnRef.style.border = "2px solid #0056b3";
-        btnMbway.style.background = "#f4f4f4"; btnMbway.style.color = "#333333"; btnMbway.style.border = "1px solid #ccc";
+        btnRef.style.background = "#007bff"; btnRef.style.color = "white";
         
-        const refAleatoria = Math.floor(100000000 + Math.random() * 900000000).toString().replace(/(\d{3})(\d{3})(\d{3})/, "$1 $2 $3");
-        referenciaGeradaParaEnvio = refAleatoria;
+        // Gera uma referência fictícia para visualização se não existir
+        referenciaGeradaParaEnvio = Math.floor(100000000 + Math.random() * 900000000).toString().replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
         
+        const totalExibido = document.getElementById("carrinho-total") ? document.getElementById("carrinho-total").innerText : "0.00";
+
         container.innerHTML = `
-            <div style="font-size: 15px; line-height: 1.8; color:#111; background:#fff; padding:10px; border-radius:4px; border:1px solid #eee;">
+            <div style="line-height: 1.6; font-family: monospace;">
                 <strong>Entidade:</strong> 11249<br>
-                <strong>Referência:</strong> <span style="font-family:monospace; font-size:16px; letter-spacing:1px;">${refAleatoria}</span><br>
-                <strong>Montante:</strong> <span style="color:#d9534f; font-weight:bold;">${totalCarrinho.toFixed(2)}€</span>
+                <strong>Referência:</strong> ${referenciaGeradaParaEnvio}<br>
+                <strong>Montante:</strong> ${totalExibido}€<br>
+                <span style="font-size:11px; color:#666; display:block; margin-top:5px;">* Válido por 24 horas. A encomenda será processada após validação.</span>
             </div>
-            <p style="font-size:13px; color:#444; margin-top:10px; line-height:1.4;">Simule o pagamento deste documento através do seu Homebanking ou numa Caixa Multibanco.</p>
         `;
     }
 }
 
+// 🟩 FUNÇÃO ATUALIZADA: FLUXO DE PAGAMENTO COM ENVIO DE COLUNAS SEPARADAS PARA LOGÍSTICA
+// 🟩 FUNÇÃO ATUALIZADA: FLUXO DE PAGAMENTO COM ENVIO DE COLUNAS SEPARADAS PARA LOGÍSTICA
 async function processarFluxoPagamento() {
     const btnConfirmar = document.getElementById("btn-confirmar-pagamento");
     const container = document.getElementById("detalhes-pagamento");
+    const modalContent = container.parentElement; 
     const totalCarrinho = carrinho.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
     
     let detalhePagamento = "";
     let nomeMetodo = "";
+    let tlmDigitado = "";
 
+    // 1. Validações e animações de espera dos métodos
     if (metodoSelecionado === 'mbway') {
-        const tlm = document.getElementById("pago-telemovel").value.trim();
-        if (tlm.length !== 9 || isNaN(tlm)) {
+        tlmDigitado = document.getElementById("pago-telemovel").value.trim();
+        if (tlmDigitado.length !== 9 || isNaN(tlmDigitado)) {
             alert("Por favor, introduz um número de telemóvel válido (9 dígitos).");
             return;
         }
         nomeMetodo = "MB WAY";
-        detalhePagamento = "Telemóvel: " + tlm;
+        detalhePagamento = "Telemóvel: " + tlmDigitado;
         
         btnConfirmar.disabled = true;
         container.innerHTML = `
@@ -714,55 +823,81 @@ async function processarFluxoPagamento() {
 
     container.innerHTML = `<div style="text-align:center; padding:20px; font-weight:bold; color:#28a745;">Pagamento Confirmado! A registar encomenda...</div>`;
 
-    // 🟩 MAPEAMENTO ULTRA-SEGURO DOS ITENS A ENVIAR PARA O SCRIPT
-      const itensParaEnviar = carrinho.map(item => {
-          // Força a captura do ID testando todas as chaves em que ele possa estar guardado
-          const idRealDoProduto = item.id_produto || item.id || "";
-          
-          return {
-              id_produto: idRealDoProduto, // Bate certo com o que o Apps Script vai ler para o stock
-              id: idRealDoProduto,         // Redundância de segurança
-              nome_produto: item.nome_produto || item.nome || "Produto",
-              quantidade: Number(item.quantidade) || 1,
-              preco_unitario: Number(item.preco_unitario) || 0
-          };
-      });
+    // 2. EXTRAÇÃO INTELIGENTE: Prioriza os dados reais do checkout e do telemóvel obrigatório do carrinho
+    const nomeFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.cliente_nome : document.getElementById("nome").value.trim();
+    const emailFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.cliente_email : document.getElementById("email").value.trim();
+    const moradaFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_morada : document.getElementById("morada").value.trim();
+    const localidadeFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_localidade : document.getElementById("localidade").value.trim();
+    const cpFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_cp : document.getElementById("cp").value.trim();
+    const tlmFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_telemovel : tlmDigitado;
+    
+    // Recupera o total faturado com a taxa de frete guardada
+    const valorFinalComFrete = window.valorFinalEncomenda || totalCarrinho;
 
-      const dadosEncomenda = {
-          acao: "comprar",
-          cliente_nome: usuarioLogado.nome,
-          cliente_email: usuarioLogado.email,
-          total: totalCarrinho,
-          metodo_pagamento: nomeMetodo,
-          detalhe_pagamento: detalhePagamento,
-          itens: itensParaEnviar // Envia a lista tratada e com IDs garantidos
-      };
+    // 🟩 ESTRUTURA RECONFIGURADA: Mapeamento direto e limpo para as colunas do teu Sheets
+    const dadosEncomenda = {
+        acao: "comprar",
+        cliente_nome: nomeFinal,
+        cliente_email: emailFinal,
+        entrega_morada: moradaFinal,
+        entrega_localidade: localidadeFinal,
+        entrega_cp: cpFinal,
+        entrega_telemovel: tlmFinal || "N/A", 
+        total: valorFinalComFrete,          
+        metodo_pagamento: nomeMetodo,
+        detalhe_pagamento: detalhePagamento,
+        itens: carrinho
+    };
 
     try {
         const response = await fetch(API_URL, { 
             method: "POST", 
-            mode: "cors", 
-            headers: { "Content-Type": "text/plain" }, 
+            headers: { "Content-Type": "text/plain;charset=utf-8" }, 
             body: JSON.stringify(dadosEncomenda) 
         });
         const resultado = await response.json();
         
         if (resultado.status === "sucesso") {
-            alert(`Encomenda paga e efetuada com sucesso! Código: ${resultado.id}`);
             carrinho = [];
-            atualizarInterfaceCarrinho();
-            fecharModalPagamento();
-            irParaEncomendas();
+            if (typeof atualizarInterfaceCarrinho === "function") { atualizarInterfaceCarrinho(); }
+            
+            modalContent.innerHTML = `
+                <div style="text-align: center; padding: 20px 10px; font-family: Arial, sans-serif;">
+                    <div style="width: 70px; height: 70px; background: #d4edda; color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 35px; font-weight: bold; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);">
+                        ✓
+                    </div>
+                    <h3 style="margin: 0 0 10px 0; color: #28a745; font-size: 22px;">Compra Concluída!</h3>
+                    <p style="margin: 0 0 20px 0; color: #555; font-size: 14px; line-height: 1.5;">
+                        O teu pagamento foi processado com sucesso e a tua encomenda já foi enviada para o armazém.
+                    </p>
+                    <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px; border-radius: 6px; margin-bottom: 25px;">
+                        <span style="font-size: 12px; color: #6c757d; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Código da Encomenda</span>
+                        <strong style="font-size: 18px; color: #232f3e; font-family: monospace;">${resultado.id}</strong>
+                    </div>
+                    <button type="button" onclick="irParaEncomendas()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,123,255,0.2); transition: background 0.2s;">
+                        📦 Ver as Minhas Encomendas
+                    </button>
+                </div>
+            `;
         } else {
             alert(`Erro ao registar: ${resultado.mensagem}`);
             btnConfirmar.disabled = false;
         }
     } catch (erro) {
-        alert("Encomenda processada com sucesso!");
+        console.error("Erro detalhado no envio pós-pagamento:", erro);
         carrinho = [];
-        atualizarInterfaceCarrinho();
-        fecharModalPagamento();
-        irParaEncomendas();
+        if (typeof atualizarInterfaceCarrinho === "function") { atualizarInterfaceCarrinho(); }
+        
+        modalContent.innerHTML = `
+            <div style="text-align: center; padding: 20px 10px;">
+                <div style="width: 70px; height: 70px; background: #d4edda; color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 35px;">✓</div>
+                <h3 style="color: #28a745; margin-bottom: 10px;">Encomenda Processada!</h3>
+                <p style="color: #555; font-size: 14px; margin-bottom: 25px;">A tua compra foi submetida com sucesso.</p>
+                <button type="button" onclick="irParaEncomendas()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
+                    📦 Ver as Minhas Encomendas
+                </button>
+            </div>
+        `;
     } finally {
         btnConfirmar.disabled = false;
     }
@@ -779,6 +914,10 @@ function irParaEncomendas() {
 
 carregarProdutos();
 atualizarInterfaceCarrinho();
+
+
+
+
     </script>
 
         <div id="modal-pagamento" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1001;">
@@ -798,6 +937,8 @@ atualizarInterfaceCarrinho();
                 </div>
             </div>
         </div>
+
+            
 
 
 </body>
