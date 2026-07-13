@@ -91,6 +91,10 @@
                         <label for="produto-dias-entrega">Dias para Entrega (Estimativa):</label>
                         <input type="number" id="produto-dias-entrega" min="1" placeholder="Ex: 3" value="8" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
                     </div>
+                    <div class="form-group">
+                        <label for="produto-custo-transporte">Custo de Transporte (€):</label>
+                        <input type="number" id="produto-custo-transporte" min="0" step="0.01" placeholder="Ex: 4.90" value="0.00" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
+                    </div>
                 </div>
                 <div class="form-group">
                     <label for="descricao">Descrição do Produto (Sobre este artigo):</label>
@@ -146,6 +150,8 @@
                         <th style="padding: 10px;">Data</th>
                         <th style="padding: 10px;">Cliente</th>
                         <th style="padding: 10px;">Artigos</th>
+                        <th style="padding: 10px;">Dados de Envio</th> 
+                        <th style="padding: 10px;">Telemóvel</th>     
                         <th style="padding: 10px;">Total</th>
                         <th style="padding: 10px;">Pagamento</th>
                         <th style="padding: 10px;">Estado Atual</th>
@@ -343,6 +349,10 @@
             const diasEntregaInput = document.getElementById("produto-dias-entrega");
             const diasEntregaDigitado = diasEntregaInput ? diasEntregaInput.value.trim() : "";
 
+            // 🟩 CAPTURA O NOVO INPUT DO CUSTO DE TRANSPORTE
+            const custoTransporteInput = document.getElementById("produto-custo-transporte");
+            const custoTransporteDigitado = custoTransporteInput ? custoTransporteInput.value.trim() : "";
+
             // 5. Construção do Payload Limpo (Mapeado de forma segura com a sessão ativa)
             const payload = {
                 acao: "cadastrar_produto",
@@ -356,7 +366,10 @@
                 descricao: document.getElementById("descricao").value.trim(),
                 detalhes_tecnicos: detalhesTecnicosObj,
                 informacoes: informacoesObj,
-                dias_entrega: diasEntregaDigitado ? parseInt(diasEntregaDigitado) : 8
+                dias_entrega: diasEntregaDigitado ? parseInt(diasEntregaDigitado) : 8,
+
+                // 🟩 INJECTADO NO PAYLOAD PARA ENVIAR AO BACKEND
+                custo_transporte: custoTransporteDigitado ? parseFloat(custoTransporteDigitado) : 0.00
             };
 
             try {
@@ -402,33 +415,28 @@
         }
 
         // =========================================================================
-        // 5. GESTÃO DE ENCOMENDAS RECEBIDAS (CORRIGIDA PARA PEDIDOS GET)
+        // 5. GESTÃO DE ENCOMENDAS RECEBIDAS (ORGANIZADA EM COLUNAS SEPARADAS)
         // =========================================================================
         async function carregarEncomendasVendedor() {
             const tbody = document.getElementById("tabela-encomendas-vendedor");
-            tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center;">A carregar encomendas...</td></tr>`;
+            // Atualizado o colspan para 10 para cobrir as novas colunas
+            tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center;">A carregar encomendas...</td></tr>`;
             
             if (!usuarioLogado || !usuarioLogado.email) {
-                tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: red;">⚠️ Sessão inválida. Por favor faça login.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center; color: red;">⚠️ Sessão inválida. Por favor faça login.</td></tr>`;
                 return;
             }
 
             try {
-                // 🟩 CORREÇÃO CRÍTICA: Faz a chamada via GET colando os parâmetros na URL, alinhado com o teu doGet(e)
                 const resposta = await fetch(`${API_URL}?acao=todas_encomendas`);
-                
-                // O Apps Script devolve a resposta. No teu doGet ele já faz o JSON.stringify,
-                // mas caso venha como String de texto puro, fazemos o .json() por segurança.
                 let encomendas = await resposta.json();
                 
-                // Se o teu Apps Script devolver uma String JSON dentro de outra String (comum no TextOutput),
-                // fazemos uma dupla conversão preventiva para evitar quebras:
                 if (typeof encomendas === "string") {
                     encomendas = JSON.parse(encomendas);
                 }
                 
                 if (!encomendas || encomendas.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: #666;">Nenhuma encomenda registada no sistema.</td></tr>`;
+                    tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center; color: #666;">Nenhuma encomenda registada no sistema.</td></tr>`;
                     return;
                 }
                 
@@ -453,31 +461,48 @@
                     const tr = document.createElement("tr");
                     tr.style.borderBottom = "1px solid #ddd";
                     
+                    // 🟩 DISTRIBUIÇÃO LIMPA EM COLUNAS EXCLUSIVAS
                     tr.innerHTML = `
                         <td style="padding: 10px; font-weight: bold;">${enc.id_encomenda}</td>
-                        <td style="padding: 10px;">${dataFmt}<br><small style="color:#777;">às ${enc.hora || "00:00"}</small></td>
-                        <td style="padding: 10px;">
+                        <td style="padding: 10px; font-size: 13px;">${dataFmt}<br><small style="color:#777;">às ${enc.hora || "00:00"}</small></td>
+                        
+                        <td style="padding: 10px; font-size: 13px;">
                             <strong>${enc.cliente_nome}</strong><br>
                             <small style="color: #666;">${enc.cliente_email}</small>
                         </td>
-                        <td style="padding: 10px;">
-                            <strong>${enc.itens}</strong><br>
-                            <small style="color: #555; display:block; max-width: 200px; line-height: 1.3;">
-                                📍 ${enc.entrega_morada || "N/D"}, ${enc.entrega_localidade || "N/D"} (${enc.entrega_cp || "N/D"})<br>
-                                📞 Tlm: ${enc.entrega_telemovel || "N/D"}
-                            </small>
+                        
+                        <td style="padding: 10px; font-weight: bold; color: #232f3e; font-size: 13px;">
+                            ${enc.itens || "Artigos da encomenda"}
                         </td>
-                        <td style="padding: 10px; font-weight: bold; color: #b12704;">${Number(enc.total).toFixed(2)}€</td>
-                        <td style="padding: 10px;">
+                        
+                        <td style="padding: 10px; font-size: 12px; color: #333; max-width: 180px; line-height: 1.3;">
+                            📍 ${enc.entrega_morada || "N/D"}<br>
+                            ${enc.entrega_localidade || "N/D"} (${enc.entrega_cp || "N/D"})
+                        </td>
+                        
+                        <td style="padding: 10px; font-size: 13px; font-family: monospace;">
+                            📞 ${enc.entrega_telemovel || "N/D"}
+                        </td>
+                        
+                        <td style="padding: 10px; font-weight: bold; font-size: 13px;">
+                            <span style="font-size: 10px; color: #666; font-weight: normal; display: block; margin-bottom: 2px;">
+                                Portes: ${Number(enc.custo_transporte || 0).toFixed(2)}€
+                            </span>
+                            <span style="color: #b12704;">${Number(enc.total).toFixed(2)}€</span>
+                        </td>
+                        
+                        <td style="padding: 10px; font-size: 12px;">
                             <small><strong>${enc.metodo_pagamento || "N/D"}</strong><br>${enc.detalhe_pagamento || ""}</small>
                         </td>
+                        
                         <td style="padding: 10px; text-align: center;">
                             <span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; background: ${badgeBg}; color: ${badgeColor}; display: inline-block;">
                                 ${estadoAtual}
                             </span>
                         </td>
+                        
                         <td style="padding: 10px;">
-                            <select onchange="alterarEstadoNoSheets('${enc.id_encomenda}', this.value)" style="padding: 5px; font-size: 13px; border-radius: 4px;">
+                            <select onchange="alterarEstadoNoSheets('${enc.id_encomenda}', this.value)" style="padding: 5px; font-size: 12px; border-radius: 4px;">
                                 <option value="">-- Alterar --</option>
                                 <option value="Pendente">Pendente</option>
                                 <option value="Em Processamento">Em Processamento</option>
@@ -489,7 +514,7 @@
                 });
             } catch(e) {
                 console.error("Erro ao renderizar:", e);
-                tbody.innerHTML = `<tr><td colspan="8" style="padding: 15px; text-align: center; color: red; font-weight: bold;">⚠️ Erro ao carregar dados do Sheets. Por favor tente mais tarde.</td></tr>`;
+                tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center; color: red; font-weight: bold;">⚠️ Erro ao carregar dados do Sheets. Por favor tente mais tarde.</td></tr>`;
             }
         }
 
@@ -560,4 +585,3 @@
     </script>
 </body>
 </html>
-

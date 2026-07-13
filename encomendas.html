@@ -157,13 +157,13 @@
             window.location.href = "autenticacao.html"; 
         }
 
-        // 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: CARREGAMENTO DO HISTÓRICO COM DADOS LOGÍSTICOS E PRAZOS
+        // 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: HISTÓRICO COM ARTIGOS DETALHADOS E TRANSPORTE ISOLADO
         async function carregarHistorico() {
             const container = document.getElementById("lista-encomendas-content");
             if (!usuarioLogado || !usuarioLogado.email) return;
 
             try {
-                // CORREÇÃO CRÍTICA: Faz a chamada via POST estruturado, exatamente como o teu Apps Script exige
+                // Chamada via POST estruturado para o teu Apps Script
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -209,18 +209,78 @@
                         `;
                     }
 
-                    // Mapeia o resumo textual dos artigos
-                    let resumenItensHTML = `
-                        <tr>
-                            <td style="padding: 8px 0;"><strong>Resumo da Compra:</strong> ${enc.itens || "Artigos da encomenda"}</td>
-                            <td style="text-align:center; padding: 8px 0;">-</td>
-                            <td style="text-align:right; padding: 8px 0;">-</td>
-                            <td style="text-align:right; font-weight:bold; padding: 8px 0;">${Number(enc.total).toFixed(2)}€</td>
+                    // 🟩 EXTRAÇÃO INTELIGENTE: Separa a string "Artigo (Qtdx)" em linhas reais de tabela
+                    let linhasArtigosHTML = "";
+                    let totalArtigosPuros = 0;
+                    const arrayItens = enc.itens ? enc.itens.split(", ") : [];
+
+                    if (arrayItens.length > 0 && enc.itens) {
+                        arrayItens.forEach(itemTexto => {
+                            // Extrai o nome e a quantidade usando uma Expressão Regular (Ex: "Nome Produto (2x)")
+                            let match = itemTexto.match(/(.*)\s\((\d+)x\)/);
+                            if (match) {
+                                let nomeArtigo = match[1].trim();
+                                let qtdArtigo = parseInt(match[2]);
+                                
+                                // Como não guardamos o preço un. nesta tabela principal, deixamos oculto ou aproximado,
+                                // focando na transparência de listar o artigo e a quantidade exata.
+                                linhasArtigosHTML += `
+                                    <tr style="border-bottom: 1px dashed #eee;">
+                                        <td style="padding: 8px 0; color:#333; font-weight:500;">📦 ${nomeArtigo}</td>
+                                        <td style="text-align:center; padding: 8px 0;">${qtdArtigo}x</td>
+                                        <td style="text-align:right; padding: 8px 0; color:#777;">-</td>
+                                        <td style="text-align:right; padding: 8px 0; color:#333;">Incluído</td>
+                                    </tr>
+                                `;
+                            } else {
+                                // Fallback de segurança se a string não estiver no formato padrão
+                                linhasArtigosHTML += `
+                                    <tr style="border-bottom: 1px dashed #eee;">
+                                        <td style="padding: 8px 0; color:#333;">📦 ${itemTexto}</td>
+                                        <td style="text-align:center; padding: 8px 0;">1x</td>
+                                        <td style="text-align:right; padding: 8px 0; color:#777;">-</td>
+                                        <td style="text-align:right; padding: 8px 0; color:#333;">Incluído</td>
+                                    </tr>
+                                `;
+                            }
+                        });
+                    } else {
+                        // Caso não existam dados convertidos, exibe o resumo guardado por segurança
+                        linhasArtigosHTML = `
+                            <tr style="border-bottom: 1px dashed #eee;">
+                                <td style="padding: 8px 0; color:#555;">${enc.itens || "Artigos da encomenda"}</td>
+                                <td style="text-align:center; padding: 8px 0;">-</td>
+                                <td style="text-align:right; padding: 8px 0;">-</td>
+                                <td style="text-align:right; padding: 8px 0;">-</td>
+                            </tr>
+                        `;
+                    }
+
+                    // 🟩 DISCRIMINAÇÃO DO TRANSPORTE E DO TOTAL FINAL DO HISTÓRICO
+                    const custoTransporte = Number(enc.custo_transporte) || 0;
+                    const subtotalProdutos = Number(enc.total) - custoTransporte;
+
+                    let linhasTotaisHTML = `
+                        <tr style="color: #666; font-size: 12px;">
+                            <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">Subtotal Artigos:</td>
+                            <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">${subtotalProdutos.toFixed(2)}€</td>
+                        </tr>
+                        <tr style="color: #0056b3; font-size: 12px; font-weight: bold;">
+                            <td colspan="2" style="padding: 2px 0 6px 0; text-align:right;">🚚 Custo de Transporte:</td>
+                            <td colspan="2" style="padding: 2px 0 6px 0; text-align:right;">${custoTransporte > 0 ? custoTransporte.toFixed(2) + '€' : 'Grátis'}</td>
+                        </tr>
+                        <tr style="border-top: 1px solid #ddd; font-size: 14px; font-weight: bold; color: #b12704;">
+                            <td colspan="2" style="padding: 8px 0 0 0; text-align:right;">Total Pago (com Portes):</td>
+                            <td colspan="2" style="padding: 8px 0 0 0; text-align:right; font-size: 16px;">${Number(enc.total).toFixed(2)}€</td>
                         </tr>
                     `;
 
                     const card = document.createElement("div");
                     card.className = "encomenda-card";
+                    card.style.marginBottom = "25px";
+                    card.style.boxShadow = "0 2px 8px rgba(0,0,0,0.05)";
+                    card.style.borderRadius = "6px";
+                    
                     card.innerHTML = `
                         <div class="encomenda-header" style="display: flex; gap: 15px; background: #f6f6f6; padding: 12px; border-radius: 6px 6px 0 0; font-size: 13px; color: #555;">
                             <div><strong>Encomenda Efetuada:</strong><br>${dataFormatada} às ${enc.hora || "00:00"}</div>
@@ -253,14 +313,15 @@
                             <table class="itens-table" style="width:100%; border-collapse: collapse; font-size:13px;">
                                 <thead>
                                     <tr style="border-bottom: 1px solid #ddd; color:#666; text-align:left;">
-                                        <th style="padding:6px 0;">Artigo</th>
-                                        <th style="text-align:center; padding:6px 0;">Qtd.</th>
-                                        <th style="text-align:right; padding:6px 0;">Preço Un.</th>
-                                        <th style="text-align:right; padding:6px 0;">Subtotal</th>
+                                        <th style="padding:6px 0; width: 55%;">Artigo</th>
+                                        <th style="text-align:center; padding:6px 0; width: 15%;">Qtd.</th>
+                                        <th style="text-align:right; padding:6px 0; width: 15%;">Preço Un.</th>
+                                        <th style="text-align:right; padding:6px 0; width: 15%;">Subtotal</th>
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    ${resumenItensHTML}
+                                    ${linhasArtigosHTML}
+                                    ${linhasTotaisHTML}
                                 </tbody>
                             </table>
                         </div>

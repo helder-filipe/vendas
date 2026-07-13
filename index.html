@@ -227,7 +227,7 @@
                     <div class="carrinho-titulo">
                         🛒 Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
                     </div>
-                    <button id="btn-esvaziar-tudo" class="btn-esvaziar" onclick="event.stopPropagation(); esvaziarCarrinho();" style="display: none;">Esvaziar</button>
+                    <button id="btn-esvaziar-tudo" class="btn-esvaziar" onclick="event.stopPropagation(); esvaziarCarrinhoCompleto();" style="display: none;">Esvaziar</button>
                     <span class="seta-toggle">▼</span>
                 </div>
                 
@@ -420,9 +420,15 @@ function renderizarVitrine(lista) {
             <h3>${produto.nome}</h3>
             <p><small style="color: ${corStock}; font-weight: ${stockNum <= 5 ? 'bold' : 'normal'}">${textoStock}</small></p>
             <p><strong>${Number(produto.preco).toFixed(2)}€</strong></p>
+            
+            <p style="font-size: 12px; color: #cc6600; font-weight: bold; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
+                <span>🚚</span> Envio estimado: ${produto.dias_entrega || 8} dias úteis
+            </p>
+
             <div style="margin-top: 10px; display:flex; gap:5px; ${!temStock ? 'display:none;' : ''}">
                 <input type="number" id="qtd-${produto.id}" value="1" min="1" max="${produto.stock}" style="width: 45px; text-align: center;">
-                <button onclick="prepararAdicao('${produto.id}', '${produto.nome.replace(/'/g, "\\'")}', ${produto.preco}, ${produto.stock})" style="flex:1; font-size:12px; background:#ffd814; color:#0f1111; border:1px solid #fcd200; border-radius:20px; font-weight:bold; padding: 6px; cursor: pointer;">
+                
+                <button onclick="prepararAdicao('${produto.id}', '${produto.nome.replace(/'/g, "\\'")}', ${produto.preco}, ${produto.stock}, ${produto.custo_transporte || 0})" style="flex:1; font-size:12px; background:#ffd814; color:#0f1111; border:1px solid #fcd200; border-radius:20px; font-weight:bold; padding: 6px; cursor: pointer;">
                     Adicionar
                 </button>
             </div>
@@ -471,26 +477,68 @@ function abrirModalDetalhes(produto) {
     document.getElementById("modal-descricao").innerText = produto.descricao;
     document.getElementById("modal-preco").innerText = Number(produto.preco).toFixed(2);
 
-    const tabelaTecnica = document.getElementById("table-tecnica"); tabelaTecnica.innerHTML = "";
+    // 1. Preenchimento da Tabela Técnica
+    const tabelaTecnica = document.getElementById("table-tecnica"); 
+    tabelaTecnica.innerHTML = "";
     try {
-        const techObj = JSON.parse(produto.detalhes_tecnicos || "{}");
-        if (Object.keys(techObj).length === 0) tabelaTecnica.innerHTML = "<tr><td>Sem especificações adicionais.</td></tr>";
-        else { for (let [ch, val] of Object.entries(techObj)) tabelaTecnica.innerHTML += `<tr><td class="tech-label">${ch}</td><td>${val}</td></tr>`; }
-    } catch(e) { tabelaTecnica.innerHTML = "<tr><td>Erro ao ler especificações.</td></tr>"; }
+        const techObj = typeof produto.detalhes_tecnicos === "string" ? JSON.parse(produto.detalhes_tecnicos || "{}") : (produto.detalhes_tecnicos || {});
+        if (Object.keys(techObj).length === 0) {
+            tabelaTecnica.innerHTML = "<tr><td>Sem especificações adicionais.</td></tr>";
+        } else { 
+            for (let [ch, val] of Object.entries(techObj)) {
+                tabelaTecnica.innerHTML += `<tr><td class="tech-label">${ch}</td><td>${val}</td></tr>`; 
+            } 
+        }
+    } catch(e) { 
+        tabelaTecnica.innerHTML = "<tr><td>Erro ao ler specifications.</td></tr>"; 
+    }
 
-    const tabelaLogistica = document.getElementById("table-logistica"); tabelaLogistica.innerHTML = "";
+    // 2. Preenchimento da Tabela Logística (CORRIGIDA COM TRANSPORTE DINÂMICO)
+    const tabelaLogistica = document.getElementById("table-logistica"); 
+    tabelaLogistica.innerHTML = "";
     try {
-        const logObj = JSON.parse(produto.informacoes || "{}");
+        const logObj = typeof produto.informacoes === "string" ? JSON.parse(produto.informacoes || "{}") : (produto.informacoes || {});
+        
+        // Mantém os teus campos originais
         tabelaLogistica.innerHTML += `<tr><td class="tech-label">Fabricante</td><td>${logObj.fabricante || 'N/D'}</td></tr>`;
         tabelaLogistica.innerHTML += `<tr><td class="tech-label">Peso do Artigo</td><td>${logObj.peso ? logObj.peso + ' kg' : 'N/D'}</td></tr>`;
         tabelaLogistica.innerHTML += `<tr><td class="tech-label">Dimensões</td><td>${logObj.dimensoes || 'N/D'}</td></tr>`;
-    } catch(e) { tabelaLogistica.innerHTML = "<tr><td>Erro ao ler logística.</td></tr>"; }
+        
+        // Exibição dos Dias de Entrega vindos da Coluna K do Sheets
+        const prazoEnvio = produto.dias_entrega || 8;
+        tabelaLogistica.innerHTML += `<tr><td class="tech-label" style="color: #cc6600; font-weight: bold;">🚚 Prazo de Envio</td><td style="color: #cc6600; font-weight: bold;">${prazoEnvio} dias úteis</td></tr>`;
+        
+        // 🟩 CORREÇÃO CRÍTICA: Lê o custo real do Sheets em vez de exibir o texto fixo anterior!
+        const custoTranspReal = parseFloat(produto.custo_transporte) || 0;
+        const textoTransporte = custoTranspReal > 0 ? `${custoTranspReal.toFixed(2)}€` : "Grátis";
+        
+        tabelaLogistica.innerHTML += `<tr><td class="tech-label" style="color: #0056b3; font-weight: bold;">💳 Transporte</td><td style="color: #0056b3; font-weight: bold;">${textoTransporte}</td></tr>`;
 
+    } catch(e) { 
+        tabelaLogistica.innerHTML = "<tr><td>Erro ao ler logística.</td></tr>"; 
+    }
+
+    // 3. Gestão do Botão de Adicionar ao Carrinho e Stock
     const btnModalAdicionar = document.getElementById("modal-btn-adicionar");
     if (Number(produto.stock) > 0) {
-        btnModalAdicionar.disabled = false; btnModalAdicionar.innerText = "Adicionar ao Carrinho";
-        btnModalAdicionar.onclick = () => { adicionarAoCarrinho(produto.id, produto.nome, produto.preco, 1); fecharModal(); };
-    } else { btnModalAdicionar.disabled = true; btnModalAdicionar.innerText = "Esgotado"; }
+        btnModalAdicionar.disabled = false; 
+        btnModalAdicionar.innerText = "Adicionar ao Carrinho";
+        
+        // Mantém a chamada segura para a tua função centralizada
+        btnModalAdicionar.onclick = () => { 
+            prepararAdicao(
+                produto.id, 
+                produto.nome, 
+                produto.preco, 
+                produto.stock, 
+                produto.custo_transporte || 0
+            ); 
+            fecharModal(); 
+        };
+    } else { 
+        btnModalAdicionar.disabled = true; 
+        btnModalAdicionar.innerText = "Esgotado"; 
+    }
 
     gerarRecomendacoes(produto);
     document.getElementById("modal-detalhes").style.display = "flex";
@@ -540,12 +588,35 @@ function gerarRecomendacoes(produtoAtual) {
 function fecharModal() { document.getElementById("modal-detalhes").style.display = "none"; }
 function fecharModalExterno(e) { if (e.target.id === "modal-detalhes") fecharModal(); }
 
-function prepararAdicao(id, nome, preco, stockMaximo) {
+// 🟩 FUNÇÃO ATUALIZADA: CAPTURA E GUARDA O CUSTO DE TRANSPORTE NO CARRINHO
+function prepararAdicao(id, nome, preco, stock, custoTransporte) {
     const inputQtd = document.getElementById(`qtd-${id}`);
-    const quantidade = parseInt(inputQtd.value) || 1;
-    if (quantidade < 1 || quantidade > stockMaximo) { alert("Quantidade indisponível."); return; }
-    adicionarAoCarrinho(id, nome, preco, quantidade);
-    inputQtd.value = 1;
+    const quantidade = inputQtd ? parseInt(inputQtd.value) : 1;
+
+    if (quantidade > parseInt(stock)) {
+        alert("⚠️ Quantidade superior ao stock disponível.");
+        return;
+    }
+
+    // Procura se o item já existe no carrinho para acumular
+    const itemExistente = carrinho.find(item => item.id_produto === id);
+
+    if (itemExistente) {
+        itemExistente.quantidade += quantidade;
+    } else {
+        // 🟩 CRÍTICO: O item agora leva a propriedade custo_transporte para o carrinho!
+        carrinho.push({
+            id_produto: id,
+            nome_produto: nome,
+            preco_unitario: parseFloat(preco),
+            quantidade: quantidade,
+            custo_transporte: parseFloat(custoTransporte) || 0.00
+        });
+    }
+
+    // Atualiza a interface visual e guarda no localStorage
+    atualizarInterfaceCarrinho();
+    //alert(`🎉 ${quantidade}x "${nome}" adicionado(s) ao carrinho!`);
 }
 
 function adicionarAoCarrinho(id, nome, preco, quantidade) {
@@ -584,8 +655,21 @@ function removerDoCarrinho(id) {
     atualizarInterfaceCarrinho();
 }
 
-function esvaziarCarrinho() {
-    if(confirm("Limpar o carrinho?")) { carrinho = []; atualizarInterfaceCarrinho(); }
+// 🟩 FUNÇÃO CORRIGIDA E PROTEGIDA PARA ESVAZIAR O CARRINHO
+function esvaziarCarrinhoCompleto() {
+    // 1. Esvazia o array global em memória
+    carrinho = [];
+    
+    // 2. Remove o registo antigo da memória do browser para não voltar a carregar
+    localStorage.removeItem("carrinho");
+    
+    // 3. Limpa a variável global de contingência de valores
+    window.valorFinalEncomenda = 0;
+    
+    // 4. Atualiza obrigatoriamente a interface para redesenhar o ecrã como "Vazio"
+    atualizarInterfaceCarrinho();
+    
+    console.log("Carrinho esvaziado com sucesso.");
 }
 
 function atualizarInterfaceCarrinho() {
@@ -597,23 +681,35 @@ function atualizarInterfaceCarrinho() {
     const btnEsvaziar = document.getElementById("btn-esvaziar-tudo");
     
     const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-    badge.innerText = totalItens;
+    if (badge) badge.innerText = totalItens;
 
     if (carrinho.length === 0) {
-        contentorItens.innerHTML = "O carrinho está vazio.";
-        elementoTotal.innerText = "0.00";
-        formCheckout.style.display = "none"; btnEsvaziar.style.display = "none";
+        if (contentorItens) contentorItens.innerHTML = "O carrinho está vazio.";
+        if (elementoTotal) elementoTotal.innerText = "0.00";
+        
+        const elementoResumo = document.getElementById("resumo-valores-carrinho");
+        if (elementoResumo) elementoResumo.innerHTML = "";
+        
+        if (formCheckout) formCheckout.style.display = "none"; 
+        if (btnEsvaziar) btnEsvaziar.style.display = "none";
         return;
     }
 
-    contentorItens.innerHTML = "";
+    if (contentorItens) contentorItens.innerHTML = "";
     let totalAcumulado = 0;
-    btnEsvaziar.style.display = "block";
+    if (btnEsvaziar) btnEsvaziar.style.display = "block";
+
+    // 🟩 NOVA REGRA MATEMÁTICA: Acumulador total do custo de transporte
+    let custoTransporteTotal = 0;
 
     carrinho.forEach(item => {
-        // Mantém a tua conta exata com preco_unitario
         const custoItem = item.preco_unitario * item.quantidade;
         totalAcumulado += custoItem;
+
+        // 🟩 SOMA CUMULATIVA: Multiplica o custo de transporte unitário pela quantidade do item
+        const custoTranspUnitario = parseFloat(item.custo_transporte) || 0.00;
+        custoTransporteTotal += (custoTranspUnitario * item.quantidade);
+
         const div = document.createElement("div");
         div.className = "item-carrinho";
         div.innerHTML = `
@@ -630,27 +726,42 @@ function atualizarInterfaceCarrinho() {
                 <button type="button" class="btn-remover" onclick="removerDoCarrinho('${item.id_produto}')">Remover</button>
             </div>
         `;
-        contentorItens.appendChild(div);
+        if (contentorItens) contentorItens.appendChild(div);
     });
-
-    // 🟩 CÁLCULO LOGÍSTICO DO FRETE COM BASE NO TEU TOTAL ACUMULADO
-    const VALOR_MINIMO_PORTES_GRATIS = 50;
-    const TAXA_FRETE = 3.99;
     
-    let valorFrete = (totalAcumulado >= VALOR_MINIMO_PORTES_GRATIS) ? 0 : TAXA_FRETE;
-    let totalFinal = totalAcumulado + valorFrete;
-
-    // 🟩 EXIBIÇÃO DOS VALORES ATUALIZADOS
-    // Mostra o total final com o frete incluído no teu elemento nativo
-    elementoTotal.innerText = totalFinal.toFixed(2);
+    // Montante global final (Produtos + Soma de todos os Transportes)
+    let totalFinal = totalAcumulado + custoTransporteTotal;
     
-    // Adiciona o valor à janela global para o script de finalização saber o total real
+    // Alimenta a janela global para o fluxo de pagamento ler o valor correto
     window.valorFinalEncomenda = totalFinal;
 
-    formCheckout.style.display = "block";
+    // Discriminação visual na interface do carrinho
+    let elementoResumo = document.getElementById("resumo-valores-carrinho");
+    if (!elementoResumo && elementoTotal) {
+        elementoResumo = document.createElement("div");
+        elementoResumo.id = "resumo-valores-carrinho";
+        elementoTotal.parentElement.insertBefore(elementoResumo, elementoTotal);
+    }
+
+    if (elementoResumo) {
+        elementoResumo.innerHTML = `
+            <div style="font-size: 14px; color: #555; line-height: 1.6; padding: 10px 0; border-top: 1px solid #eee; margin-top: 15px;">
+                <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
+                    <span>Subtotal de Artigos:</span>
+                    <span>${totalAcumulado.toFixed(2)}€</span>
+                </div>
+                <div style="display:flex; justify-content:space-between; color: #0056b3; font-weight: bold; margin-bottom: 4px;">
+                    <span>Custo de Transporte Total:</span>
+                    <span>${custoTransporteTotal > 0 ? custoTransporteTotal.toFixed(2) + '€' : 'Grátis'}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    if (elementoTotal) elementoTotal.innerText = totalFinal.toFixed(2);
+    if (formCheckout) formCheckout.style.display = "block";
     
-    // 🟩 INJEÇÃO INTELIGENTE DOS DADOS (Só preenche se os inputs estiverem vazios)
-    // Isto evita que o JavaScript limpe o que o utilizador acabou de digitar ao mudar as quantidades!
+    // Injeção dos dados do utilizador logado nos campos do checkout
     if (usuarioLogado) {
         const inputNome = document.getElementById("nome");
         const inputEmail = document.getElementById("email");
@@ -658,11 +769,11 @@ function atualizarInterfaceCarrinho() {
         const inputLocalidade = document.getElementById("localidade");
         const inputCp = document.getElementById("cp");
 
-        if (!inputNome.value) inputNome.value = usuarioLogado.nome || "";
-        if (!inputEmail.value) inputEmail.value = usuarioLogado.email || "";
-        if (!inputMorada.value) inputMorada.value = usuarioLogado.morada || "";
-        if (!inputLocalidade.value) inputLocalidade.value = usuarioLogado.localidade || "";
-        if (!inputCp.value) inputCp.value = usuarioLogado.codigo_postal || "";
+        if (inputNome && !inputNome.value) inputNome.value = usuarioLogado.nome || "";
+        if (inputEmail && !inputEmail.value) inputEmail.value = usuarioLogado.email || "";
+        if (inputMorada && !inputMorada.value) inputMorada.value = usuarioLogado.morada || "";
+        if (inputLocalidade && !inputLocalidade.value) inputLocalidade.value = usuarioLogado.localidade || "";
+        if (inputCp && !inputCp.value) inputCp.value = usuarioLogado.codigo_postal || "";
     }
 }
 
@@ -774,19 +885,23 @@ function selecionarMetodo(metodo) {
     }
 }
 
-// 🟩 FUNÇÃO ATUALIZADA: FLUXO DE PAGAMENTO COM ENVIO DE COLUNAS SEPARADAS PARA LOGÍSTICA
-// 🟩 FUNÇÃO ATUALIZADA: FLUXO DE PAGAMENTO COM ENVIO DE COLUNAS SEPARADAS PARA LOGÍSTICA
+// 🟩 FUNÇÃO ATUALIZADA: FLUXO DE PAGAMENTO COM CUSTO DE TRANSPORTE INTEGRADO NO TOTAL
 async function processarFluxoPagamento() {
     const btnConfirmar = document.getElementById("btn-confirmar-pagamento");
     const container = document.getElementById("detalhes-pagamento");
     const modalContent = container.parentElement; 
+    
+    // Cálculo do valor bruto dos produtos no carrinho
     const totalCarrinho = carrinho.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
     
+    // Configuração de segurança: taxa padrão de transporte caso o cálculo global não esteja preenchido
+    const taxaTransportePadrao = 4.90; 
+
     let detalhePagamento = "";
     let nomeMetodo = "";
     let tlmDigitado = "";
 
-    // 1. Validações e animações de espera dos métodos
+    // 1. Validações e animações de espera dos métodos de pagamento
     if (metodoSelecionado === 'mbway') {
         tlmDigitado = document.getElementById("pago-telemovel").value.trim();
         if (tlmDigitado.length !== 9 || isNaN(tlmDigitado)) {
@@ -823,7 +938,7 @@ async function processarFluxoPagamento() {
 
     container.innerHTML = `<div style="text-align:center; padding:20px; font-weight:bold; color:#28a745;">Pagamento Confirmado! A registar encomenda...</div>`;
 
-    // 2. EXTRAÇÃO INTELIGENTE: Prioriza os dados reais do checkout e do telemóvel obrigatório do carrinho
+    // 2. EXTRAÇÃO SEGURA DE DADOS DE ENTREGA: Evita valores "undefined"
     const nomeFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.cliente_nome : document.getElementById("nome").value.trim();
     const emailFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.cliente_email : document.getElementById("email").value.trim();
     const moradaFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_morada : document.getElementById("morada").value.trim();
@@ -831,10 +946,15 @@ async function processarFluxoPagamento() {
     const cpFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_cp : document.getElementById("cp").value.trim();
     const tlmFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_telemovel : tlmDigitado;
     
-    // Recupera o total faturado com a taxa de frete guardada
-    const valorFinalComFrete = window.valorFinalEncomenda || totalCarrinho;
+    // 🟩 INTEGRAÇÃO DO TRANSPORTE NO VALOR FINAL:
+    // Se o valorFinalEncomenda já existir (vindo do checkout somado), usa-o. Senão, faz a soma de contingência.
+    const valorFinalComFrete = window.valorFinalEncomenda || (totalCarrinho + taxaTransportePadrao);
+    
+    // Calcula a diferença real para discriminar os portes no texto do Sheets
+    const portesAplicados = (valorFinalComFrete - totalCarrinho) > 0 ? (valorFinalComFrete - totalCarrinho) : 0;
+    detalhePagamento += ` | Portes: ${portesAplicados.toFixed(2)}€`;
 
-    // 🟩 ESTRUTURA RECONFIGURADA: Mapeamento direto e limpo para as colunas do teu Sheets
+    // 3. CONSTRUÇÃO DO OBJECTO EM CONFORMIDADE COM AS 16 COLUNAS DO SHEETS
     const dadosEncomenda = {
         acao: "comprar",
         cliente_nome: nomeFinal,
@@ -943,4 +1063,3 @@ atualizarInterfaceCarrinho();
 
 </body>
 </html>
-
