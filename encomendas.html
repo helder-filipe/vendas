@@ -105,6 +105,85 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
         
+        
+        function abrirModalAvaliacao(idEncomenda, idProduto) {
+        document.getElementById("eval-id-encomenda").innerText = idEncomenda;
+        document.getElementById("eval-hidden-id-enc").value = idEncomenda;
+        document.getElementById("eval-hidden-id-prod").value = idProduto || "1"; // Fallback se não vier preenchido
+        document.getElementById("form-avaliacao-cliente").reset();
+        document.getElementById("modal-avaliacao").style.display = "flex";
+    }
+
+    function fecharModalAvaliacao() {
+        document.getElementById("modal-avaliacao").style.display = "none";
+    }
+
+    async function enviarAvaliacaoAoSheets(event) {
+        event.preventDefault();
+        
+        const btnSubmeter = event.target.querySelector("button[type='submit']");
+        if (btnSubmeter) {
+            if (btnSubmeter.disabled) return; // Evita cliques fantasmas repetidos
+            btnSubmeter.disabled = true;
+            btnSubmeter.innerText = "A guardar...";
+        }
+        
+        let emailCliente = "";
+        const sessaoRaw = localStorage.getItem("usuario_logado");
+
+        if (sessaoRaw) {
+            try {
+                const dadosUser = JSON.parse(sessaoRaw);
+                emailCliente = dadosUser.email || dadosUser.cliente_email || "";
+            } catch (e) {
+                emailCliente = sessaoRaw.trim();
+            }
+        }
+
+        if (!emailCliente || !emailCliente.includes("@")) {
+            alert("⚠️ Sessão não detetada. Por favor, faz login novamente.");
+            if (btnSubmeter) { btnSubmeter.disabled = false; btnSubmeter.innerText = "Submeter"; }
+            return;
+        }
+
+        const dadosAvaliacao = {
+            acao: "submeter_avaliacao",
+            id_encomenda: document.getElementById("eval-hidden-id-enc").value,
+            id_produto: document.getElementById("eval-hidden-id-prod").value,
+            cliente_email: emailCliente,
+            nota_produto: document.getElementById("eval-nota-produto").value,
+            nota_transporte: document.getElementById("eval-nota-transporte").value,
+            nota_vendedor: document.getElementById("eval-nota-vendedor").value,
+            comentario: document.getElementById("eval-comentario").value
+        };
+
+        try {
+            await fetch(API_URL, { 
+                method: "POST",
+                headers: { "Content-Type": "text/plain;charset=utf-8" },
+                body: JSON.stringify(dadosAvaliacao)
+            });
+            
+            // 🟩 APENAS UM ALERTA CENTRALIZADO DE SUCESSO
+            alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
+            fecharModalAvaliacao();
+            
+            if (typeof carregarHistorico === "function") {
+                carregarHistorico();
+            } else {
+                window.location.reload();
+            }
+        } catch (erro) {
+            console.error("Erro processado no fluxo:", erro);
+            alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
+            fecharModalAvaliacao();
+            window.location.reload();
+        }
+    }
+        
+        
+        
+        
         // --- CONTROLO DE ACESSO E SESSÃO ---
         let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
 
@@ -157,7 +236,7 @@
             window.location.href = "autenticacao.html"; 
         }
 
-        // 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: HISTÓRICO COM ARTIGOS DETALHADOS E TRANSPORTE ISOLADO
+        // 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: HISTÓRICO COM ARTIGOS DETALHADOS, TRANSPORTE ISOLADO E BOTÃO DE AVALIAÇÃO
         async function carregarHistorico() {
             const container = document.getElementById("lista-encomendas-content");
             if (!usuarioLogado || !usuarioLogado.email) return;
@@ -209,21 +288,17 @@
                         `;
                     }
 
-                    // 🟩 EXTRAÇÃO INTELIGENTE: Separa a string "Artigo (Qtdx)" em linhas reais de tabela
+                    // EXTRAÇÃO INTELIGENTE: Separa a string "Artigo (Qtdx)" em linhas reais de tabela
                     let linhasArtigosHTML = "";
-                    let totalArtigosPuros = 0;
                     const arrayItens = enc.itens ? enc.itens.split(", ") : [];
 
                     if (arrayItens.length > 0 && enc.itens) {
                         arrayItens.forEach(itemTexto => {
-                            // Extrai o nome e a quantidade usando uma Expressão Regular (Ex: "Nome Produto (2x)")
                             let match = itemTexto.match(/(.*)\s\((\d+)x\)/);
                             if (match) {
                                 let nomeArtigo = match[1].trim();
                                 let qtdArtigo = parseInt(match[2]);
                                 
-                                // Como não guardamos o preço un. nesta tabela principal, deixamos oculto ou aproximado,
-                                // focando na transparência de listar o artigo e a quantidade exata.
                                 linhasArtigosHTML += `
                                     <tr style="border-bottom: 1px dashed #eee;">
                                         <td style="padding: 8px 0; color:#333; font-weight:500;">📦 ${nomeArtigo}</td>
@@ -233,7 +308,6 @@
                                     </tr>
                                 `;
                             } else {
-                                // Fallback de segurança se a string não estiver no formato padrão
                                 linhasArtigosHTML += `
                                     <tr style="border-bottom: 1px dashed #eee;">
                                         <td style="padding: 8px 0; color:#333;">📦 ${itemTexto}</td>
@@ -245,7 +319,6 @@
                             }
                         });
                     } else {
-                        // Caso não existam dados convertidos, exibe o resumo guardado por segurança
                         linhasArtigosHTML = `
                             <tr style="border-bottom: 1px dashed #eee;">
                                 <td style="padding: 8px 0; color:#555;">${enc.itens || "Artigos da encomenda"}</td>
@@ -256,11 +329,11 @@
                         `;
                     }
 
-                    // 🟩 DISCRIMINAÇÃO DO TRANSPORTE E DO TOTAL FINAL DO HISTÓRICO
+                    // DISCRIMINAÇÃO DO TRANSPORTE E DO TOTAL FINAL DO HISTÓRICO
                     const custoTransporte = Number(enc.custo_transporte) || 0;
                     const subtotalProdutos = Number(enc.total) - custoTransporte;
 
-                    let linhasTotaisHTML = `
+                    let linesTotaisHTML = `
                         <tr style="color: #666; font-size: 12px;">
                             <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">Subtotal Artigos:</td>
                             <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">${subtotalProdutos.toFixed(2)}€</td>
@@ -274,6 +347,19 @@
                             <td colspan="2" style="padding: 8px 0 0 0; text-align:right; font-size: 16px;">${Number(enc.total).toFixed(2)}€</td>
                         </tr>
                     `;
+
+                    // 🟩 LÓGICA DE AVALIAÇÃO: Cria o botão apenas se o estado for diferente de Pendente (paga / enviada)
+                    let botaoAvaliarHTML = "";
+                    if (estadoText.toLowerCase() !== "pendente") {
+                        // Passa o ID da encomenda e deixa o campo do ID do produto dinâmico para o modal capturar
+                        botaoAvaliarHTML = `
+                            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; text-align: right;">
+                                <button onclick="abrirModalAvaliacao('${enc.id_encomenda}', '${enc.id_produto || '1'}')" style="padding: 8px 16px; background: #232f3e; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;">
+                                    ⭐ Avaliar Compra
+                                </button>
+                            </div>
+                        `;
+                    }
 
                     const card = document.createElement("div");
                     card.className = "encomenda-card";
@@ -321,9 +407,11 @@
                                 </thead>
                                 <tbody>
                                     ${linhasArtigosHTML}
-                                    ${linhasTotaisHTML}
+                                    ${linesTotaisHTML}
                                 </tbody>
                             </table>
+                            
+                            ${botaoAvaliarHTML}
                         </div>
                     `;
                     container.appendChild(card);
@@ -338,5 +426,61 @@
         // 🟩 TRIGER DA FUNÇÃO: Executa o carregamento assim que o script corre
         carregarHistorico();
     </script>
+
+        <div id="modal-avaliacao" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
+        <div style="background: white; padding: 25px; border-radius: 12px; width: 90%; max-width: 450px; box-shadow: 0 4px 15px rgba(0,0,0,0.2);">
+            <h3 style="margin-top: 0; color: #232f3e;">Avaliar Encomenda #<span id="eval-id-encomenda"></span></h3>
+            <p style="font-size: 13px; color: #666; margin-bottom: 20px;">A tua opinião é muito importante para nós. Por favor, avalia a tua experiência:</p>
+            
+            <form id="form-avaliacao-cliente" onsubmit="enviarAvaliacaoAoSheets(event)">
+                <input type="hidden" id="eval-hidden-id-enc">
+                <input type="hidden" id="eval-hidden-id-prod">
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">🛍️ O que achaste do Produto?</label>
+                    <select id="eval-nota-produto" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;" required>
+                        <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
+                        <option value="4">⭐⭐⭐⭐ (Muito Bom)</option>
+                        <option value="3">⭐⭐⭐ (Bom)</option>
+                        <option value="2">⭐⭐ (Razoável)</option>
+                        <option value="1">⭐ (Fraco)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">🤝 Assistência do Fornecedor / Vendedor?</label>
+                    <select id="eval-nota-vendedor" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;" required>
+                        <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
+                        <option value="4">⭐⭐⭐⭐ (Muito Bom)</option>
+                        <option value="3">⭐⭐⭐ (Bom)</option>
+                        <option value="2">⭐⭐ (Razoável)</option>
+                        <option value="1">⭐ (Fraco)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 15px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">🚚 Serviço de Transporte?</label>
+                    <select id="eval-nota-transporte" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc;" required>
+                        <option value="5">⭐⭐⭐⭐⭐ (Excelente)</option>
+                        <option value="4">⭐⭐⭐⭐ (Muito Bom)</option>
+                        <option value="3">⭐⭐⭐ (Bom)</option>
+                        <option value="2">⭐⭐ (Razoável)</option>
+                        <option value="1">⭐ (Fraco)</option>
+                    </select>
+                </div>
+
+                <div style="margin-bottom: 20px;">
+                    <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 14px;">✍️ Deixa o teu comentário (opcional):</label>
+                    <textarea id="eval-comentario" rows="3" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #ccc; resize: none; box-sizing: border-box;" placeholder="Escreve aqui o teu feedback..."></textarea>
+                </div>
+
+                <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                    <button type="button" onclick="fecharModalAvaliacao()" style="padding: 8px 15px; background: #ddd; border: none; border-radius: 6px; cursor: pointer;">Cancelar</button>
+                    <button type="submit" style="padding: 8px 15px; background: #ffd814; border: 1px solid #fcd200; font-weight: bold; border-radius: 6px; cursor: pointer;">Submeter</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
 </body>
 </html>

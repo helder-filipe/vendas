@@ -415,9 +415,28 @@ function renderizarVitrine(lista) {
             ? `⚠️ ÚLTIMAS UNIDADES: ${stockNum} un.` 
             : `Disponível: ${stockNum} un.`;
 
+        // 🟩 CÁLCULO DINÂMICO PARA A EXIBIÇÃO EXCLUSIVA DA MÉDIA GLOBAL NA VITRINE
+        const temAvaliacao = produto.total_votos > 0;
+        const notaArredondada = temAvaliacao ? Math.round(produto.media_avaliacao) : 0;
+        const estrelasTexto = temAvaliacao ? "★".repeat(notaArredondada) + "☆".repeat(5 - notaArredondada) : "☆☆☆☆☆";
+
+        const exibicaoNotasHTML = temAvaliacao 
+            ? `<div style="font-size: 13px; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
+                <span style="color: #ff9900; font-weight: bold; font-size: 14px;">${produto.media_avaliacao.toFixed(1)}</span>
+                <span style="color: #ff9900; letter-spacing: 1px;">${estrelasTexto}</span>
+                <small style="color:#666; font-size: 11px;">(${produto.total_votos})</small>
+            </div>`
+            : `<div style="font-size: 12px; margin: 6px 0; color: #ccc; font-style: italic;">
+                ☆☆☆☆☆ Sem avaliações
+            </div>`;
+
+        // RENDERIZAÇÃO DO CARD COMPLETO
         card.innerHTML = `
             <img src="${produto.imagem_url || 'https://via.placeholder.com/150'}" alt="${produto.nome}">
             <h3>${produto.nome}</h3>
+
+            ${exibicaoNotasHTML}
+            
             <p><small style="color: ${corStock}; font-weight: ${stockNum <= 5 ? 'bold' : 'normal'}">${textoStock}</small></p>
             <p><strong>${Number(produto.preco).toFixed(2)}€</strong></p>
             
