@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="pt-PT">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>O Meu Perfil - Loja Online</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f4f6f9;
+            margin: 0;
+            padding: 0;
+            color: #333;
+        }
+
+        /* Menu de Navegação Superior (Estilo Amazon) */
+        header {
+            background-color: #232f3e;
+            color: white;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 20px;
+            cursor: pointer;
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 15px;
+        }
+
+        .nav-links a {
+            color: white;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: bold;
+            padding: 8px 12px;
+            border-radius: 4px;
+            transition: background 0.2s;
+        }
+
+        .nav-links a:hover {
+            background-color: #37475a;
+        }
+
+        /* Container Principal */
+        .container-perfil {
+            max-width: 650px;
+            margin: 40px auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            border: 1px solid #eef2f5;
+        }
+
+        .container-perfil h2 {
+            margin-top: 0;
+            color: #232f3e;
+            border-bottom: 2px solid #ffd814;
+            padding-bottom: 10px;
+            font-size: 22px;
+        }
+
+        /* Alerta de feedback */
+        .feedback-mensagem {
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .feedback-sucesso {
+            background-color: #e6f4ea;
+            color: #137333;
+            border: 1px solid #c2e7cd;
+        }
+
+        .feedback-erro {
+            background-color: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #fad2cf;
+        }
+
+        /* Formulário de Perfil */
+        .form-grupo {
+            margin-bottom: 18px;
+        }
+
+        .form-grupo label {
+            display: block;
+            font-weight: bold;
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #555;
+        }
+
+        .form-grupo input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 14px;
+            box-sizing: border-box;
+            transition: border-color 0.2s;
+        }
+
+        .form-grupo input:focus {
+            border-color: #ffd814;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(255, 216, 20, 0.2);
+        }
+
+        .form-grupo input[readonly] {
+            background-color: #f5f5f5;
+            color: #777;
+            cursor: not-allowed;
+        }
+
+        /* Linha dupla para campos menores (CP e Localidade, etc) */
+        .linha-dupla {
+            display: flex;
+            gap: 15px;
+        }
+
+        .linha-dupla .form-grupo {
+            flex: 1;
+        }
+
+        /* Botões */
+        .btn-guardar {
+            width: 100%;
+            padding: 12px;
+            background-color: #ffd814;
+            color: #0f1111;
+            border: 1px solid #fcd200;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-guardar:hover {
+            background-color: #f7ca00;
+        }
+
+        .btn-guardar:disabled {
+            background-color: #f5f5f5;
+            border-color: #ddd;
+            color: #aaa;
+            cursor: not-allowed;
+        }
+
+        .loading-indicador {
+            text-align: center;
+            font-size: 14px;
+            color: #666;
+            padding: 20px 0;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1 onclick="window.location.href='index.html'">🛒 A Minha Loja</h1>
+        <div class="nav-links">
+            <a href="index.html">Vitrina</a>
+            <a href="encomendas.html">As Minhas Encomendas</a>
+            <a href="#" onclick="fazerLogout()">Sair</a>
+        </div>
+    </header>
+
+    <div class="container-perfil">
+        <h2>👤 O Meu Perfil</h2>
+        
+        <div id="mensagem-feedback" class="feedback-mensagem"></div>
+
+        <div id="loading-perfil" class="loading-indicador">
+            🔄 A carregar os teus dados a partir do servidor...
+        </div>
+
+        <form id="form-perfil" onsubmit="guardarAlteracoesPerfil(event)" style="display: none;">
+            
+            <div class="form-grupo">
+                <label for="perfil-nome">Nome Completo</label>
+                <input type="text" id="perfil-nome" required placeholder="O teu nome completo">
+            </div>
+
+            <div class="form-grupo">
+                <label for="perfil-email">E-mail (Não editável)</label>
+                <input type="email" id="perfil-email" readonly>
+            </div>
+
+            <div class="form-grupo">
+                <label for="perfil-telemovel">Telemóvel de Contacto</label>
+                <input type="tel" id="perfil-telemovel" required placeholder="Ex: 912345678" pattern="[0-9]{9,15}">
+            </div>
+
+            <div class="form-grupo">
+                <label for="perfil-morada">Morada de Envio</label>
+                <input type="text" id="perfil-morada" required placeholder="Rua, número, andar, etc.">
+            </div>
+
+            <div class="linha-dupla">
+                <div class="form-grupo">
+                    <label for="perfil-cp">Código Postal</label>
+                    <input type="text" id="perfil-cp" required placeholder="Ex: 8125-100">
+                </div>
+                <div class="form-grupo">
+                    <label for="perfil-localidade">Localidade</label>
+                    <input type="text" id="perfil-localidade" required placeholder="Ex: Quarteira">
+                </div>
+            </div>
+
+            <button type="submit" id="btn-submit-perfil" class="btn-guardar">
+                Guardar Alterações
+            </button>
+        </form>
+    </div>
+
+        <script>
+        // 🟩 CONFIGURAÇÃO: Insere o URL real da tua API do Google Apps Script
+        const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec"; 
+
+        // Recupera a sessão local
+        const sessaoRaw = localStorage.getItem("usuario_logado");
+        let usuarioLogado = null;
+
+        if (sessaoRaw) {
+            try {
+                const dadosUser = JSON.parse(sessaoRaw);
+                if (dadosUser && typeof dadosUser === "object") {
+                    usuarioLogado = {
+                        id: dadosUser.id || "",
+                        nome: dadosUser.nome || "",
+                        email: dadosUser.email || dadosUser.cliente_email || "",
+                        morada: dadosUser.morada || "",
+                        localidade: dadosUser.localidade || "",
+                        codigo_postal: dadosUser.codigo_postal || "",
+                        telemovel: dadosUser.telemovel || "",
+                        tipo: dadosUser.tipo || "cliente"
+                    };
+                }
+            } catch (e) {
+                if (sessaoRaw.includes("@")) {
+                    usuarioLogado = { email: sessaoRaw.trim(), nome: "" };
+                }
+            }
+        }
+
+        // 🛡️ CONTINGÊNCIA ATIVA PARA REDE LOCAL:
+        // Se a sessão veio vazia devido ao bloqueio do browser na pasta de rede srv-dc,
+        // pedimos o e-mail dinamicamente para permitir o teste!
+        if (!usuarioLogado || !usuarioLogado.email) {
+            console.warn("Sessão local vazia (possível bloqueio de localStorage na rede). A solicitar e-mail...");
+            const emailTemporario = prompt("Pretendes aceder ao teu perfil? Introduz o teu e-mail de login:");
+            
+            if (emailTemporario && emailTemporario.includes("@")) {
+                usuarioLogado = {
+                    email: emailTemporario.trim().toLowerCase(),
+                    nome: "Utilizador"
+                };
+            } else {
+                alert("⚠️ Precisas de iniciar sessão para aceder ao teu perfil.");
+                window.location.href = "index.html";
+            }
+        }
+
+        // Executa automaticamente ao carregar a página
+        window.addEventListener("DOMContentLoaded", carregarDadosDoPerfil);
+
+        // 🟩 FUNÇÃO REFORÇADA: CARREGAR DADOS DO PERFIL
+        async function carregarDadosDoPerfil() {
+            const form = document.getElementById("form-perfil");
+            const loading = document.getElementById("loading-perfil");
+            const feedback = document.getElementById("mensagem-feedback");
+
+            if (!API_URL || API_URL.includes("INSERE_AQUI")) {
+                mostrarFeedback("⚠️ Configuração em falta: Por favor, insere o teu URL do Apps Script na constante API_URL no topo do script.", "erro");
+                if (loading) loading.style.display = "none";
+                return;
+            }
+
+            // Nova verificação de segurança para evitar erros de leitura
+            const emailBusca = (usuarioLogado && usuarioLogado.email) ? usuarioLogado.email : "";
+
+            try {
+                const urlPedido = `${API_URL}?acao=obter_perfil&email=${encodeURIComponent(emailBusca)}`;
+                console.log("A chamar API do Perfil em:", urlPedido);
+                
+                const resposta = await fetch(urlPedido);
+                const dados = await resposta.json();
+
+                console.log("Resposta recebida da API:", dados);
+
+                if (dados.status === "sucesso") {
+                    atribuirValorSeguro("perfil-nome", dados.nome);
+                    atribuirValorSeguro("perfil-email", dados.email || emailBusca);
+                    atribuirValorSeguro("perfil-telemovel", dados.telemovel);
+                    atribuirValorSeguro("perfil-morada", dados.morada);
+                    atribuirValorSeguro("perfil-cp", dados.codigo_postal);
+                    atribuirValorSeguro("perfil-localidade", dados.localidade);
+
+                    if (loading) loading.style.display = "none";
+                    if (form) form.style.display = "block";
+                } else {
+                    mostrarFeedback(dados.mensagem || "Erro ao carregar dados.", "erro");
+                    if (loading) loading.style.display = "none";
+                }
+            } catch (erro) {
+                console.warn("A usar preenchimento local devido a erro de rede ou CORS:", erro);
+                
+                // Atribuição ultra segura contornando o erro de objeto nulo
+                const nomeLocal = usuarioLogado ? usuarioLogado.nome : "";
+                const moradaLocal = usuarioLogado ? usuarioLogado.morada : "";
+                const localidadeLocal = usuarioLogado ? usuarioLogado.localidade : "";
+                const cpLocal = usuarioLogado ? usuarioLogado.codigo_postal : "";
+                const telemovelLocal = usuarioLogado ? usuarioLogado.telemovel : "";
+
+                atribuirValorSeguro("perfil-nome", nomeLocal);
+                atribuirValorSeguro("perfil-email", emailBusca);
+                atribuirValorSeguro("perfil-telemovel", telemovelLocal);
+                atribuirValorSeguro("perfil-morada", moradaLocal);
+                atribuirValorSeguro("perfil-cp", cpLocal);
+                atribuirValorSeguro("perfil-localidade", localidadeLocal);
+
+                if (loading) loading.style.display = "none";
+                if (form) form.style.display = "block";
+            }
+        }
+
+        // Função utilitária para evitar erros de ID inexistente
+        function atribuirValorSeguro(idElemento, valor) {
+            const elemento = document.getElementById(idElemento);
+            if (elemento) {
+                elemento.value = valor || "";
+            } else {
+                console.error(`O elemento com ID '${idElemento}' não foi encontrado no HTML!`);
+            }
+        }
+
+        // 🟩 FUNÇÃO: GUARDAR ALTERAÇÕES DO PERFIL (POST)
+        async function guardarAlteracoesPerfil(event) {
+            event.preventDefault();
+
+            const btnSubmit = document.getElementById("btn-submit-perfil");
+            if (btnSubmit) {
+                btnSubmit.disabled = true;
+                btnSubmit.innerText = "A guardar alterações...";
+            }
+
+            const emailAtual = document.getElementById("perfil-email") ? document.getElementById("perfil-email").value : (usuarioLogado ? usuarioLogado.email : "");
+
+            const dadosNovos = {
+                acao: "atualizar_perfil",
+                email: emailAtual,
+                nome: document.getElementById("perfil-nome") ? document.getElementById("perfil-nome").value : "",
+                telemovel: document.getElementById("perfil-telemovel") ? document.getElementById("perfil-telemovel").value : "",
+                morada: document.getElementById("perfil-morada") ? document.getElementById("perfil-morada").value : "",
+                codigo_postal: document.getElementById("perfil-cp") ? document.getElementById("perfil-cp").value : "",
+                localidade: document.getElementById("perfil-localidade") ? document.getElementById("perfil-localidade").value : ""
+            };
+
+            try {
+                const resposta = await fetch(API_URL, {
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(dadosNovos)
+                });
+
+                const respostaJson = await resposta.json();
+
+                if (respostaJson.status === "sucesso") {
+                    mostrarFeedback("🎉 Perfil guardado e atualizado com sucesso!", "sucesso");
+                    
+                    // Atualiza o localStorage com segurança
+                    const novoObjetoSessao = {
+                        id: (usuarioLogado && usuarioLogado.id) ? usuarioLogado.id : "USR",
+                        nome: dadosNovos.nome,
+                        email: dadosNovos.email,
+                        morada: dadosNovos.morada,
+                        localidade: dadosNovos.localidade,
+                        codigo_postal: dadosNovos.codigo_postal,
+                        telemovel: dadosNovos.telemovel,
+                        tipo: (usuarioLogado && usuarioLogado.tipo) ? usuarioLogado.tipo : "cliente"
+                    };
+                    localStorage.setItem("usuario_logado", JSON.stringify(novoObjetoSessao));
+                } else {
+                    mostrarFeedback("❌ Erro ao guardar: " + respostaJson.mensagem, "erro");
+                }
+            } catch (erro) {
+                console.error("Erro ao guardar alterações:", erro);
+                mostrarFeedback("❌ Ocorreu um erro ao guardar. Por favor, verifica a ligação.", "erro");
+            } finally {
+                if (btnSubmit) {
+                    btnSubmit.disabled = false;
+                    btnSubmit.innerText = "Guardar Alterações";
+                }
+            }
+        }
+
+        function mostrarFeedback(texto, tipo) {
+            const feedback = document.getElementById("mensagem-feedback");
+            if (feedback) {
+                feedback.innerText = texto;
+                feedback.className = `feedback-mensagem ${tipo === "sucesso" ? "feedback-sucesso" : "feedback-erro"}`;
+                feedback.style.display = "block";
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function fazerLogout() {
+            localStorage.removeItem("usuario_logado");
+            window.location.href = "index.html";
+        }
+    </script>
+</body>
+</html>

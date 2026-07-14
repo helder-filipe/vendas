@@ -189,21 +189,75 @@
     <div class="main-wrapper">
         <div class="top-bar">
             <div class="logo-container">
-                <img src="koolaction.png" alt="OmniMarket" onerror="this.style.display='none'; document.getElementById('placeholder-txt').style.display='block';">
-                <div id="placeholder-txt" class="logo-placeholder" style="display: none;">OmniMarket</div>
+                <img src="koolaction.png" alt="Koolaction" onerror="this.style.display='none'; document.getElementById('placeholder-txt').style.display='block';">
+                <div id="placeholder-txt" class="logo-placeholder" style="display: none;">Koolaction</div>
             </div>
             
             <div class="search-container">
                 <input type="text" id="input-pesquisa" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
             </div>
 
-            <div class="user-menu">
-                <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
-                <button style="background:#232f3e; font-size:13px;" onclick="irParaEncomendas()">📦 As Minhas Encomendas</button>
-                <button id="btn-painel-vendedor" class="btn-vendedor" onclick="abrirPainelVendedor()">Painel do Vendedor ⚙️</button>
-                <button class="btn-logout" onclick="terminarSessao()">Sair</button>
-            </div>
-        </div>
+           
+
+            
+
+
+           
+            
+                <div class="user-menu">
+                    <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
+
+                    <a id="btn-perfil-header" href="perfil.html" style="
+                        display: none; 
+                        align-items: center;
+                        gap: 6px;
+                        background-color: #ffd814;
+                        color: #0f1111 !important;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        text-decoration: none;
+                        font-weight: bold;
+                        font-size: 13px;
+                        border: 1px solid #fcd200;
+                        transition: background 0.2s, transform 0.1s;
+                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                    " 
+                    onmouseover="this.style.backgroundColor='#f7ca00'" 
+                    onmouseout="this.style.backgroundColor='#ffd814'">
+                        👤 O Meu Perfil
+                    </a>
+
+                    <a id="btn-login-header" href="#" onclick="window.location.href='autenticacao.html'" style="
+                        display: none;
+                        align-items: center;
+                        background-color: #37475a;
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        text-decoration: none;
+                        font-weight: bold;
+                        font-size: 13px;
+                        border: 1px solid #485769;
+                        transition: background 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='#485769'" 
+                    onmouseout="this.style.backgroundColor='#37475a'">
+                        🔑 Iniciar Sessão
+                    </a>
+                    
+                    <button id="btn-encomendas-header" style="display: none; background:#232f3e; font-size:13px;" onclick="window.location.href='encomendas.html'">
+                        📦 As Minhas Encomendas
+                    </button>
+
+                    <button id="btn-painel-vendedor" class="btn-vendedor" style="display: none;" onclick="window.location.href='painel-vendedor.html'">
+                        Painel do Vendedor ⚙️
+                    </button>
+
+                    <button id="btn-logout-header" class="btn-logout" style="display: none;" onclick="terminarSessao()">
+                        Sair
+                    </button>
+                </div>
+    </div>
 
         <div class="nav-categorias">
             <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
@@ -280,6 +334,20 @@
                         <h4 style="margin: 0 0 10px 0; color: #111; font-size: 13px;">Quem viu este artigo também demonstrou interesse por:</h4>
                         <div id="modal-recomendados" style="display: flex; gap: 10px; overflow-x: auto; padding-bottom: 5px;"></div>
                     </div>
+
+                    <div style="margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px;">
+                        <h4 style="color: #232f3e; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
+                            <span>💬</span> Avaliações dos Clientes
+                        </h4>
+                        
+                        <div id="modal-resumo-avaliacao" style="background: #f9f9f9; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
+                            </div>
+
+                        <div id="modal-lista-comentarios" style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
+                            </div>
+                    </div>
+
+
                 </div>
             </div>
         </div>
@@ -326,42 +394,95 @@
     </footer>
 
     <script>
-        // --- CONTROLO DE ACESSO E SESSÃO ---
-let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
-if (!usuarioLogado) {
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('email')) {
-        usuarioLogado = {
-            nome: urlParams.get('nome'), 
-            email: urlParams.get('email'),
-            morada: urlParams.get('morada'), 
-            localidade: urlParams.get('localidade'),
-            codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp'), // 🟩 CORREÇÃO: Alinhado para ler ambas as variantes
-            tipo: urlParams.get('tipo')
-        };
-        try { localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado)); } catch(e){}
+       // 🟩 CONTROLO SEGURO DO CABEÇALHO (CORRIGIDO E SEGURO)
+        let usuarioLogado = null; // Declarado fora para ser acessível globalmente
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Tentar ler primeiro os parâmetros do URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailURL = urlParams.get('email');
+
+            if (emailURL) {
+                usuarioLogado = {
+                    nome: urlParams.get('nome') || "",
+                    email: emailURL,
+                    morada: urlParams.get('morada') || "",
+                    localidade: urlParams.get('localidade') || "",
+                    codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || "",
+                    telemovel: urlParams.get('telemovel') || "", // 🟩 ADICIONADO AQUI
+                    tipo: urlParams.get('tipo') || "comprador"
+                };
+                localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
+                
+                // Limpa os parâmetros do URL para ficar limpo (comentado conforme tinhas)
+                // window.history.replaceState({}, document.title, window.location.pathname);
+            } else {
+                // 2. Se não houver URL, tenta ler do localStorage
+                try {
+                    const sessaoRaw = localStorage.getItem("usuario_logado");
+                    if (sessaoRaw) {
+                        usuarioLogado = JSON.parse(sessaoRaw);
+                    }
+                } catch (e) {
+                    console.warn("Nenhuma sessão ativa detetada.");
+                }
+            }
+
+            // Referências aos elementos do menu
+            const saudacaoTexto = document.getElementById("saudacao-texto");
+            const btnPerfil = document.getElementById("btn-perfil-header");
+            const btnLogin = document.getElementById("btn-login-header");
+            const btnLogout = document.getElementById("btn-logout-header");
+            const btnVendedor = document.getElementById("btn-painel-vendedor");
+            const btnEncomendas = document.getElementById("btn-encomendas-header");
+
+            // 3. Renderização visual do menu
+            if (usuarioLogado && usuarioLogado.nome) {
+                if (saudacaoTexto) saudacaoTexto.innerText = "Olá, " + usuarioLogado.nome + "!";
+                if (btnPerfil) btnPerfil.style.display = "inline-flex";
+                if (btnEncomendas) btnEncomendas.style.display = "inline-block";
+                if (btnLogout) btnLogout.style.display = "inline-block";
+                if (btnLogin) btnLogin.style.display = "none";
+
+                if (btnVendedor) {
+                    if (usuarioLogado.tipo === "vendedor") {
+                        btnVendedor.style.display = "inline-block";
+                    } else {
+                        btnVendedor.style.display = "none";
+                    }
+                }
+            } else {
+                if (saudacaoTexto) saudacaoTexto.innerText = "Olá, Visitante!";
+                if (btnLogin) btnLogin.style.display = "inline-flex";
+                
+                if (btnPerfil) btnPerfil.style.display = "none";
+                if (btnEncomendas) btnEncomendas.style.display = "none";
+                if (btnVendedor) btnVendedor.style.display = "none";
+                if (btnLogout) btnLogout.style.display = "none";
+            }
+
+            // Atualiza o carrinho após carregar a sessão
+            if (typeof atualizarInterfaceCarrinho === "function") {
+                atualizarInterfaceCarrinho();
+            }
+        });
+
+    // 🟩 APENAS UMA DECLARAÇÃO DE CADA (Copia isto para o teu script)
+    function abrirPainelVendedor() {
+        if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
+            window.location.href = "painel-vendedor.html";
+        } else {
+            alert("Acesso negado.");
+        }
     }
-}
 
-if (!usuarioLogado) { 
-    window.location.href = "autenticacao.html"; 
-} else {
-    document.getElementById("saudacao-texto").innerText = `Olá, ${usuarioLogado.nome}!`;
-}
-
-if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
-    document.getElementById("btn-painel-vendedor").style.display = "inline-block";
-}
-
-function abrirPainelVendedor() {
-    window.location.href = `painel-vendedor.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&tipo=vendedor`;
-}
-
-function terminarSessao() { 
-    localStorage.removeItem("usuario_logado"); 
-    localStorage.removeItem("carrinho"); 
-    window.location.href = "autenticacao.html"; 
-}
+    function terminarSessao() { 
+            try {
+                localStorage.removeItem("usuario_logado"); 
+                localStorage.removeItem("carrinho"); 
+            } catch(e) {}
+            window.location.href = "autenticacao.html"; 
+        }
 
 // --- LÓGICA DE PRODUTOS, FILTROS E PESQUISA ---
 const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
@@ -490,6 +611,7 @@ function toggleCarrinho() {
     document.getElementById("carrinho-container").classList.toggle("minimizado");
 }
 
+// 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: ABERTURA COM DETALHES, PORTES DINÂMICOS E AVALIAÇÕES EM TEMPO REAL
 function abrirModalDetalhes(produto) {
     document.getElementById("modal-img").src = produto.imagem_url || 'https://via.placeholder.com/150';
     document.getElementById("modal-nome").innerText = produto.nome;
@@ -560,6 +682,11 @@ function abrirModalDetalhes(produto) {
     }
 
     gerarRecomendacoes(produto);
+
+    // 🟩 NOVA INTEGRAÇÃO: Carrega as classificações e comentários dinamicamente para este produto
+    carregarAvaliacoesNoModal(produto.id);
+
+    // Abre o modal
     document.getElementById("modal-detalhes").style.display = "flex";
 }
 
@@ -603,6 +730,73 @@ function gerarRecomendacoes(produtoAtual) {
         containerRecomendados.appendChild(miniCard);
     });
 }
+
+
+// 🟩 FUNÇÃO: CARREGAR AVALIAÇÕES DO PRODUTO PARA O MODAL
+async function carregarAvaliacoesNoModal(idProduto) {
+    const resumoContainer = document.getElementById("modal-resumo-avaliacao");
+    const listaContainer = document.getElementById("modal-lista-comentarios");
+    
+    // Mostra um estado de carregamento inicial
+    resumoContainer.innerHTML = `<span style="font-size: 13px; color: #666;">A carregar classificações...</span>`;
+    listaContainer.innerHTML = "";
+
+    try {
+        // Faz a chamada GET à tua API do Apps Script
+        const url = `${API_URL}?acao=obter_avaliacoes&id_produto=${idProduto}`;
+        const resposta = await fetch(url);
+        const dados = await resposta.json();
+
+        // 1. Renderiza o Resumo da Média Global
+        if (dados.total_votos > 0) {
+            const numEstrelas = Math.round(dados.media_global);
+            const estrelasTexto = "★".repeat(numEstrelas) + "☆".repeat(5 - numEstrelas);
+            
+            resumoContainer.innerHTML = `
+                <div style="font-size: 32px; font-weight: bold; color: #111;">
+                    ${dados.media_global.toFixed(1)}
+                </div>
+                <div>
+                    <div style="color: #ff9900; font-size: 18px; letter-spacing: 1px;">${estrelasTexto}</div>
+                    <small style="color: #666; font-size: 12px;">Média com base em ${dados.total_votos} avaliações</small>
+                </div>
+            `;
+
+            // 2. Renderiza a Lista de Comentários
+            let comentariosHTML = "";
+            dados.lista.forEach(item => {
+                const estrelasItem = "★".repeat(Math.round(item.nota_combinada)) + "☆".repeat(5 - Math.round(item.nota_combinada));
+                const comentarioTexto = item.comentario.trim() !== "" ? item.comentario : `<span style="color:#aaa; font-style:italic;">Não deixou comentário de texto.</span>`;
+                
+                comentariosHTML += `
+                    <div style="border-bottom: 1px dashed #eee; padding: 10px 0; font-size: 13px;">
+                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
+                            <strong style="color: #333;">👤 ${item.cliente}</strong>
+                            <small style="color: #999;">${item.data}</small>
+                        </div>
+                        <div style="color: #ff9900; font-size: 12px; margin-bottom: 4px;">${estrelasItem}</div>
+                        <p style="margin: 0; color: #555; line-height: 1.4;">${comentarioTexto}</p>
+                    </div>
+                `;
+            });
+            listaContainer.innerHTML = comentariosHTML;
+
+        } else {
+            // Caso o produto ainda não tenha votos
+            resumoContainer.innerHTML = `
+                <div style="font-size: 18px; color: #ccc; letter-spacing: 1px;">☆☆☆☆☆</div>
+                <div style="font-size: 13px; color: #666;">Este produto ainda não recebeu avaliações. Seja o primeiro a comprar e avaliar!</div>
+            `;
+            listaContainer.innerHTML = `<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem comentários disponíveis.</p>`;
+        }
+
+    } catch (erro) {
+        console.error("Erro ao procurar avaliações do produto:", erro);
+        resumoContainer.innerHTML = `<span style="color: red; font-size: 12px;">⚠️ Erro ao carregar avaliações.</span>`;
+    }
+}
+
+
 
 function fecharModal() { document.getElementById("modal-detalhes").style.display = "none"; }
 function fecharModalExterno(e) { if (e.target.id === "modal-detalhes") fecharModal(); }
@@ -780,20 +974,41 @@ function atualizarInterfaceCarrinho() {
     if (elementoTotal) elementoTotal.innerText = totalFinal.toFixed(2);
     if (formCheckout) formCheckout.style.display = "block";
     
-    // Injeção dos dados do utilizador logado nos campos do checkout
-    if (usuarioLogado) {
-        const inputNome = document.getElementById("nome");
-        const inputEmail = document.getElementById("email");
-        const inputMorada = document.getElementById("morada");
-        const inputLocalidade = document.getElementById("localidade");
-        const inputCp = document.getElementById("cp");
+    // 🟩 INJEÇÃO SEGURA, BLINDADA E COM ATRASO DE SEGURANÇA (IDs EXATOS DO INDEX.HTML)
+    setTimeout(() => {
+        try {
+            const sessaoCheckoutRaw = localStorage.getItem("usuario_logado");
+            
+            if (sessaoCheckoutRaw) {
+                const usuarioCheckout = JSON.parse(sessaoCheckoutRaw);
+                
+                // Dentro do setTimeout da tua atualizarInterfaceCarrinho():
+                if (usuarioCheckout) {
+                    const inputNome = document.getElementById("nome");
+                    const inputEmail = document.getElementById("email");
+                    const inputMorada = document.getElementById("morada");
+                    const inputLocalidade = document.getElementById("localidade");
+                    const inputCp = document.getElementById("cp");
+                    const inputTelemovel = document.getElementById("telemovel-entrega");
 
-        if (inputNome && !inputNome.value) inputNome.value = usuarioLogado.nome || "";
-        if (inputEmail && !inputEmail.value) inputEmail.value = usuarioLogado.email || "";
-        if (inputMorada && !inputMorada.value) inputMorada.value = usuarioLogado.morada || "";
-        if (inputLocalidade && !inputLocalidade.value) inputLocalidade.value = usuarioLogado.localidade || "";
-        if (inputCp && !inputCp.value) inputCp.value = usuarioLogado.codigo_postal || "";
-    }
+                    if (inputNome && !inputNome.value) inputNome.value = usuarioCheckout.nome || "";
+                    if (inputEmail && !inputEmail.value) inputEmail.value = usuarioCheckout.email || usuarioCheckout.cliente_email || "";
+                    if (inputMorada && !inputMorada.value) inputMorada.value = usuarioCheckout.morada || "";
+                    if (inputLocalidade && !inputLocalidade.value) inputLocalidade.value = usuarioCheckout.localidade || "";
+                    if (inputCp && !inputCp.value) inputCp.value = usuarioCheckout.codigo_postal || usuarioCheckout.cp || "";
+                    
+                    // Injeção limpa e direta do telemóvel
+                    if (inputTelemovel && !inputTelemovel.value) {
+                        inputTelemovel.value = usuarioCheckout.telemovel || "";
+                    }
+                    
+                    console.log("Dados de envio pré-preenchidos com sucesso!");
+                }
+            }
+        } catch (erroDeLeitura) {
+            console.warn("Aviso: Não foi possível realizar o pré-preenchimento automático:", erroDeLeitura);
+        }
+    }, 2000);
 }
 
 // VARIÁVEL GLOBAL (Coloca no topo do teu script ou deixa o JS criar)
@@ -963,7 +1178,20 @@ async function processarFluxoPagamento() {
     const moradaFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_morada : document.getElementById("morada").value.trim();
     const localidadeFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_localidade : document.getElementById("localidade").value.trim();
     const cpFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_cp : document.getElementById("cp").value.trim();
-    const tlmFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_telemovel : tlmDigitado;
+    
+    // 🟩 EXTRAÇÃO DO TELEMÓVEL: Prioriza a recolha temporária validada e depois do input do formulário ou MB WAY
+    let tlmFinal = "";
+    if (window.dadosEntregaTemporarios && window.dadosEntregaTemporarios.entrega_telemovel) {
+        tlmFinal = window.dadosEntregaTemporarios.entrega_telemovel;
+    } else {
+        const inputTlmCheckout = document.getElementById("telemovel-entrega");
+        tlmFinal = inputTlmCheckout ? inputTlmCheckout.value.trim() : tlmDigitado;
+    }
+    
+    // Se ainda assim vier vazio ou for indefinido, define como "N/A"
+    if (!tlmFinal) {
+        tlmFinal = "N/A";
+    }
     
     // 🟩 INTEGRAÇÃO DO TRANSPORTE NO VALOR FINAL:
     // Se o valorFinalEncomenda já existir (vindo do checkout somado), usa-o. Senão, faz a soma de contingência.
@@ -981,7 +1209,7 @@ async function processarFluxoPagamento() {
         entrega_morada: moradaFinal,
         entrega_localidade: localidadeFinal,
         entrega_cp: cpFinal,
-        entrega_telemovel: tlmFinal || "N/A", 
+        entrega_telemovel: tlmFinal, // 🟩 TELEMÓVEL INTEGRADO COM SUCESSO!
         total: valorFinalComFrete,          
         metodo_pagamento: nomeMetodo,
         detalhe_pagamento: detalhePagamento,
@@ -1013,6 +1241,7 @@ async function processarFluxoPagamento() {
                         <span style="font-size: 12px; color: #6c757d; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Código da Encomenda</span>
                         <strong style="font-size: 18px; color: #232f3e; font-family: monospace;">${resultado.id}</strong>
                     </div>
+                    
                     <button type="button" onclick="irParaEncomendas()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,123,255,0.2); transition: background 0.2s;">
                         📦 Ver as Minhas Encomendas
                     </button>
@@ -1046,6 +1275,7 @@ function irParaEncomendas() {
     if (usuarioLogado) {
         // 🟩 CORREÇÃO CRÍTICA DA SESSÃO: Passa as variáveis corretas para que o topo da página as leia bem sem estragar o objeto
         window.location.href = `encomendas.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada)}&localidade=${encodeURIComponent(usuarioLogado.localidade)}&codigo_postal=${encodeURIComponent(usuarioLogado.codigo_postal)}&tipo=${encodeURIComponent(usuarioLogado.tipo || 'comprador')}`;
+        window.location.href = "encomendas.html";
     } else {
         window.location.href = "encomendas.html";
     }
@@ -1055,7 +1285,18 @@ carregarProdutos();
 atualizarInterfaceCarrinho();
 
 
-
+    // Função para redirecionar de forma ultra segura passando dados no URL (evita bloqueios locais file://)
+    function irParaEncomendasComSeguranca(event) {
+        if (event) event.preventDefault();
+        
+        if (usuarioLogado && usuarioLogado.email) {
+            const queryParams = `nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada || "")}&localidade=${encodeURIComponent(usuarioLogado.localidade || "")}&cp=${encodeURIComponent(usuarioLogado.codigo_postal || "")}&tipo=${encodeURIComponent(usuarioLogado.tipo || "comprador")}`;
+            window.location.href = `encomendas.html?${queryParams}`;
+        } else {
+            alert("Por favor, faça login primeiro.");
+            window.location.href = "autenticacao.html";
+        }
+    }
 
     </script>
 

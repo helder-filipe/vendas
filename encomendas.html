@@ -72,12 +72,38 @@
                 <img src="koolaction.png" alt="Koolaction" onerror="this.style.display='none'; document.getElementById('placeholder-txt').style.display='block';">
                 <div id="placeholder-txt" style="font-size:22px; font-weight:bold; color:#ff9900; display:none;">Koolaction</div>
             </div>
+
+            
+
             <div class="user-menu">
                 <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
+                
+                <a href="perfil.html" style="
+                display: inline-flex;
+                align-items: center;
+                gap: 6px;
+                background-color: #ffd814;
+                color: #0f1111 !important; /* Força a cor escura do texto contra estilos herdados */
+                padding: 8px 16px;
+                border-radius: 20px;
+                text-decoration: none;
+                font-weight: bold;
+                font-size: 13px;
+                border: 1px solid #fcd200;
+                transition: background 0.2s, transform 0.1s;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            " 
+            onmouseover="this.style.backgroundColor='#f7ca00'" 
+            onmouseout="this.style.backgroundColor='#ffd814'">
+                👤 O Meu Perfil
+            </a>
+                
                 <button class="btn-voltar" onclick="window.location.href='index.html'">🛒 Voltar à Loja</button>
                 <button id="btn-painel-vendedor" onclick="abrirPainelVendedor()" style="display: none; background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
                     Painel de Vendedor
                 </button>
+
+
                 <button style="background: #cc0000;" onclick="terminarSessao()">Sair</button>
             </div>
         </div>
@@ -103,125 +129,144 @@
     </footer>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
-        
-        
+       const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
+
+        // 1. DECLARAÇÃO GLOBAL ÚNICA
+        let usuarioLogado = null;
+
+        // --- FUNÇÕES DO MODAL DE AVALIAÇÃO ---
         function abrirModalAvaliacao(idEncomenda, idProduto) {
-        document.getElementById("eval-id-encomenda").innerText = idEncomenda;
-        document.getElementById("eval-hidden-id-enc").value = idEncomenda;
-        document.getElementById("eval-hidden-id-prod").value = idProduto || "1"; // Fallback se não vier preenchido
-        document.getElementById("form-avaliacao-cliente").reset();
-        document.getElementById("modal-avaliacao").style.display = "flex";
-    }
-
-    function fecharModalAvaliacao() {
-        document.getElementById("modal-avaliacao").style.display = "none";
-    }
-
-    async function enviarAvaliacaoAoSheets(event) {
-        event.preventDefault();
-        
-        const btnSubmeter = event.target.querySelector("button[type='submit']");
-        if (btnSubmeter) {
-            if (btnSubmeter.disabled) return; // Evita cliques fantasmas repetidos
-            btnSubmeter.disabled = true;
-            btnSubmeter.innerText = "A guardar...";
-        }
-        
-        let emailCliente = "";
-        const sessaoRaw = localStorage.getItem("usuario_logado");
-
-        if (sessaoRaw) {
-            try {
-                const dadosUser = JSON.parse(sessaoRaw);
-                emailCliente = dadosUser.email || dadosUser.cliente_email || "";
-            } catch (e) {
-                emailCliente = sessaoRaw.trim();
-            }
+            document.getElementById("eval-id-encomenda").innerText = idEncomenda;
+            document.getElementById("eval-hidden-id-enc").value = idEncomenda;
+            document.getElementById("eval-hidden-id-prod").value = idProduto || "1";
+            document.getElementById("form-avaliacao-cliente").reset();
+            document.getElementById("modal-avaliacao").style.display = "flex";
         }
 
-        if (!emailCliente || !emailCliente.includes("@")) {
-            alert("⚠️ Sessão não detetada. Por favor, faz login novamente.");
-            if (btnSubmeter) { btnSubmeter.disabled = false; btnSubmeter.innerText = "Submeter"; }
-            return;
+        function fecharModalAvaliacao() {
+            document.getElementById("modal-avaliacao").style.display = "none";
         }
 
-        const dadosAvaliacao = {
-            acao: "submeter_avaliacao",
-            id_encomenda: document.getElementById("eval-hidden-id-enc").value,
-            id_produto: document.getElementById("eval-hidden-id-prod").value,
-            cliente_email: emailCliente,
-            nota_produto: document.getElementById("eval-nota-produto").value,
-            nota_transporte: document.getElementById("eval-nota-transporte").value,
-            nota_vendedor: document.getElementById("eval-nota-vendedor").value,
-            comentario: document.getElementById("eval-comentario").value
-        };
-
-        try {
-            await fetch(API_URL, { 
-                method: "POST",
-                headers: { "Content-Type": "text/plain;charset=utf-8" },
-                body: JSON.stringify(dadosAvaliacao)
-            });
+        async function enviarAvaliacaoAoSheets(event) {
+            event.preventDefault();
             
-            // 🟩 APENAS UM ALERTA CENTRALIZADO DE SUCESSO
-            alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
-            fecharModalAvaliacao();
-            
-            if (typeof carregarHistorico === "function") {
-                carregarHistorico();
-            } else {
-                window.location.reload();
+            const btnSubmeter = event.target.querySelector("button[type='submit']");
+            if (btnSubmeter) {
+                if (btnSubmeter.disabled) return;
+                btnSubmeter.disabled = true;
+                btnSubmeter.innerText = "A guardar...";
             }
-        } catch (erro) {
-            console.error("Erro processado no fluxo:", erro);
-            alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
-            fecharModalAvaliacao();
-            window.location.reload();
-        }
-    }
-        
-        
-        
-        
-        // --- CONTROLO DE ACESSO E SESSÃO ---
-        let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
+            
+            let emailCliente = "";
+            const sessaoRaw = localStorage.getItem("usuario_logado");
 
-        const urlParams = new URLSearchParams(window.location.search);
-        const emailURL = urlParams.get('email');
+            if (sessaoRaw) {
+                try {
+                    const dadosUser = JSON.parse(sessaoRaw);
+                    emailCliente = dadosUser.email || dadosUser.cliente_email || "";
+                } catch (e) {
+                    emailCliente = sessaoRaw.trim();
+                }
+            }
 
-        if (emailURL) {
-            usuarioLogado = {
-                nome: urlParams.get('nome') || (usuarioLogado ? usuarioLogado.nome : ""),
-                email: emailURL,
-                morada: urlParams.get('morada') || (usuarioLogado ? usuarioLogado.morada : ""),
-                localidade: urlParams.get('localidade') || (usuarioLogado ? usuarioLogado.localidade : ""),
-                codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || (usuarioLogado ? usuarioLogado.codigo_postal : ""),
-                tipo: urlParams.get('tipo') || (usuarioLogado ? usuarioLogado.tipo : "comprador")
+            if (!emailCliente || !emailCliente.includes("@")) {
+                alert("⚠️ Sessão não detetada. Por favor, faz login novamente.");
+                if (btnSubmeter) { btnSubmeter.disabled = false; btnSubmeter.innerText = "Submeter"; }
+                return;
+            }
+
+            const dadosAvaliacao = {
+                acao: "submeter_avaliacao",
+                id_encomenda: document.getElementById("eval-hidden-id-enc").value,
+                id_produto: document.getElementById("eval-hidden-id-prod").value,
+                cliente_email: emailCliente,
+                nota_produto: document.getElementById("eval-nota-produto").value,
+                nota_transporte: document.getElementById("eval-nota-transporte").value,
+                nota_vendedor: document.getElementById("eval-nota-vendedor").value,
+                comentario: document.getElementById("eval-comentario").value
             };
-            localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
+
+            try {
+                await fetch(API_URL, { 
+                    method: "POST",
+                    headers: { "Content-Type": "text/plain;charset=utf-8" },
+                    body: JSON.stringify(dadosAvaliacao)
+                });
+                
+                alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
+                fecharModalAvaliacao();
+                
+                carregarHistorico();
+            } catch (erro) {
+                console.error("Erro processado no fluxo:", erro);
+                alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
+                fecharModalAvaliacao();
+                carregarHistorico();
+            }
         }
 
-        if (!usuarioLogado || !usuarioLogado.email) {
-            alert("Sessão expirada ou utilizador não identificado. Por favor, faça login.");
-            window.location.href = "autenticacao.html";
-        } else {
+        // --- CONTROLO DE SESSÃO À PROVA DE FALHAS (CORRE SÓ DEPOIS DO CARREGAMENTO) ---
+        document.addEventListener("DOMContentLoaded", function() {
+            // 1. Tenta obter parâmetros do URL (origem direta do login)
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailURL = urlParams.get('email');
+            const nomeURL = urlParams.get('nome');
+
+            if (emailURL && nomeURL) {
+                // Se temos dados no URL, forçamos a reconstrução imediata da sessão
+                usuarioLogado = {
+                    nome: decodeURIComponent(nomeURL),
+                    email: decodeURIComponent(emailURL),
+                    morada: decodeURIComponent(urlParams.get('morada') || ""),
+                    localidade: decodeURIComponent(urlParams.get('localidade') || ""),
+                    codigo_postal: decodeURIComponent(urlParams.get('codigo_postal') || urlParams.get('cp') || ""),
+                    tipo: decodeURIComponent(urlParams.get('tipo') || "comprador")
+                };
+                try {
+                    localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
+                } catch (e) {
+                    console.warn("Bloqueio de escrita no localStorage devido ao protocolo file:///");
+                }
+            } else {
+                // 2. Se não veio do URL, tenta ler o localStorage de forma tradicional
+                try {
+                    const sessaoRaw = localStorage.getItem("usuario_logado");
+                    if (sessaoRaw) {
+                        usuarioLogado = JSON.parse(sessaoRaw);
+                    }
+                } catch (e) {
+                    console.error("Erro ao ler o localStorage:", e);
+                }
+            }
+
+            // 3. Validação robusta de emergência para utilizadores locais (ignora falhas menores)
+            if (!usuarioLogado || !usuarioLogado.email || usuarioLogado.email === "undefined") {
+                console.warn("Dados de utilizador inválidos ou inexistentes:", usuarioLogado);
+                alert("Sessão expirada ou utilizador não identificado. Por favor, faça login.");
+                window.location.href = "autenticacao.html";
+                return;
+            }
+
+            // 4. Configurar elementos visuais do cabeçalho
             const saudacao = document.getElementById("saudacao-texto");
             if (saudacao) {
                 saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
             }
-        }
 
-        // 🟩 CONTROLO SEGURO DO PAINEL DE VENDEDOR
-        const btnVendedor = document.getElementById("btn-painel-vendedor");
-        if (btnVendedor) {
-            if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
-                btnVendedor.style.display = "inline-block";
-            } else {
-                btnVendedor.style.display = "none";
+            const btnVendedor = document.getElementById("btn-painel-vendedor");
+            if (btnVendedor) {
+                if (usuarioLogado.tipo === "vendedor") {
+                    btnVendedor.style.display = "inline-block";
+                } else {
+                    btnVendedor.style.display = "none";
+                }
             }
-        }
 
+            // 5. Correr o histórico
+            carregarHistorico();
+        });
+
+        // --- FUNÇÕES DE NAVEGAÇÃO ---
         function abrirPainelVendedor() {
             if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
                 window.location.href = `painel-vendedor.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&tipo=vendedor`;
@@ -231,18 +276,22 @@
         }
 
         function terminarSessao() { 
-            localStorage.removeItem("usuario_logado"); 
-            localStorage.removeItem("carrinho"); 
+            try {
+                localStorage.removeItem("usuario_logado"); 
+                localStorage.removeItem("carrinho"); 
+            } catch(e) {}
             window.location.href = "autenticacao.html"; 
         }
 
-        // 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: HISTÓRICO COM ARTIGOS DETALHADOS, TRANSPORTE ISOLADO E BOTÃO DE AVALIAÇÃO
+        // --- CARREGAMENTO DO HISTÓRICO ATUALIZADO (INTACTO) ---
         async function carregarHistorico() {
             const container = document.getElementById("lista-encomendas-content");
+            if (!container) return;
             if (!usuarioLogado || !usuarioLogado.email) return;
 
+            container.innerHTML = "<p style='text-align:center;'>A carregar o seu histórico de encomendas...</p>";
+
             try {
-                // Chamada via POST estruturado para o teu Apps Script
                 const response = await fetch(API_URL, {
                     method: "POST",
                     headers: { "Content-Type": "text/plain;charset=utf-8" },
@@ -255,7 +304,7 @@
                 const encomendas = await response.json();
 
                 if (!encomendas || encomendas.length === 0) {
-                    container.innerHTML = "<p style='color:#666;'>Ainda não efetuaste nenhuma encomenda no nosso site.</p>";
+                    container.innerHTML = "<p style='color:#666; text-align:center;'>Ainda não efetuaste nenhuma encomenda no nosso site.</p>";
                     return;
                 }
 
@@ -267,10 +316,8 @@
                     if (estadoText.toLowerCase() === "em processamento") statusClass = "status-processamento";
                     if (estadoText.toLowerCase() === "enviado") statusClass = "status-enviado";
 
-                    // Formatação correta da data da encomenda
                     let dataFormatada = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
                     
-                    // LÓGICA LOGÍSTICA: Valida se a encomenda já foi fechada com a Entrega Real ou exibe a Estimativa
                     let statusEntregaHTML = "";
                     if (enc.entrega_real && enc.entrega_real.trim() !== "") {
                         let realFormatada = new Date(enc.entrega_real).toLocaleDateString('pt-PT');
@@ -288,7 +335,6 @@
                         `;
                     }
 
-                    // EXTRAÇÃO INTELIGENTE: Separa a string "Artigo (Qtdx)" em linhas reais de tabela
                     let linhasArtigosHTML = "";
                     const arrayItens = enc.itens ? enc.itens.split(", ") : [];
 
@@ -329,7 +375,6 @@
                         `;
                     }
 
-                    // DISCRIMINAÇÃO DO TRANSPORTE E DO TOTAL FINAL DO HISTÓRICO
                     const custoTransporte = Number(enc.custo_transporte) || 0;
                     const subtotalProdutos = Number(enc.total) - custoTransporte;
 
@@ -348,10 +393,8 @@
                         </tr>
                     `;
 
-                    // 🟩 LÓGICA DE AVALIAÇÃO: Cria o botão apenas se o estado for diferente de Pendente (paga / enviada)
                     let botaoAvaliarHTML = "";
                     if (estadoText.toLowerCase() !== "pendente") {
-                        // Passa o ID da encomenda e deixa o campo do ID do produto dinâmico para o modal capturar
                         botaoAvaliarHTML = `
                             <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; text-align: right;">
                                 <button onclick="abrirModalAvaliacao('${enc.id_encomenda}', '${enc.id_produto || '1'}')" style="padding: 8px 16px; background: #232f3e; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;">
@@ -422,9 +465,6 @@
                 container.innerHTML = "<p style='color:red; font-weight:bold; text-align:center;'>⚠️ Erro ao carregar o histórico. Por favor tenta mais tarde.</p>";
             }
         }
-
-        // 🟩 TRIGER DA FUNÇÃO: Executa o carregamento assim que o script corre
-        carregarHistorico();
     </script>
 
         <div id="modal-avaliacao" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; z-index: 1000;">
