@@ -207,25 +207,24 @@
                 <div class="user-menu">
                     <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
 
-                    <a id="btn-perfil-header" href="perfil.html" style="
+                    <button id="btn-perfil-header" onclick="window.location.href='perfil.html'" style="
                         display: none; 
                         align-items: center;
                         gap: 6px;
                         background-color: #ffd814;
-                        color: #0f1111 !important;
+                        color: #0f1111;
                         padding: 8px 16px;
                         border-radius: 20px;
-                        text-decoration: none;
                         font-weight: bold;
                         font-size: 13px;
                         border: 1px solid #fcd200;
-                        transition: background 0.2s, transform 0.1s;
-                        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+                        cursor: pointer;
+                        transition: background 0.2s;
                     " 
                     onmouseover="this.style.backgroundColor='#f7ca00'" 
                     onmouseout="this.style.backgroundColor='#ffd814'">
                         👤 O Meu Perfil
-                    </a>
+                    </button>
 
                     <a id="btn-login-header" href="#" onclick="window.location.href='autenticacao.html'" style="
                         display: none;
@@ -245,16 +244,58 @@
                         🔑 Iniciar Sessão
                     </a>
                     
-                    <button id="btn-encomendas-header" style="display: none; background:#232f3e; font-size:13px;" onclick="window.location.href='encomendas.html'">
+                    <button id="btn-encomendas-header" onclick="window.location.href='encomendas.html'" style="
+                        display: none; 
+                        align-items: center;
+                        background-color: #232f3e; 
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-weight: bold;
+                        font-size: 13px;
+                        border: 1px solid #37475a;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='#37475a'" 
+                    onmouseout="this.style.backgroundColor='#232f3e'">
                         📦 As Minhas Encomendas
                     </button>
 
-                    <button id="btn-painel-vendedor" class="btn-vendedor" style="display: none;" onclick="window.location.href='painel-vendedor.html'">
+                    <button id="btn-painel-vendedor" class="btn-vendedor" onclick="window.location.href='painel-vendedor.html'" style="
+                        display: none; 
+                        align-items: center;
+                        background-color: #232f3e; 
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-weight: bold;
+                        font-size: 13px;
+                        border: 1px solid #37475a;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='#37475a'" 
+                    onmouseout="this.style.backgroundColor='#232f3e'">
                         Painel do Vendedor ⚙️
                     </button>
 
-                    <button id="btn-logout-header" class="btn-logout" style="display: none;" onclick="terminarSessao()">
-                        Sair
+                    <button id="btn-logout-header" class="btn-logout" onclick="terminarSessao()" style="
+                        display: none; 
+                        align-items: center;
+                        background-color: #cc0c39; 
+                        color: white;
+                        padding: 8px 16px;
+                        border-radius: 20px;
+                        font-weight: bold;
+                        font-size: 13px;
+                        border: 1px solid #b12704;
+                        cursor: pointer;
+                        transition: background 0.2s;
+                    "
+                    onmouseover="this.style.backgroundColor='#b12704'" 
+                    onmouseout="this.style.backgroundColor='#cc0c39'">
+                        🚪 Sair
                     </button>
                 </div>
     </div>

@@ -32,26 +32,163 @@
 </head>
 <body>
 
-    <div style="max-width: 700px; margin: 0 auto;">
-        <button class="btn-voltar" onclick="window.history.back()">◀ Voltar para a Loja</button>
-    </div>
+    <header class="top-bar" style="
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center; 
+    background: white; 
+    padding: 12px 20px; 
+    border-radius: 8px; 
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+    margin-bottom: 25px;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+">
+        <div class="logo-container" onclick="window.location.href='index.html'" style="display: flex; align-items: center; cursor: pointer; gap: 15px;">
+            
+            <img src="koolaction.png" alt="Logo" style="height: 70px; width: auto; object-fit: contain; display: block;">
+            
+            
+        </div>
 
-   
+        <div class="user-menu" style="
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            height: 36px; /* Força o alinhamento da linha de botões */
+        ">
+            <span id="saudacao-texto" class="saudacao-user" style="font-size: 13px; font-weight: bold; color: #555; margin-right: 10px; display: inline-block;">Olá, Vendedor!</span>
 
-    <div style="display: flex; gap: 15px; margin-bottom: 25px; padding: 15px; background: white; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); position: sticky; top: 0; z-index: 1000;">
-        <button onclick="irParaSecao('form-cadastro')" style="flex: 1; padding: 12px; font-weight: bold; background: #232f3e; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            ➕ Cadastrar Novo Produto
-        </button>
-        <button onclick="irParaSecao('tabela-encomendas-vendedor')" style="flex: 1; padding: 12px; font-weight: bold; background: #232f3e; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            📦 Gestão de Encomendas
-        </button>
-        <button onclick="irParaSecao('tabela-stocks-body')" style="flex: 1; padding: 12px; font-weight: bold; background: #232f3e; color: white; border: none; border-radius: 4px; cursor: pointer;">
-            📊 Controlo de Stocks / Inventário
-        </button>
-    </div>
+            <button class="btn-voltar" onclick="window.location.href='index.html'" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #37475a;
+                color: white;
+                height: 36px;
+                width: 160px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #485769;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0 !important; /* Anula qualquer margem externa indesejada */
+                padding: 0 16px !important;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#485769'" 
+            onmouseout="this.style.backgroundColor='#37475a'">
+                ◀ Voltar para a Loja
+            </button>
+
+            <button onclick="irParaSecao('form-cadastro')" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #232f3e;
+                color: white;
+                height: 36px;
+                width: 160px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #37475a;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0 16px;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#37475a'" 
+            onmouseout="this.style.backgroundColor='#232f3e'">
+                ➕ Novo Produto
+            </button>
+
+            <button onclick="irParaSecao('tabela-encomendas-vendedor')" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #232f3e;
+                color: white;
+                height: 36px;
+                width: 160px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #37475a;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0 16px;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#37475a'" 
+            onmouseout="this.style.backgroundColor='#232f3e'">
+                📦 Encomendas
+            </button>
+
+            <button onclick="irParaSecao('tabela-stocks-body')" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #232f3e;
+                color: white;
+                height: 36px;
+                width: 160px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #37475a;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0 16px;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#37475a'" 
+            onmouseout="this.style.backgroundColor='#232f3e'">
+                📊 Stocks / Inventário
+            </button>
+
+            <button onclick="terminarSessao()" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #cc0c39;
+                color: white;
+                height: 36px;
+                width: 85px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #b12704;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#b12704'" 
+            onmouseout="this.style.backgroundColor='#cc0c39'">
+                🚪 Sair
+            </button>
+        </div>
+    </header>
 
     <div class="admin-container">
-        <h1>Painel Vendedor - Cadastro de Produto</h1>
+        <h1>Cadastro de Produto</h1>
         <form id="form-cadastro" onsubmit="enviarNovoProdutoAoSheets(event)">
             
             <div class="form-section">
@@ -195,7 +332,30 @@
     <script>
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
 
-        
+        document.addEventListener("DOMContentLoaded", function() {
+            let usuarioLogado = null;
+            
+            try {
+                const sessaoRaw = localStorage.getItem("usuario_logado");
+                if (sessaoRaw) {
+                    usuarioLogado = JSON.parse(sessaoRaw);
+                }
+            } catch (e) {
+                console.error("Erro ao ler sessão do localStorage");
+            }
+
+            // Se o utilizador estiver autenticado, atualiza o cabeçalho dinamicamente
+            if (usuarioLogado && usuarioLogado.nome) {
+                const saudacao = document.getElementById("saudacao-texto");
+                if (saudacao) {
+                    saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
+                }
+            }
+            
+            // ... restante lógica do teu DOMContentLoaded (como carregar encomendas/stocks) ...
+        });
+
+
         async function carregarStocksVendedor() {
             const tbody = document.getElementById("tabela-stocks-body");
             if (!tbody) return;

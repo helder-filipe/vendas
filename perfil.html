@@ -170,12 +170,117 @@
 </head>
 <body>
 
-    <header>
-        <h1 onclick="window.location.href='index.html'">🛒 A Minha Loja</h1>
-        <div class="nav-links">
-            <a href="index.html">Vitrina</a>
-            <a href="encomendas.html">As Minhas Encomendas</a>
-            <a href="#" onclick="fazerLogout()">Sair</a>
+    <!-- 🟩 CABEÇALHO UNIFORMIZADO (ESTILO INDEX / ENCOMENDAS) -->
+    <header class="top-bar" style="
+        display: flex; 
+        justify-content: space-between; 
+        align-items: center; 
+        background: white; 
+        padding: 12px 20px; 
+        border-radius: 8px; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        margin-bottom: 25px;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+    ">
+        <!-- Lado Esquerdo: Logótipo da Koolaction -->
+        <div class="logo-container" onclick="window.location.href='index.html'" style="display: flex; align-items: center; cursor: pointer; gap: 15px;">
+            <img src="koolaction.png" alt="Logo" style="height: 70px; width: auto; object-fit: contain; display: block;">
+            
+            
+            </span>
+        </div>
+
+        <!-- Lado Direito: Menu de Utilizador Alinhado e Proporcional -->
+        <div class="user-menu" style="
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            height: 36px;
+        ">
+            <!-- Saudação Dinâmica -->
+            <span id="saudacao-texto" class="saudacao-user" style="font-size: 13px; font-weight: bold; color: #555; margin-right: 10px; display: inline-block; vertical-align: middle;">
+                A carregar sessão...
+            </span>
+
+            <!-- 🛒 Voltar à Vitrina -->
+            <button onclick="window.location.href='index.html'" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #37475a;
+                color: white;
+                height: 36px;
+                width: 160px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #485769;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0 16px;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#485769'" 
+            onmouseout="this.style.backgroundColor='#37475a'">
+                🛒 Voltar à Loja
+            </button>
+
+            <!-- 📦 As Minhas Encomendas -->
+            <button onclick="window.location.href='encomendas.html'" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #232f3e;
+                color: white;
+                height: 36px;
+                width: 170px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #37475a;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0 16px;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#37475a'" 
+            onmouseout="this.style.backgroundColor='#232f3e'">
+                📦 As Minhas Encomendas
+            </button>
+
+            <!-- 🚪 Sair / Logout -->
+            <button onclick="fazerLogout()" style="
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                gap: 6px;
+                background-color: #cc0c39;
+                color: white;
+                height: 36px;
+                width: 85px;
+                border-radius: 20px;
+                font-weight: bold;
+                font-size: 12px;
+                border: 1px solid #b12704;
+                cursor: pointer;
+                transition: background 0.2s;
+                box-sizing: border-box;
+                margin: 0;
+                padding: 0;
+                vertical-align: middle;
+            "
+            onmouseover="this.style.backgroundColor='#b12704'" 
+            onmouseout="this.style.backgroundColor='#cc0c39'">
+                🚪 Sair
+            </button>
         </div>
     </header>
 
@@ -231,6 +336,33 @@
         // 🟩 CONFIGURAÇÃO: Insere o URL real da tua API do Google Apps Script
         const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec"; 
 
+        
+        document.addEventListener("DOMContentLoaded", function() {
+            let usuarioLogado = null;
+            
+            try {
+                const sessaoRaw = localStorage.getItem("usuario_logado");
+                if (sessaoRaw) {
+                    usuarioLogado = JSON.parse(sessaoRaw);
+                }
+            } catch (e) {
+                console.error("Erro ao ler sessão do localStorage");
+            }
+
+            // Se o utilizador estiver autenticado, atualiza o cabeçalho dinamicamente
+            if (usuarioLogado && usuarioLogado.nome) {
+                const saudacao = document.getElementById("saudacao-texto");
+                if (saudacao) {
+                    saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
+                }
+            }
+            
+            // ... restante lógica do teu DOMContentLoaded (como carregar encomendas/stocks) ...
+        });
+        
+        
+        
+        
         // Recupera a sessão local
         const sessaoRaw = localStorage.getItem("usuario_logado");
         let usuarioLogado = null;

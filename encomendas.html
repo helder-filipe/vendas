@@ -78,33 +78,81 @@
             <div class="user-menu">
                 <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
                 
-                <a href="perfil.html" style="
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                background-color: #ffd814;
-                color: #0f1111 !important; /* Força a cor escura do texto contra estilos herdados */
-                padding: 8px 16px;
-                border-radius: 20px;
-                text-decoration: none;
-                font-weight: bold;
-                font-size: 13px;
-                border: 1px solid #fcd200;
-                transition: background 0.2s, transform 0.1s;
-                box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            " 
-            onmouseover="this.style.backgroundColor='#f7ca00'" 
-            onmouseout="this.style.backgroundColor='#ffd814'">
-                👤 O Meu Perfil
-            </a>
+                <button id="btn-perfil-header" onclick="window.location.href='perfil.html'" style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background-color: #ffd814;
+                    color: #0f1111;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #fcd200;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                " 
+                onmouseover="this.style.backgroundColor='#f7ca00'" 
+                onmouseout="this.style.backgroundColor='#ffd814'">
+                    👤 O Meu Perfil
+                </button>
                 
-                <button class="btn-voltar" onclick="window.location.href='index.html'">🛒 Voltar à Loja</button>
-                <button id="btn-painel-vendedor" onclick="abrirPainelVendedor()" style="display: none; background: #007bff; color: white; border: none; padding: 10px 15px; border-radius: 4px; cursor: pointer; font-weight: bold;">
-                    Painel de Vendedor
+                <button class="btn-voltar" onclick="window.location.href='index.html'" style="
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 6px;
+                    background-color: #37475a;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #485769;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#485769'" 
+                onmouseout="this.style.backgroundColor='#37475a'">
+                    🛒 Voltar à Loja
                 </button>
 
+                <button id="btn-painel-vendedor" onclick="abrirPainelVendedor()" style="
+                    display: none; 
+                    align-items: center;
+                    gap: 6px;
+                    background-color: #232f3e; 
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #37475a;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#37475a'" 
+                onmouseout="this.style.backgroundColor='#232f3e'">
+                    Painel de Vendedor ⚙️
+                </button>
 
-                <button style="background: #cc0000;" onclick="terminarSessao()">Sair</button>
+                <button onclick="terminarSessao()" style="
+                    display: inline-flex; 
+                    align-items: center;
+                    gap: 6px;
+                    background-color: #cc0c39; 
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #b12704;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#b12704'" 
+                onmouseout="this.style.backgroundColor='#cc0c39'">
+                    🚪 Sair
+                </button>
             </div>
         </div>
 
