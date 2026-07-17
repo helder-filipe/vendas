@@ -63,6 +63,7 @@
         .footer-col p { line-height: 1.5; color: #96a2af; margin: 3px 0; }
         .footer-bottom { background: #19222d; text-align: center; padding: 12px 20px; font-size: 11px; color: #8492a0; border-top: 1px solid #232f3e; }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -177,7 +178,11 @@
     </footer>
 
     <script>
-       const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
+       
+        const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
+
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // 1. DECLARAÇÃO GLOBAL ÚNICA
         let usuarioLogado = null;
@@ -195,7 +200,8 @@
             document.getElementById("modal-avaliacao").style.display = "none";
         }
 
-        async function enviarAvaliacaoAoSheets(event) {
+        // --- SUBMETER AVALIAÇÃO DIRETAMENTE NA TABELA AVALIACOES DO SUPABASE ---
+        async function enviarAvaliacaoAoSupabase(event) {
             event.preventDefault();
             
             const btnSubmeter = event.target.querySelector("button[type='submit']");
@@ -223,45 +229,60 @@
                 return;
             }
 
-            const dadosAvaliacao = {
-                acao: "submeter_avaliacao",
-                id_encomenda: document.getElementById("eval-hidden-id-enc").value,
-                id_produto: document.getElementById("eval-hidden-id-prod").value,
-                cliente_email: emailCliente,
-                nota_produto: document.getElementById("eval-nota-produto").value,
-                nota_transporte: document.getElementById("eval-nota-transporte").value,
-                nota_vendedor: document.getElementById("eval-nota-vendedor").value,
-                comentario: document.getElementById("eval-comentario").value
-            };
+            const idEncomenda = document.getElementById("eval-hidden-id-enc").value;
+            const idProduto = document.getElementById("eval-hidden-id-prod").value;
+            const notaProdutoVal = document.getElementById("eval-nota-produto").value;
+            const notaVendedorVal = document.getElementById("eval-nota-vendedor").value;
+            const notaTransporteVal = document.getElementById("eval-nota-transporte").value;
+            const comentarioVal = document.getElementById("eval-comentario").value.trim();
+
+            // Gerar carimbos de data e IDs para preencher a tua tabela a 100%
+            const timestampUnico = new Date().getTime();
+            const dataHoje = new Date().toISOString().split('T')[0]; // Formato "YYYY-MM-DD"
 
             try {
-                await fetch(API_URL, { 
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify(dadosAvaliacao)
-                });
+                // 🟩 Envio mapeado com todas as colunas da tua imagem
+                const { error } = await supabaseClient
+                    .from('avaliacoes')
+                    .insert([
+                        {
+                            id: timestampUnico,                             // Resolve o erro do Primary Key NULL
+                            id_avaliacao: "AVAL-" + timestampUnico,          // Preenche a tua coluna text
+                            id_encomenda: idEncomenda.toString(),
+                            id_produto: idProduto ? idProduto.toString() : "1",
+                            cliente_email: emailCliente.trim().toLowerCase(),
+                            nota_produto: parseInt(notaProdutoVal),
+                            nota_transporte: parseInt(notaTransporteVal),
+                            nota_vendedor: parseInt(notaVendedorVal),
+                            comentario: comentarioVal || null,
+                            data_avaliacao: dataHoje                         // Preenche a coluna 'date'
+                        }
+                    ]);
+
+                if (error) throw error;
                 
-                alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
+                alert("🎉 Obrigado! A tua avaliação foi gravada com sucesso.");
                 fecharModalAvaliacao();
-                
                 carregarHistorico();
+
             } catch (erro) {
-                console.error("Erro processado no fluxo:", erro);
-                alert("🎉 Obrigado! A tua avaliação foi registada com sucesso.");
-                fecharModalAvaliacao();
-                carregarHistorico();
+                console.error("Erro detalhado do Supabase:", erro.message || erro);
+                alert("❌ Erro ao guardar a avaliação na base de dados.");
+            } finally {
+                if (btnSubmeter) {
+                    btnSubmeter.disabled = false;
+                    btnSubmeter.innerText = "Submeter";
+                }
             }
         }
 
-        // --- CONTROLO DE SESSÃO À PROVA DE FALHAS (CORRE SÓ DEPOIS DO CARREGAMENTO) ---
+        // --- CONTROLO DE SESSÃO À PROVA DE FALHAS ---
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Tenta obter parâmetros do URL (origem direta do login)
             const urlParams = new URLSearchParams(window.location.search);
             const emailURL = urlParams.get('email');
             const nomeURL = urlParams.get('nome');
 
             if (emailURL && nomeURL) {
-                // Se temos dados no URL, forçamos a reconstrução imediata da sessão
                 usuarioLogado = {
                     nome: decodeURIComponent(nomeURL),
                     email: decodeURIComponent(emailURL),
@@ -276,7 +297,6 @@
                     console.warn("Bloqueio de escrita no localStorage devido ao protocolo file:///");
                 }
             } else {
-                // 2. Se não veio do URL, tenta ler o localStorage de forma tradicional
                 try {
                     const sessaoRaw = localStorage.getItem("usuario_logado");
                     if (sessaoRaw) {
@@ -287,7 +307,6 @@
                 }
             }
 
-            // 3. Validação robusta de emergência para utilizadores locais (ignora falhas menores)
             if (!usuarioLogado || !usuarioLogado.email || usuarioLogado.email === "undefined") {
                 console.warn("Dados de utilizador inválidos ou inexistentes:", usuarioLogado);
                 alert("Sessão expirada ou utilizador não identificado. Por favor, faça login.");
@@ -295,7 +314,6 @@
                 return;
             }
 
-            // 4. Configurar elementos visuais do cabeçalho
             const saudacao = document.getElementById("saudacao-texto");
             if (saudacao) {
                 saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
@@ -310,7 +328,6 @@
                 }
             }
 
-            // 5. Correr o histórico
             carregarHistorico();
         });
 
@@ -331,7 +348,7 @@
             window.location.href = "autenticacao.html"; 
         }
 
-        // --- CARREGAMENTO DO HISTÓRICO ATUALIZADO (INTACTO) ---
+        // --- CARREGAMENTO DO HISTÓRICO AVANÇADO (COM PRODUTOS REAIS E VALIDAÇÃO DE AVALIAÇÃO) ---
         async function carregarHistorico() {
             const container = document.getElementById("lista-encomendas-content");
             if (!container) return;
@@ -340,27 +357,45 @@
             container.innerHTML = "<p style='text-align:center;'>A carregar o seu histórico de encomendas...</p>";
 
             try {
-                const response = await fetch(API_URL, {
-                    method: "POST",
-                    headers: { "Content-Type": "text/plain;charset=utf-8" },
-                    body: JSON.stringify({
-                        acao: "historico",
-                        email: usuarioLogado.email
-                    })
-                });
-                
-                const encomendas = await response.json();
+                const emailProcura = usuarioLogado.email.trim().toLowerCase();
+
+                // 1. Procurar todas as encomendas do comprador
+                const { data: encomendas, error: errorEnc } = await supabaseClient
+                    .from('encomendas')
+                    .select('*')
+                    .eq('cliente_email', emailProcura)
+                    .order('data', { ascending: false });
+
+                if (errorEnc) throw errorEnc;
 
                 if (!encomendas || encomendas.length === 0) {
                     container.innerHTML = "<p style='color:#666; text-align:center;'>Ainda não efetuaste nenhuma encomenda no nosso site.</p>";
                     return;
                 }
 
+                // 2. Procurar todos os itens de todas as encomendas deste utilizador para fazer o mapeamento
+                const { data: todosOsItens, error: errorItens } = await supabaseClient
+                    .from('itens_encomenda')
+                    .select('*');
+
+                if (errorItens) throw errorItens;
+
+                // 3. Procurar as avaliações já feitas por este cliente para bloquear o botão duplicado
+                const { data: avaliacoesFeitas, error: errorAval } = await supabaseClient
+                    .from('avaliacoes')
+                    .select('id_encomenda')
+                    .eq('cliente_email', emailProcura);
+
+                if (errorAval) throw errorAval;
+
+                // Criar um Set (lista única) de IDs de encomendas já avaliadas para consulta ultra rápida
+                const encomendasAvaliadas = new Set(avaliacoesFeitas ? avaliacoesFeitas.map(a => String(a.id_encomenda)) : []);
+
                 container.innerHTML = ""; 
 
                 encomendas.forEach(enc => {
                     let statusClass = "status-pendente";
-                    let estadoText = enc.estado || "Pendente";
+                    let estadoText = enc.status || "Pendente";
                     if (estadoText.toLowerCase() === "em processamento") statusClass = "status-processamento";
                     if (estadoText.toLowerCase() === "enviado") statusClass = "status-enviado";
 
@@ -383,53 +418,46 @@
                         `;
                     }
 
-                    let linhasArtigosHTML = "";
-                    const arrayItens = enc.itens ? enc.itens.split(", ") : [];
+                    // 🟩 FILTRAGEM DOS ARTIGOS REAIS: Procura na tabela itens_encomenda os produtos deste ID
+                    const itensDestaEncomenda = todosOsItens 
+                        ? todosOsItens.filter(item => String(item.id_encomenda) === String(enc.id)) 
+                        : [];
 
-                    if (arrayItens.length > 0 && enc.itens) {
-                        arrayItens.forEach(itemTexto => {
-                            let match = itemTexto.match(/(.*)\s\((\d+)x\)/);
-                            if (match) {
-                                let nomeArtigo = match[1].trim();
-                                let qtdArtigo = parseInt(match[2]);
-                                
-                                linhasArtigosHTML += `
-                                    <tr style="border-bottom: 1px dashed #eee;">
-                                        <td style="padding: 8px 0; color:#333; font-weight:500;">📦 ${nomeArtigo}</td>
-                                        <td style="text-align:center; padding: 8px 0;">${qtdArtigo}x</td>
-                                        <td style="text-align:right; padding: 8px 0; color:#777;">-</td>
-                                        <td style="text-align:right; padding: 8px 0; color:#333;">Incluído</td>
-                                    </tr>
-                                `;
-                            } else {
-                                linhasArtigosHTML += `
-                                    <tr style="border-bottom: 1px dashed #eee;">
-                                        <td style="padding: 8px 0; color:#333;">📦 ${itemTexto}</td>
-                                        <td style="text-align:center; padding: 8px 0;">1x</td>
-                                        <td style="text-align:right; padding: 8px 0; color:#777;">-</td>
-                                        <td style="text-align:right; padding: 8px 0; color:#333;">Incluído</td>
-                                    </tr>
-                                `;
-                            }
+                    let linhasArtigosHTML = "";
+                    let subtotalCalculado = 0;
+
+                    if (itensDestaEncomenda.length > 0) {
+                        itensDestaEncomenda.forEach(item => {
+                            const qtd = Number(item.quantidade) || 1;
+                            const precoUn = Number(item.preco_unitario) || 0;
+                            const subtotalItem = precoUn * qtd;
+                            subtotalCalculado += subtotalItem;
+
+                            linhasArtigosHTML += `
+                                <tr style="border-bottom: 1px dashed #eee;">
+                                    <td style="padding: 8px 0; color:#333; font-weight:500;">📦 ${item.nome_produto}</td>
+                                    <td style="text-align:center; padding: 8px 0;">${qtd}x</td>
+                                    <td style="text-align:right; padding: 8px 0; color:#666;">${precoUn.toFixed(2)}€</td>
+                                    <td style="text-align:right; padding: 8px 0; color:#333; font-weight:bold;">${subtotalItem.toFixed(2)}€</td>
+                                </tr>
+                            `;
                         });
                     } else {
                         linhasArtigosHTML = `
                             <tr style="border-bottom: 1px dashed #eee;">
-                                <td style="padding: 8px 0; color:#555;">${enc.itens || "Artigos da encomenda"}</td>
-                                <td style="text-align:center; padding: 8px 0;">-</td>
-                                <td style="text-align:right; padding: 8px 0;">-</td>
-                                <td style="text-align:right; padding: 8px 0;">-</td>
+                                <td colspan="4" style="padding: 8px 0; color:#777; font-style:italic;">Detalhes dos artigos indisponíveis.</td>
                             </tr>
                         `;
                     }
 
                     const custoTransporte = Number(enc.custo_transporte) || 0;
-                    const subtotalProdutos = Number(enc.total) - custoTransporte;
+                    // Se o subtotal calculado der 0 (caso antigo), baseia-se no total da encomenda
+                    const subtotalExibicao = subtotalCalculado > 0 ? subtotalCalculado : (Number(enc.total) - custoTransporte);
 
                     let linesTotaisHTML = `
                         <tr style="color: #666; font-size: 12px;">
                             <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">Subtotal Artigos:</td>
-                            <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">${subtotalProdutos.toFixed(2)}€</td>
+                            <td colspan="2" style="padding: 8px 0 2px 0; text-align:right;">${subtotalExibicao.toFixed(2)}€</td>
                         </tr>
                         <tr style="color: #0056b3; font-size: 12px; font-weight: bold;">
                             <td colspan="2" style="padding: 2px 0 6px 0; text-align:right;">🚚 Custo de Transporte:</td>
@@ -441,15 +469,28 @@
                         </tr>
                     `;
 
+                    // 🟩 TRANCA DE SEGURANÇA: Só mostra o botão se a encomenda NÃO estiver no Set de avaliadas e não for pendente
                     let botaoAvaliarHTML = "";
                     if (estadoText.toLowerCase() !== "pendente") {
-                        botaoAvaliarHTML = `
-                            <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; text-align: right;">
-                                <button onclick="abrirModalAvaliacao('${enc.id_encomenda}', '${enc.id_produto || '1'}')" style="padding: 8px 16px; background: #232f3e; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;">
-                                    ⭐ Avaliar Compra
-                                </button>
-                            </div>
-                        `;
+                        if (encomendasAvaliadas.has(String(enc.id))) {
+                            // Se já foi avaliada, mostra um indicador bonito em vez do botão
+                            botaoAvaliarHTML = `
+                                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; text-align: right; color: #28a745; font-size: 12px; font-weight: bold;">
+                                    ✓ Encomenda já Avaliada
+                                </div>
+                            `;
+                        } else {
+                            // Pega no ID do primeiro produto da lista para passar ao modal (ou '1' por defeito)
+                            const primeiroProdId = itensDestaEncomenda.length > 0 ? itensDestaEncomenda[0].id_produto : '1';
+                            
+                            botaoAvaliarHTML = `
+                                <div style="margin-top: 15px; padding-top: 10px; border-top: 1px solid #eee; text-align: right;">
+                                    <button onclick="abrirModalAvaliacao('${enc.id}', '${primeiroProdId}')" style="padding: 8px 16px; background: #232f3e; color: white; border: none; border-radius: 4px; font-size: 13px; font-weight: bold; cursor: pointer;">
+                                        ⭐ Avaliar Compra
+                                    </button>
+                                </div>
+                            `;
+                        }
                     }
 
                     const card = document.createElement("div");
@@ -464,7 +505,7 @@
                             <div><strong>Total:</strong><br><span style="color:#b12704; font-weight:bold; font-size:14px;">${Number(enc.total).toFixed(2)}€</span></div>
                             <div><strong>Enviar para:</strong><br><span style="color:#333; font-weight:bold;">${enc.cliente_nome || usuarioLogado.nome}</span></div>
                             <div style="margin-left:auto; text-align:right;">
-                                <strong>ID da Encomenda:</strong> #${enc.id_encomenda}<br>
+                                <strong>ID da Encomenda:</strong> #${enc.id}<br>
                                 <span class="status-badge ${statusClass}" style="display: inline-block; padding: 2px 6px; border-radius: 3px; font-weight: bold; font-size: 11px; margin-top: 3px;">${estadoText}</span>
                             </div>
                         </div>
@@ -477,14 +518,14 @@
                                 <div>
                                     <strong style="color: #555;">Método de Pagamento escolhido:</strong> 
                                     <span style="color: #0056b3; font-weight: bold;">${enc.metodo_pagamento}</span> 
-                                    <span style="color: #666; margin-left: 10px; font-style: italic;">(${enc.detalhe_pagamento})</span>
+                                    <span style="color: #666; margin-left: 10px; font-style: italic;">(${enc.detalhe_pagamento || ''})</span>
                                 </div>
                             </div>
 
                             <div style="background: #f9f9f9; padding: 10px 15px; border-radius: 4px; margin-bottom: 15px; font-size: 13px; color:#555; line-height:1.5;">
                                 <strong>📍 Detalhes de Envio:</strong><br>
-                                Morada: ${enc.entrega_morada || "N/D"}, ${enc.entrega_localidade || "N/D"} (${enc.entrega_cp || "N/D"})<br>
-                                Contacto Logístico: ${enc.entrega_telemovel || "N/D"}
+                                Morada: ${enc.morada || "N/D"}, ${enc.localidade || "N/D"} (${enc.cp || "N/D"})<br>
+                                Contacto Logístico: ${enc.telemovel || "N/D"}
                             </div>
 
                             <table class="itens-table" style="width:100%; border-collapse: collapse; font-size:13px;">
@@ -509,7 +550,7 @@
                 });
 
             } catch (error) {
-                console.error("Erro crítico ao renderizar o histórico:", error);
+                console.error("Erro crítico ao renderizar o histórico relacional:", error);
                 container.innerHTML = "<p style='color:red; font-weight:bold; text-align:center;'>⚠️ Erro ao carregar o histórico. Por favor tenta mais tarde.</p>";
             }
         }
@@ -520,7 +561,7 @@
             <h3 style="margin-top: 0; color: #232f3e;">Avaliar Encomenda #<span id="eval-id-encomenda"></span></h3>
             <p style="font-size: 13px; color: #666; margin-bottom: 20px;">A tua opinião é muito importante para nós. Por favor, avalia a tua experiência:</p>
             
-            <form id="form-avaliacao-cliente" onsubmit="enviarAvaliacaoAoSheets(event)">
+            <form id="form-avaliacao-cliente" onsubmit="enviarAvaliacaoAoSupabase(event)">
                 <input type="hidden" id="eval-hidden-id-enc">
                 <input type="hidden" id="eval-hidden-id-prod">
 

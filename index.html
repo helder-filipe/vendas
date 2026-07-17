@@ -183,6 +183,7 @@
             .vitrine-seccao { grid-row: 2; width: 100%; }
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -330,7 +331,7 @@
                     <div id="carrinho-itens">O carrinho está vazio.</div>
                     <h3 style="margin-top: 20px; text-align: right;">Total: <span id="carrinho-total">0.00</span>€</h3>
                     
-                    <form id="formulario-checkout" class="checkout-form" onsubmit="finalizarCompra(event)">
+                    <form id="formulario-checkout" class="checkout-form" onsubmit="processarCheckout(event)">
                         <h3>Dados de Envio</h3>
                         <div class="form-group"><label>Nome Completo:</label><input type="text" id="nome" required></div>
                         <div class="form-group"><label>E-mail:</label><input type="email" id="email" required readonly style="background: #f5f5f5; color: #777;"></div>
@@ -344,7 +345,7 @@
                             <input type="tel" id="telemovel-entrega" placeholder="9XXXXXXXX" required>
                         </div>
                         
-                        <button type="button" onclick="finalizarCompra()" class="btn-checkout">Finalizar Encomenda</button>
+                        <button type="button" onclick="finalizarCompra(event)" id="btn-finalizar-compra" class="btn-checkout">Finalizar Encomenda</button>
                     </form>
                 </div>
             </div>
@@ -526,7 +527,11 @@
         }
 
 // --- LÓGICA DE PRODUTOS, FILTROS E PESQUISA ---
-const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
+const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
+const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
+
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 let todosProdutos = []; 
 let categoriaAtual = "Todas"; 
 let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
@@ -537,19 +542,51 @@ let referenciaGeradaParaEnvio = "";
 
 async function carregarProdutos() {
     try {
-        // 🟩 APENAS ADICIONÁMOS O PARÂMETRO DA AÇÃO À TUA API_URL
-        const resposta = await fetch(`${API_URL}?acao=listar_produtos`);
-        
-        // Mantém rigorosamente a tua variável global original para os filtros funcionarem!
-        todosProdutos = await resposta.json();
-        
-        // Chama a tua função original que já funciona às mil maravilhas
+        // 1. Procurar todos os produtos na tabela do Supabase
+        const { data: produtos, error: errorProd } = await supabaseClient
+            .from('produtos')
+            .select('*');
+
+        if (errorProd) {
+            console.error("Erro ao ler produtos do Supabase:", errorProd.message);
+            alert("Erro ao carregar a vitrina de produtos.");
+            return;
+        }
+
+        // 2. Procurar todas as avaliações registadas
+        const { data: avaliacoes, error: errorAval } = await supabaseClient
+            .from('avaliacoes')
+            .select('id_produto, nota_produto');
+
+        // 3. Processar e acoplar as médias calculadas em tempo real a cada produto
+        todosProdutos = produtos.map(prod => {
+            const listaNotasDoProd = avaliacoes 
+                ? avaliacoes.filter(a => String(a.id_produto) === String(prod.id)) 
+                : [];
+            
+            const totalVotos = listaNotasDoProd.length;
+            let mediaAvaliacao = 0;
+
+            if (totalVotos > 0) {
+                const soma = listaNotasDoProd.reduce((acc, current) => acc + Number(current.nota_produto), 0);
+                mediaAvaliacao = soma / totalVotos;
+            }
+
+            // Injeta as propriedades esperadas pela tua função renderizarVitrine
+            return {
+                ...prod,
+                total_votos: totalVotos,
+                media_avaliacao: mediaAvaliacao
+            };
+        });
+
+        // 4. Desenhar a vitrina com os dados processados
         renderizarVitrine(todosProdutos);
-    } catch (erro) { 
-        document.getElementById("produtos-content").innerText = "Erro ao carregar produtos."; 
+
+    } catch (erro) {
+        console.error("Erro inesperado ao carregar produtos:", erro);
     }
 }
-
 
 function renderizarVitrine(lista) {
     const vitrine = document.getElementById("produtos-content");
@@ -773,47 +810,63 @@ function gerarRecomendacoes(produtoAtual) {
 }
 
 
-// 🟩 FUNÇÃO: CARREGAR AVALIAÇÕES DO PRODUTO PARA O MODAL
+// 🟩 FUNÇÃO MIGRADA: CARREGAR AVALIAÇÕES EM TEMPO REAL DIRETAMENTE DO SUPABASE NO MODAL
 async function carregarAvaliacoesNoModal(idProduto) {
     const resumoContainer = document.getElementById("modal-resumo-avaliacao");
     const listaContainer = document.getElementById("modal-lista-comentarios");
     
-    // Mostra um estado de carregamento inicial
+    if (!resumoContainer || !listaContainer) return;
+
     resumoContainer.innerHTML = `<span style="font-size: 13px; color: #666;">A carregar classificações...</span>`;
     listaContainer.innerHTML = "";
 
     try {
-        // Faz a chamada GET à tua API do Apps Script
-        const url = `${API_URL}?acao=obter_avaliacoes&id_produto=${idProduto}`;
-        const resposta = await fetch(url);
-        const dados = await resposta.json();
+        // Consultar as avaliações deste produto específico no Supabase
+        const { data: listaAvaliacoes, error } = await supabaseClient
+            .from('avaliacoes')
+            .select('*')
+            .eq('id_produto', String(idProduto))
+            .order('data_avaliacao', { ascending: false });
 
-        // 1. Renderiza o Resumo da Média Global
-        if (dados.total_votos > 0) {
-            const numEstrelas = Math.round(dados.media_global);
+        if (error) throw error;
+
+        if (listaAvaliacoes && listaAvaliacoes.length > 0) {
+            const totalVotos = listaAvaliacoes.length;
+            
+            // Calcular a média baseada na coluna nota_produto
+            const somaNotas = listaAvaliacoes.reduce((acc, item) => acc + Number(item.nota_produto), 0);
+            const mediaGlobal = somaNotas / totalVotos;
+
+            const numEstrelas = Math.round(mediaGlobal);
             const estrelasTexto = "★".repeat(numEstrelas) + "☆".repeat(5 - numEstrelas);
             
             resumoContainer.innerHTML = `
                 <div style="font-size: 32px; font-weight: bold; color: #111;">
-                    ${dados.media_global.toFixed(1)}
+                    ${mediaGlobal.toFixed(1)}
                 </div>
                 <div>
                     <div style="color: #ff9900; font-size: 18px; letter-spacing: 1px;">${estrelasTexto}</div>
-                    <small style="color: #666; font-size: 12px;">Média com base em ${dados.total_votos} avaliações</small>
+                    <small style="color: #666; font-size: 12px;">Média com base em ${totalVotos} avaliações</small>
                 </div>
             `;
 
-            // 2. Renderiza a Lista de Comentários
+            // Renderizar a Lista de Comentários recebidos
             let comentariosHTML = "";
-            dados.lista.forEach(item => {
-                const estrelasItem = "★".repeat(Math.round(item.nota_combinada)) + "☆".repeat(5 - Math.round(item.nota_combinada));
-                const comentarioTexto = item.comentario.trim() !== "" ? item.comentario : `<span style="color:#aaa; font-style:italic;">Não deixou comentário de texto.</span>`;
+            listaAvaliacoes.forEach(item => {
+                const notaItem = Number(item.nota_produto) || 5;
+                const estrelasItem = "★".repeat(notaItem) + "☆".repeat(5 - notaItem);
+                
+                // Formata a data se existir
+                const dataExibicao = item.data_avaliacao ? new Date(item.data_avaliacao).toLocaleDateString('pt-PT') : 'Recente';
+                const comentarioTexto = item.comentario && item.comentario.trim() !== "" 
+                    ? item.comentario 
+                    : `<span style="color:#aaa; font-style:italic;">Não deixou comentário de texto.</span>`;
                 
                 comentariosHTML += `
                     <div style="border-bottom: 1px dashed #eee; padding: 10px 0; font-size: 13px;">
                         <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <strong style="color: #333;">👤 ${item.cliente}</strong>
-                            <small style="color: #999;">${item.data}</small>
+                            <strong style="color: #333;">👤 ${item.cliente_email.split('@')[0]}</strong>
+                            <small style="color: #999;">${dataExibicao}</small>
                         </div>
                         <div style="color: #ff9900; font-size: 12px; margin-bottom: 4px;">${estrelasItem}</div>
                         <p style="margin: 0; color: #555; line-height: 1.4;">${comentarioTexto}</p>
@@ -823,7 +876,7 @@ async function carregarAvaliacoesNoModal(idProduto) {
             listaContainer.innerHTML = comentariosHTML;
 
         } else {
-            // Caso o produto ainda não tenha votos
+            // Caso o produto ainda não tenha votos na tabela
             resumoContainer.innerHTML = `
                 <div style="font-size: 18px; color: #ccc; letter-spacing: 1px;">☆☆☆☆☆</div>
                 <div style="font-size: 13px; color: #666;">Este produto ainda não recebeu avaliações. Seja o primeiro a comprar e avaliar!</div>
@@ -832,11 +885,10 @@ async function carregarAvaliacoesNoModal(idProduto) {
         }
 
     } catch (erro) {
-        console.error("Erro ao procurar avaliações do produto:", erro);
+        console.error("Erro ao procurar avaliações do produto no Supabase:", erro);
         resumoContainer.innerHTML = `<span style="color: red; font-size: 12px;">⚠️ Erro ao carregar avaliações.</span>`;
     }
 }
-
 
 
 function fecharModal() { document.getElementById("modal-detalhes").style.display = "none"; }
@@ -1052,64 +1104,149 @@ function atualizarInterfaceCarrinho() {
     }, 2000);
 }
 
+
+
 // VARIÁVEL GLOBAL (Coloca no topo do teu script ou deixa o JS criar)
 window.dadosEntregaTemporarios = null;
 
-async function finalizarCompra(event) {
-    if (event) event.preventDefault(); 
+async function processarCheckout(event) {
+    if (event) event.preventDefault();
 
-    // 1. Captura os valores dos inputs editáveis do carrinho
-    const nomeDigitado = document.getElementById("nome").value.trim();
-    const emailDigitado = document.getElementById("email").value.trim();
-    const moradaDigitada = document.getElementById("morada").value.trim();
-    const localidadeDigitada = document.getElementById("localidade").value.trim();
-    const cpDigitado = document.getElementById("cp").value.trim();
-    
-    // 🟩 RECOLHA DO NOVO CAMPO DE TELEMÓVEL DA ENCOMENDA
-    const tlmEntregaInput = document.getElementById("telemovel-entrega");
-    const tlmEntrega = tlmEntregaInput ? tlmEntregaInput.value.trim() : "";
-
-    // 🟩 TRANCA 1: Validação do Nome Completo (Pelo menos primeiro e apelido)
-    const partesDoNome = nomeDigitado.split(/\s+/);
-    if (partesDoNome.length < 2 || partesDoNome[1] === "") {
-        alert("⚠️ Por favor, introduza o seu nome completo (pelo menos o primeiro nome e um apelido) para efeitos de envio.");
-        return; 
-    }
-
-    // 🟩 TRANCA 2: Validação do Código-Postal (Formato XXXX-XXX)
-    const cpRegex = /^\d{4}-\d{3}$/;
-    if (!cpRegex.test(cpDigitado)) {
-        alert("⚠️ O Código-Postal introduzido não é válido! Por favor, use o formato correto (Ex: 8125-401).");
-        return; 
-    }
-
-    // 🟩 TRANCA 3: Validação Obrigatória do Telemóvel para a Encomenda (9 dígitos)
-    if (tlmEntrega.length !== 9 || isNaN(tlmEntrega)) {
-        alert("⚠️ Por favor, introduza um número de telemóvel válido (9 dígitos) para coordenação da entrega.");
+    // 1. Validar se o carrinho tem itens
+    // (Ajusta o nome da variável se o teu carrinho se chamar de outra forma, ex: carrinho)
+    if (!listaItensDoCarrinho || listaItensDoCarrinho.length === 0) {
+        alert("O teu carrinho está vazio!");
         return;
     }
 
-    if (!carrinho || carrinho.length === 0) {
-        alert("⚠️ O seu carrinho está vazio.");
-        return;
+    const botao = document.getElementById("btn-finalizar-compra"); // Ajusta o ID do teu botão se necessário
+    if (botao) {
+        botao.disabled = true;
+        botao.innerText = "A processar encomenda...";
     }
 
-    // 🟩 ATUALIZAÇÃO: Guardamos todos os campos de forma desmembrada na janela global
-    // Isto permite que o processarFluxoPagamento leia os dados exatos introduzidos no momento!
-    window.dadosEntregaTemporarios = {
-        cliente_nome: nomeDigitado,
-        cliente_email: emailDigitado,
-        entrega_morada: moradaDigitada,
-        entrega_localidade: localidadeDigitada,
-        entrega_cp: cpDigitado,
-        entrega_telemovel: tlmEntrega
-    };
-
-    // 🟩 ABRIR VISUALMENTE O MODAL DE PAGAMENTO
-    document.getElementById("modal-pagamento").style.display = "flex";
+    // 2. Gerar ID Único da Encomenda
+    const idEncomenda = "ENC-" + new Date().getTime();
+    const dataAtual = new Date();
     
-    // Força a renderização inicial do MB WAY para que o input do telemóvel passe a existir
-    selecionarMetodo('mbway');
+    // Formatar datas e horas no formato esperado pelas colunas do Supabase
+    const dataFormatada = dataAtual.toISOString().split('T')[0]; // yyyy-mm-dd
+    const horaFormatada = dataAtual.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+    // Recolha dos dados do formulário de envio/pagamento (Ajusta os IDs conforme o teu HTML)
+    const clienteNome = document.getElementById("checkout-nome")?.value || usuarioLogado?.nome || "Cliente";
+    const clienteEmail = document.getElementById("checkout-email")?.value || usuarioLogado?.email || "";
+    const morada = document.getElementById("checkout-morada")?.value || "";
+    const localidade = document.getElementById("checkout-localidade")?.value || "";
+    const cp = document.getElementById("checkout-cp")?.value || "";
+    const telemovel = document.getElementById("checkout-telemovel")?.value || "";
+    const metodoPagamento = document.getElementById("checkout-pagamento")?.value || "Não especificado";
+    const detalhePagamento = document.getElementById("checkout-detalhes-pagamento")?.value || "";
+
+    // Calcular o total e o resumo de itens para a tabela principal
+    let totalCompra = 0;
+    let maiorPrazoDias = 8; // Padrão
+    const linhasItens = [];
+
+    listaItensDoCarrinho.forEach(item => {
+        const qtd = Number(item.quantidade) || 1;
+        const preco = Number(item.preco) || 0;
+        totalCompra += (preco * qtd);
+
+        // Preparar a linha para a tabela itens_encomenda
+        linhasItens.push({
+            id_encomenda: idEncomenda,
+            id_produto: (item.id || item.id_produto).toString(),
+            nome_produto: item.nome,
+            quantidade: qtd,
+            preco_unitario: preco
+        });
+    });
+
+    // Calcular a data estimada de entrega
+    const dataEstimada = new Date();
+    dataEstimada.setDate(dataAtual.getDate() + maiorPrazoDias);
+    const dataEstimadaFormatada = dataEstimada.toISOString().split('T')[0];
+
+    try {
+        // STEP 1: Inserir o cabeçalho da encomenda na tabela 'encomendas'
+        const { error: errorEncomenda } = await supabaseClient
+            .from('encomendas')
+            .insert([
+                {
+                    id: idEncomenda,
+                    data: dataFormatada,
+                    hora: horaFormatada,
+                    cliente_nome: clienteNome,
+                    cliente_email: clienteEmail,
+                    morada: morada,
+                    localidade: localidade,
+                    cp: cp,
+                    telemovel: telemovel,
+                    itens: listaItensDoCarrinho.length + " artigo(s)",
+                    total: totalCompra,
+                    status: 'Pendente',
+                    metodo_pagamento: metodoPagamento,
+                    detalhe_pagamento: detalhePagamento,
+                    estimativa_entrega: dataEstimadaFormatada,
+                    entrega_real: null
+                }
+            ]);
+
+        if (errorEncomenda) throw new Error("Erro ao registar encomenda: " + errorEncomenda.message);
+
+        // STEP 2: Inserir todos os artigos de uma só vez na tabela 'itens_encomenda'
+        const { error: errorItens } = await supabaseClient
+            .from('itens_encomenda')
+            .insert(linhasItens);
+
+        if (errorItens) throw new Error("Erro ao registar itens da encomenda: " + errorItens.message);
+
+        // STEP 3: Atualizar os stocks dos produtos comprados (Loop individual)
+        for (const item of listaItensDoCarrinho) {
+            const idProd = item.id || item.id_produto;
+            const qtdComprada = Number(item.quantidade) || 1;
+
+            // 3.1 Procurar o stock atual do produto
+            const { data: produtoOriginal } = await supabaseClient
+                .from('produtos')
+                .select('stock')
+                .eq('id', idProd)
+                .single();
+
+            if (produtoOriginal) {
+                const stockAtual = Number(produtoOriginal.stock) || 0;
+                let novoStock = stockAtual - qtdComprada;
+                if (novoStock < 0) novoStock = 0;
+
+                // 3.2 Atualizar o novo stock na tabela
+                await supabaseClient
+                    .from('produtos')
+                    .update({ stock: novoStock })
+                    .eq('id', idProd);
+            }
+        }
+
+        // Sucesso Total! 🎉
+        alert(`Encomenda finalizada com sucesso! ID: ${idEncomenda}`);
+        
+        // Limpar o carrinho e atualizar a interface (Ajusta para as tuas funções nativas)
+        listaItensDoCarrinho = [];
+        if (typeof atualizarInterfaceCarrinho === "function") atualizarInterfaceCarrinho();
+        if (typeof fecharModalCheckout === "function") fecharModalCheckout();
+        
+        // Redirecionar ou recarregar a página para atualizar a vitrina (com os novos stocks)
+        window.location.reload();
+
+    } catch (erro) {
+        alert("Ocorreu um erro ao finalizar a compra.");
+        console.error(erro);
+    } finally {
+        if (botao) {
+            botao.disabled = false;
+            botao.innerText = "Finalizar Compra";
+        }
+    }
 }
 
 function fecharModalPagamento() {
@@ -1160,157 +1297,221 @@ function selecionarMetodo(metodo) {
     }
 }
 
-// 🟩 FUNÇÃO ATUALIZADA: FLUXO DE PAGAMENTO COM CUSTO DE TRANSPORTE INTEGRADO NO TOTAL
 async function processarFluxoPagamento() {
-    const btnConfirmar = document.getElementById("btn-confirmar-pagamento");
-    const container = document.getElementById("detalhes-pagamento");
-    const modalContent = container.parentElement; 
+    const botao = document.getElementById("btn-confirmar-pagamento");
     
-    // Cálculo do valor bruto dos produtos no carrinho
-    const totalCarrinho = carrinho.reduce((acc, item) => acc + (item.preco_unitario * item.quantidade), 0);
-    
-    // Configuração de segurança: taxa padrão de transporte caso o cálculo global não esteja preenchido
-    const taxaTransportePadrao = 4.90; 
-
     let detalhePagamento = "";
-    let nomeMetodo = "";
-    let tlmDigitado = "";
+    
+    if (metodoSelecionado === "mbway") {
+        // Tenta ler o input do modal, se não existir usa o do formulário de entrega
+        let tlm = document.getElementById("mbway-telemovel")?.value.trim();
+        if (!tlm && window.dadosEntregaTemporarios) {
+            tlm = window.dadosEntregaTemporarios.entrega_telemovel;
+        }
 
-    // 1. Validações e animações de espera dos métodos de pagamento
-    if (metodoSelecionado === 'mbway') {
-        tlmDigitado = document.getElementById("pago-telemovel").value.trim();
-        if (tlmDigitado.length !== 9 || isNaN(tlmDigitado)) {
-            alert("Por favor, introduz um número de telemóvel válido (9 dígitos).");
+        if (!tlm || tlm.length !== 9 || isNaN(tlm)) {
+            alert("⚠️ Por favor, introduza um número de MB WAY válido (9 dígitos).");
             return;
         }
-        nomeMetodo = "MB WAY";
-        detalhePagamento = "Telemóvel: " + tlmDigitado;
+        detalhePagamento = "Telemóvel MB WAY: " + tlm;
         
-        btnConfirmar.disabled = true;
-        container.innerHTML = `
-            <div style="text-align:center; padding:10px;">
-                <div style="margin-bottom:10px; font-weight:bold; color:#0056b3;">A aguardar aprovação na App MB WAY...</div>
-                <div style="font-size:24px; font-weight:bold; color:#333;" id="countdown">3</div>
-            </div>
-        `;
-        
-        await new Promise((resolve) => {
-            let tempo = 3;
-            const intervalo = setInterval(() => {
-                tempo--;
-                if (tempo <= 0) { clearInterval(intervalo); resolve(); }
-                else { document.getElementById("countdown").innerText = tempo; }
-            }, 1000);
-        });
-    } else {
-        nomeMetodo = "Referência Multibanco";
-        detalhePagamento = "Ent: 11249 | Ref: " + referenciaGeradaParaEnvio;
-        
-        btnConfirmar.disabled = true;
-        container.innerHTML = `<div style="text-align:center; padding:20px; color:green; font-weight:bold;">A validar o pagamento da Referência MB...</div>`;
-        await new Promise(resolve => setTimeout(resolve, 1500));
+    } else if (metodoSelecionado === "ref") {
+        // Captura o texto da referência gerada. Se estiver vazio, põe um texto padrão
+        const elementoRef = document.getElementById("detalhes-pagamento");
+        detalhePagamento = elementoRef ? elementoRef.innerText.replace(/\s+/g, ' ').trim() : "Referência Multibanco Gerada";
     }
-
-    container.innerHTML = `<div style="text-align:center; padding:20px; font-weight:bold; color:#28a745;">Pagamento Confirmado! A registar encomenda...</div>`;
-
-    // 2. EXTRAÇÃO SEGURA DE DADOS DE ENTREGA: Evita valores "undefined"
-    const nomeFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.cliente_nome : document.getElementById("nome").value.trim();
-    const emailFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.cliente_email : document.getElementById("email").value.trim();
-    const moradaFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_morada : document.getElementById("morada").value.trim();
-    const localidadeFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_localidade : document.getElementById("localidade").value.trim();
-    const cpFinal = window.dadosEntregaTemporarios ? window.dadosEntregaTemporarios.entrega_cp : document.getElementById("cp").value.trim();
-    
-    // 🟩 EXTRAÇÃO DO TELEMÓVEL: Prioriza a recolha temporária validada e depois do input do formulário ou MB WAY
-    let tlmFinal = "";
-    if (window.dadosEntregaTemporarios && window.dadosEntregaTemporarios.entrega_telemovel) {
-        tlmFinal = window.dadosEntregaTemporarios.entrega_telemovel;
-    } else {
-        const inputTlmCheckout = document.getElementById("telemovel-entrega");
-        tlmFinal = inputTlmCheckout ? inputTlmCheckout.value.trim() : tlmDigitado;
-    }
-    
-    // Se ainda assim vier vazio ou for indefinido, define como "N/A"
-    if (!tlmFinal) {
-        tlmFinal = "N/A";
-    }
-    
-    // 🟩 INTEGRAÇÃO DO TRANSPORTE NO VALOR FINAL:
-    // Se o valorFinalEncomenda já existir (vindo do checkout somado), usa-o. Senão, faz a soma de contingência.
-    const valorFinalComFrete = window.valorFinalEncomenda || (totalCarrinho + taxaTransportePadrao);
-    
-    // Calcula a diferença real para discriminar os portes no texto do Sheets
-    const portesAplicados = (valorFinalComFrete - totalCarrinho) > 0 ? (valorFinalComFrete - totalCarrinho) : 0;
-    detalhePagamento += ` | Portes: ${portesAplicados.toFixed(2)}€`;
-
-    // 3. CONSTRUÇÃO DO OBJECTO EM CONFORMIDADE COM AS 16 COLUNAS DO SHEETS
-    const dadosEncomenda = {
-        acao: "comprar",
-        cliente_nome: nomeFinal,
-        cliente_email: emailFinal,
-        entrega_morada: moradaFinal,
-        entrega_localidade: localidadeFinal,
-        entrega_cp: cpFinal,
-        entrega_telemovel: tlmFinal, // 🟩 TELEMÓVEL INTEGRADO COM SUCESSO!
-        total: valorFinalComFrete,          
-        metodo_pagamento: nomeMetodo,
-        detalhe_pagamento: detalhePagamento,
-        itens: carrinho
-    };
 
     try {
-        const response = await fetch(API_URL, { 
-            method: "POST", 
-            headers: { "Content-Type": "text/plain;charset=utf-8" }, 
-            body: JSON.stringify(dadosEncomenda) 
-        });
-        const resultado = await response.json();
-        
-        if (resultado.status === "sucesso") {
-            carrinho = [];
-            if (typeof atualizarInterfaceCarrinho === "function") { atualizarInterfaceCarrinho(); }
-            
-            modalContent.innerHTML = `
-                <div style="text-align: center; padding: 20px 10px; font-family: Arial, sans-serif;">
-                    <div style="width: 70px; height: 70px; background: #d4edda; color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 35px; font-weight: bold; box-shadow: 0 4px 10px rgba(40, 167, 69, 0.2);">
-                        ✓
-                    </div>
-                    <h3 style="margin: 0 0 10px 0; color: #28a745; font-size: 22px;">Compra Concluída!</h3>
-                    <p style="margin: 0 0 20px 0; color: #555; font-size: 14px; line-height: 1.5;">
-                        O teu pagamento foi processado com sucesso e a tua encomenda já foi enviada para o armazém.
-                    </p>
-                    <div style="background: #f8f9fa; border: 1px solid #e9ecef; padding: 12px; border-radius: 6px; margin-bottom: 25px;">
-                        <span style="font-size: 12px; color: #6c757d; display: block; text-transform: uppercase; letter-spacing: 0.5px;">Código da Encomenda</span>
-                        <strong style="font-size: 18px; color: #232f3e; font-family: monospace;">${resultado.id}</strong>
-                    </div>
-                    
-                    <button type="button" onclick="irParaEncomendas()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 15px; font-weight: bold; box-shadow: 0 3px 6px rgba(0,123,255,0.2); transition: background 0.2s;">
-                        📦 Ver as Minhas Encomendas
-                    </button>
-                </div>
-            `;
-        } else {
-            alert(`Erro ao registar: ${resultado.mensagem}`);
-            btnConfirmar.disabled = false;
+        if (botao) {
+            botao.disabled = true;
+            botao.innerText = "A processar...";
         }
+
+        // 🟩 Chamada corrigida (Garante que o nome bate exatamente com a função abaixo)
+        await efetuarCompraSupabase(metodoSelecionado, detalhePagamento);
+
     } catch (erro) {
-        console.error("Erro detalhado no envio pós-pagamento:", erro);
-        carrinho = [];
-        if (typeof atualizarInterfaceCarrinho === "function") { atualizarInterfaceCarrinho(); }
-        
-        modalContent.innerHTML = `
-            <div style="text-align: center; padding: 20px 10px;">
-                <div style="width: 70px; height: 70px; background: #d4edda; color: #28a745; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 20px auto; font-size: 35px;">✓</div>
-                <h3 style="color: #28a745; margin-bottom: 10px;">Encomenda Processada!</h3>
-                <p style="color: #555; font-size: 14px; margin-bottom: 25px;">A tua compra foi submetida com sucesso.</p>
-                <button type="button" onclick="irParaEncomendas()" style="width: 100%; padding: 12px; background: #007bff; color: white; border: none; border-radius: 4px; font-weight: bold; cursor: pointer;">
-                    📦 Ver as Minhas Encomendas
-                </button>
-            </div>
-        `;
-    } finally {
-        btnConfirmar.disabled = false;
+        alert("❌ Ocorreu um erro ao processar o seu pedido.");
+        console.error(erro);
+        if (botao) {
+            botao.disabled = false;
+            botao.innerText = "Confirmar Pagamento";
+        }
     }
 }
+
+// 1. A TUA FUNÇÃO DE VALIDAÇÃO (Mantendo as tuas trancas originais)
+async function finalizarCompra(event) {
+    if (event) event.preventDefault(); 
+
+    // Captura os valores dos inputs editáveis do carrinho
+    const nomeDigitado = document.getElementById("nome").value.trim();
+    const emailDigitado = document.getElementById("email").value.trim();
+    const moradaDigitada = document.getElementById("morada").value.trim();
+    const localidadeDigitada = document.getElementById("localidade").value.trim();
+    const cpDigitado = document.getElementById("cp").value.trim();
+    
+    // Recolha do campo de telemóvel da encomenda
+    const tlmEntregaInput = document.getElementById("telemovel-entrega");
+    const tlmEntrega = tlmEntregaInput ? tlmEntregaInput.value.trim() : "";
+
+    // TRANCA 1: Validação do Nome Completo
+    const partesDoNome = nomeDigitado.split(/\s+/);
+    if (partesDoNome.length < 2 || partesDoNome[1] === "") {
+        alert("⚠️ Por favor, introduza o seu nome completo (pelo menos o primeiro nome e um apelido) para efeitos de envio.");
+        return; 
+    }
+
+    // TRANCA 2: Validação do Código-Postal (Formato XXXX-XXX)
+    const cpRegex = /^\d{4}-\d{3}$/;
+    if (!cpRegex.test(cpDigitado)) {
+        alert("⚠️ O Código-Postal introduzido não é válido! Por favor, use o formato correto (Ex: 8125-401).");
+        return; 
+    }
+
+    // TRANCA 3: Validação Obrigatória do Telemóvel (9 dígitos)
+    if (tlmEntrega.length !== 9 || isNaN(tlmEntrega)) {
+        alert("⚠️ Por favor, introduza um número de telemóvel válido (9 dígitos) para coordenação da entrega.");
+        return;
+    }
+
+    if (!carrinho || carrinho.length === 0) {
+        alert("⚠️ O seu carrinho está vazio.");
+        return;
+    }
+
+    // Guardar temporariamente os dados para o passo do pagamento
+    window.dadosEntregaTemporarios = {
+        cliente_nome: nomeDigitado,
+        cliente_email: emailDigitado,
+        entrega_morada: moradaDigitada,
+        entrega_localidade: localidadeDigitada,
+        entrega_cp: cpDigitado,
+        entrega_telemovel: tlmEntrega
+    };
+
+    // Abrir o modal de pagamento
+    document.getElementById("modal-pagamento").style.display = "flex";
+    
+    // Selecionar o método inicial
+    if (typeof selecionarMetodo === "function") selecionarMetodo('mbway');
+}
+
+async function efetuarCompraSupabase(metodoPagamento, detalhePagamento) {
+    if (!carrinho || carrinho.length === 0) {
+        alert("⚠️ O seu carrinho está vazio!");
+        return;
+    }
+    if (!window.dadosEntregaTemporarios) {
+        alert("⚠️ Dados de entrega não encontrados. Por favor, preencha o formulário novamente.");
+        return;
+    }
+
+    const dados = window.dadosEntregaTemporarios;
+    const idEncomenda = "ENC-" + new Date().getTime();
+    const dataAtual = new Date();
+    
+    const dataFormatada = dataAtual.toISOString().split('T')[0];
+    const horaFormatada = dataAtual.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+    let totalCompra = 0;
+    const linhasItens = [];
+
+    carrinho.forEach(item => {
+        const qtd = Number(item.quantidade) || 1;
+        const preco = Number(item.preco_unitario || item.preco) || 0; //[cite: 1]
+        totalCompra += (preco * qtd);
+
+        linhasItens.push({
+            id_encomenda: idEncomenda,
+            id_produto: (item.id_produto).toString(), //[cite: 1]
+            nome_produto: item.nome_produto, //[cite: 1]
+            quantidade: qtd,
+            preco_unitario: preco
+        });
+    });
+
+    try {
+        // STEP 1: Gravar a encomenda principal
+        const { error: errorEncomenda } = await supabaseClient
+            .from('encomendas')
+            .insert([
+                {
+                    id: idEncomenda,
+                    data: dataFormatada.toString(),
+                    hora: horaFormatada.toString(),
+                    cliente_nome: dados.cliente_nome,
+                    cliente_email: dados.cliente_email,
+                    morada: dados.entrega_morada,
+                    localidade: dados.entrega_localidade,
+                    cp: dados.entrega_cp,
+                    telemovel: dados.entrega_telemovel.toString(),
+                    itens: carrinho.length + " artigo(s)",
+                    total: Number(totalCompra),
+                    status: 'Pendente',
+                    metodo_pagamento: metodoPagamento,
+                    detalhe_pagamento: detalhePagamento,
+                    estimativa_entrega: dataFormatada.toString(),
+                    entrega_real: null
+                }
+            ]);
+
+        if (errorEncomenda) {
+            console.error("Erro na tabela encomendas:", errorEncomenda.message);
+            throw new Error(errorEncomenda.message);
+        }
+
+        // STEP 2: Gravar os itens da encomenda
+        const { error: errorItens } = await supabaseClient
+            .from('itens_encomenda')
+            .insert(linhasItens);
+
+        if (errorItens) {
+            console.error("Erro na tabela itens_encomenda:", errorItens.message);
+            throw new Error(errorItens.message);
+        }
+
+        // STEP 3: Atualizar Stocks
+        for (const item of carrinho) {
+            const idProd = (item.id_produto).toString(); //[cite: 1]
+            const qtdComprada = Number(item.quantidade) || 1;
+
+            const { data: produtoOriginal } = await supabaseClient
+                .from('produtos')
+                .select('stock')
+                .eq('id', idProd)
+                .single();
+
+            if (produtoOriginal) {
+                let novoStock = (Number(produtoOriginal.stock) || 0) - qtdComprada;
+                if (novoStock < 0) novoStock = 0;
+
+                await supabaseClient
+                    .from('produtos')
+                    .update({ stock: novoStock })
+                    .eq('id', idProd);
+            }
+        }
+
+        // 🎉 TUDO GRAVADO COM SUCESSO!
+        alert(`🎉 Encomenda finalizada com sucesso!\nID: ${idEncomenda}`);
+        
+        // 🟩 CHAMADA NATIVA À TUA FUNÇÃO DE LIMPEZA[cite: 1]
+        esvaziarCarrinhoCompleto(); //[cite: 1]
+        
+        fecharModalPagamento(); 
+        
+        // Pequena pausa para garantir que o localStorage é atualizado antes de recarregar[cite: 1]
+        setTimeout(() => {
+            window.location.reload();
+        }, 200);
+
+    } catch (erro) {
+        alert("❌ Erro ao finalizar a compra no servidor.");
+        console.error(erro);
+    }
+}
+
 
 function irParaEncomendas() {
     if (usuarioLogado) {

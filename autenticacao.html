@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Acesso ao Marketplace</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         body { font-family: Arial, sans-serif; margin: 0; background: #f4f4f4; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 20px 0; }
         .auth-container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); width: 100%; max-width: 450px; box-sizing: border-box; }
@@ -11,150 +12,234 @@
         .form-group { margin-bottom: 15px; }
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
         .form-group input, .form-group select { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; font-size: 14px; }
-        .form-row { display: flex; gap: 10px; }
-        button { background: #007bff; color: white; border: none; padding: 12px; border-radius: 5px; cursor: pointer; width: 100%; font-size: 16px; transition: background 0.2s; }
-        button:hover { background: #0056b3; }
-        button:disabled { background: #cccccc; cursor: not-allowed; }
-        .toggle-text { text-align: center; margin-top: 15px; font-size: 14px; color: #666; }
-        .toggle-text a { color: #007bff; text-decoration: none; font-weight: bold; cursor: pointer; }
-        .hidden { display: none; }
+        .btn-auth { width: 100%; padding: 12px; background: #232f3e; color: white; border: none; border-radius: 4px; font-size: 16px; font-weight: bold; cursor: pointer; transition: background 0.2s; margin-top: 10px; }
+        .btn-auth:hover { background: #37475a; }
+        .btn-auth:disabled { background: #ccc; cursor: not-allowed; }
+        .toggle-text { text-align: center; margin-top: 20px; font-size: 14px; color: #555; }
+        .toggle-text a { color: #0066cc; text-decoration: none; font-weight: bold; }
+        .toggle-text a:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
 
     <div class="auth-container">
-        <div id="seccao-login">
+        <div id="container-login">
             <h2>Iniciar Sessão</h2>
             <form id="form-login" onsubmit="processarLogin(event)">
                 <div class="form-group">
-                    <label for="login-email">E-mail:</label>
-                    <input type="email" id="login-email" required placeholder="Ex: joao@email.com">
+                    <label for="login-email">E-mail</label>
+                    <input type="email" id="login-email" required placeholder="o_teu_email@gmail.com">
                 </div>
                 <div class="form-group">
-                    <label for="login-password">Palavra-passe:</label>
-                    <input type="password" id="login-password" required placeholder="Insere a tua palavra-passe">
+                    <label for="login-password">Palavra-passe</label>
+                    <input type="password" id="login-password" required placeholder="Introduz a tua palavra-passe">
                 </div>
-                <button type="submit" id="btn-login">Entrar</button>
+                <button type="submit" id="btn-login" class="btn-auth">Entrar</button>
             </form>
-            <p class="toggle-text">Não tens conta? <a onclick="alternarFormularios()">Regista-te aqui</a></p>
+            <div class="toggle-text">
+                Não tem conta? <a href="#" onclick="alternarFormularios()">Regista-te aqui</a>
+            </div>
         </div>
 
-        <div id="seccao-registo" class="hidden">
+        <div id="container-registo" style="display: none;">
             <h2>Criar Conta</h2>
             <form id="form-registo" onsubmit="processarRegisto(event)">
                 <div class="form-group">
-                    <label for="registo-tipo">Tipo de Conta:</label>
+                    <label for="registo-tipo">Tipo de Conta</label>
                     <select id="registo-tipo" required>
-                        <option value="comprador">Quero Comprar Artigos (Comprador)</option>
-                        <option value="vendedor">Quero Vender Artigos (Vendedor)</option>
+                        <option value="comprador">Comprador (Quero comprar produtos)</option>
+                        <option value="vendedor">Vendedor (Quero comercializar produtos)</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label for="registo-nome">Nome Completo:</label>
-                    <input type="text" id="registo-nome" required placeholder="Ex: João Silva">
+                    <label for="registo-nome">Nome Completo</label>
+                    <input type="text" id="registo-nome" required placeholder="Hélder Filipe">
                 </div>
                 <div class="form-group">
-                    <label for="registo-email">E-mail:</label>
-                    <input type="email" id="registo-email" required placeholder="Ex: joao@email.com">
+                    <label for="registo-email">E-mail</label>
+                    <input type="email" id="registo-email" required placeholder="exemplo@gmail.com">
                 </div>
                 <div class="form-group">
-                    <label for="registo-password">Palavra-passe:</label>
-                    <input type="password" id="registo-password" required minlength="6" placeholder="Mínimo 6 caracteres">
+                    <label for="registo-password">Palavra-passe</label>
+                    <input type="password" id="registo-password" required placeholder="Mínimo 6 caracteres">
                 </div>
                 <div class="form-group">
-                    <label for="registo-morada">Morada:</label>
-                    <input type="text" id="registo-morada" required placeholder="Rua, número, andar...">
+                    <label for="registo-telemovel">Telemóvel</label>
+                    <input type="tel" id="registo-telemovel" required placeholder="9XXXXXXXX">
                 </div>
-                <div class="form-row">
-                    <div class="form-group" style="flex: 2;">
-                        <label for="registo-localidade">Localidade:</label>
-                        <input type="text" id="registo-localidade" required placeholder="Cidade/Vila">
-                    </div>
-                    <div class="form-group" style="flex: 1;">
-                        <label for="registo-cp">Cód. Postal:</label>
-                        <input type="text" id="registo-cp" required placeholder="0000-000" pattern="\d{4}-\d{3}">
-                    </div>
-                    <div class="form-group">
-                        <label>Telemóvel (Opcional):</label>
-                        <input type="tel" id="registo-telemovel" placeholder="9XXXXXXXX">
-                    </div>
-
-
+                <div class="form-group">
+                    <label for="registo-morada">Morada</label>
+                    <input type="text" id="registo-morada" required placeholder="Rua, Nº, Andar">
                 </div>
-
-                <button type="submit" id="btn-registo">Criar Conta</button>
+                <div class="form-group">
+                    <label for="registo-localidade">Localidade</label>
+                    <input type="text" id="registo-localidade" required placeholder="Quarteira">
+                </div>
+                <div class="form-group">
+                    <label for="registo-cp">Código Postal</label>
+                    <input type="text" id="registo-cp" required placeholder="8125-XXX">
+                </div>
+                <button type="submit" id="btn-registo" class="btn-auth">Criar Conta</button>
             </form>
-            <p class="toggle-text">Já tens conta? <a onclick="alternarFormularios()">Inicia sessão aqui</a></p>
+            <div class="toggle-text">
+                Já tem conta? <a href="#" onclick="alternarFormularios()">Inicie sessão aqui</a>
+            </div>
         </div>
     </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
+        // 1. INICIALIZAÇÃO DO SUPABASE (Variável alterada para supabaseClient para evitar conflitos)
+        const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
+        
+        // Usamos o objeto global do SDK do Supabase para criar o cliente na nossa variável única
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        // 2. FUNÇÃO DE ALTERNÂNCIA (Agora vai ser lida sem erros)
         function alternarFormularios() {
-            document.getElementById("seccao-login").classList.toggle("hidden");
-            document.getElementById("seccao-registo").classList.toggle("hidden");
+            const loginForm = document.getElementById("container-login");
+            const registoForm = document.getElementById("container-registo");
+
+            if (loginForm.style.display === "none") {
+                loginForm.style.display = "block";
+                registoForm.style.display = "none";
+            } else {
+                loginForm.style.display = "none";
+                registoForm.style.display = "block";
+            }
         }
 
+        // 3. PROCESSAR REGISTO NO SUPABASE
         async function processarRegisto(event) {
             event.preventDefault();
             const botao = document.getElementById("btn-registo");
 
-            const dadosUsuario = {
-                acao: "registar",
-                tipo: document.getElementById("registo-tipo").value,
-                nome: document.getElementById("registo-nome").value,
-                email: document.getElementById("registo-email").value,
-                password: document.getElementById("registo-password").value,
-                morada: document.getElementById("registo-morada").value,
-                localidade: document.getElementById("registo-localidade").value,
-                codigo_postal: document.getElementById("registo-cp").value
-            };
+            const tipo = document.getElementById("registo-tipo").value;
+            const nome = document.getElementById("registo-nome").value;
+            const email = document.getElementById("registo-email").value.trim().toLowerCase();
+            const password = document.getElementById("registo-password").value;
+            const morada = document.getElementById("registo-morada").value;
+            const localidade = document.getElementById("registo-localidade").value;
+            const codigo_postal = document.getElementById("registo-cp").value;
+            const telemovel = document.getElementById("registo-telemovel").value;
 
             try {
                 botao.disabled = true;
                 botao.innerText = "A criar conta...";
-                const resposta = await fetch(API_URL, {
-                    method: "POST", mode: "cors", headers: { "Content-Type": "text/plain" },
-                    body: JSON.stringify(dadosUsuario)
+
+                // Chamada usando a nossa nova variável de cliente
+                const { data: authData, error: authError } = await supabaseClient.auth.signUp({
+                    email: email,
+                    password: password
                 });
-                const resultado = await resposta.json();
-                alert(resultado.mensagem);
-                if (resultado.status === "sucesso") { document.getElementById("form-registo").reset(); alternarFormularios(); }
-            } catch (erro) { alert("Erro no registo."); } finally { botao.disabled = false; botao.innerText = "Criar Conta"; }
-        }
 
-        async function processarLogin(event) {
-            event.preventDefault();
-            const botao = document.getElementById("btn-login");
-
-            const dadosLogin = {
-                acao: "login",
-                email: document.getElementById("login-email").value,
-                password: document.getElementById("login-password").value
-            };
-
-            try {
-                botao.disabled = true;
-                botao.innerText = "A autenticar...";
-                const resposta = await fetch(API_URL, {
-                    method: "POST", mode: "cors", headers: { "Content-Type": "text/plain" },
-                    body: JSON.stringify(dadosLogin)
-                });
-                const resultado = await resposta.json();
-
-                if (resultado.status === "sucesso") {
-                    localStorage.setItem("usuario_logado", JSON.stringify(resultado));
-                    // alert(`Bem-vindo, ${resultado.nome}!`);
-                    
-                    // Envia os dados e o TIPO pelo URL como segurança
-                    // Substitui a linha antiga de redirecionamento no autenticacao.html por esta:
-                window.location.href = `index.html?nome=${encodeURIComponent(resultado.nome)}&email=${encodeURIComponent(resultado.email)}&morada=${encodeURIComponent(resultado.morada)}&localidade=${encodeURIComponent(resultado.localidade)}&cp=${encodeURIComponent(resultado.codigo_postal)}&telemovel=${encodeURIComponent(resultado.telemovel)}&tipo=${encodeURIComponent(resultado.tipo)}`;
-                } else {
-                    alert(`Falha no login: ${resultado.mensagem}`);
+                if (authError) {
+                    alert("Erro no registo de segurança: " + authError.message);
+                    return;
                 }
-            } catch (erro) { alert("Erro ao autenticar."); } finally { botao.disabled = false; botao.innerText = "Entrar"; }
+
+                if (authData.user) {
+                    const { error: dbError } = await supabaseClient
+                        .from('utilizadores')
+                        .insert([
+                            {
+                                id: authData.user.id,
+                                nome: nome,
+                                email: email,
+                                password: password,
+                                morada: morada,
+                                localidade: localidade,
+                                codigo_postal: codigo_postal,
+                                tipo: tipo,
+                                telemovel: telemovel,
+                                data_criacao: new Date()
+                            }
+                        ]);
+
+                    if (dbError) {
+                        alert("Erro ao guardar dados do perfil: " + dbError.message);
+                        return;
+                    }
+
+                    alert("Conta criada com sucesso no Supabase! 🎉");
+                    document.getElementById("form-registo").reset();
+                    alternarFormularios();
+                }
+            } catch (erro) {
+                alert("Erro inesperado no processo de registo.");
+                console.error(erro);
+            } finally {
+                botao.disabled = false;
+                botao.innerText = "Criar Conta";
+            }
         }
+
+        // 4. PROCESSAR LOGIN
+        async function processarLogin(event) {
+        event.preventDefault();
+        const botao = document.getElementById("btn-login");
+
+        const email = document.getElementById("login-email").value.trim().toLowerCase();
+        const password = document.getElementById("login-password").value;
+
+        try {
+            botao.disabled = true;
+            botao.innerText = "A autenticar...";
+
+            // 1. Fazer o login no sistema de autenticação segura do Supabase
+            const { data: authData, error: authError } = await supabaseClient.auth.signInWithPassword({
+                email: email,
+                password: password
+            });
+
+            if (authError) {
+                alert(`Falha no login: ${authError.message}`);
+                return;
+            }
+
+            // 2. Se o login foi um sucesso, vamos buscar o perfil completo à tabela 'utilizadores'
+            if (authData.user) {
+                const { data: perfil, error: dbError } = await supabaseClient
+                    .from('utilizadores')
+                    .select('*')
+                    .eq('id', authData.user.id)
+                    .single(); // Traz apenas um único registo correspondente
+
+                if (dbError || !perfil) {
+                    alert("Erro ao obter os dados de perfil do utilizador.");
+                    console.error(dbError);
+                    return;
+                }
+
+                // 3. Guardar os dados no localStorage para manter a sessão ativa (compatível com o teu index.html)
+                // Adaptado para manter a exata estrutura e chaves que tinhas antes
+                const dadosSessao = {
+                    status: "sucesso",
+                    id: perfil.id,
+                    nome: perfil.nome,
+                    email: perfil.email,
+                    morada: perfil.morada,
+                    localidade: perfil.localidade,
+                    codigo_postal: perfil.codigo_postal,
+                    telemovel: perfil.telemovel,
+                    tipo: perfil.tipo
+                };
+
+                localStorage.setItem("usuario_logado", JSON.stringify(dadosSessao));
+
+                alert(`Bem-vindo, ${perfil.nome}! 🎉`);
+
+                // 4. Redirecionar para a página principal enviando os parâmetros necessários
+                window.location.href = `index.html?nome=${encodeURIComponent(perfil.nome)}&email=${encodeURIComponent(perfil.email)}&morada=${encodeURIComponent(perfil.morada)}&localidade=${encodeURIComponent(perfil.localidade)}&cp=${encodeURIComponent(perfil.codigo_postal)}&telemovel=${encodeURIComponent(perfil.telemovel)}&tipo=${encodeURIComponent(perfil.tipo)}`;
+            }
+        } catch (erro) {
+            alert("Erro ao autenticar.");
+            console.error(erro);
+        } finally {
+            botao.disabled = false;
+            botao.innerText = "Entrar";
+        }
+    }
     </script>
 </body>
 </html>

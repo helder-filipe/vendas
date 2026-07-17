@@ -29,6 +29,7 @@
             scroll-behavior: smooth;
         }
     </style>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 
@@ -46,17 +47,14 @@
     z-index: 1000;
 ">
         <div class="logo-container" onclick="window.location.href='index.html'" style="display: flex; align-items: center; cursor: pointer; gap: 15px;">
-            
             <img src="koolaction.png" alt="Logo" style="height: 70px; width: auto; object-fit: contain; display: block;">
-            
-            
         </div>
 
         <div class="user-menu" style="
             display: flex; 
             align-items: center; 
             gap: 10px;
-            height: 36px; /* Força o alinhamento da linha de botões */
+            height: 36px;
         ">
             <span id="saudacao-texto" class="saudacao-user" style="font-size: 13px; font-weight: bold; color: #555; margin-right: 10px; display: inline-block;">Olá, Vendedor!</span>
 
@@ -76,7 +74,7 @@
                 cursor: pointer;
                 transition: background 0.2s;
                 box-sizing: border-box;
-                margin: 0 !important; /* Anula qualquer margem externa indesejada */
+                margin: 0 !important;
                 padding: 0 16px !important;
                 vertical-align: middle;
             "
@@ -269,8 +267,6 @@
                     <label for="dimensoes">Dimensões (Comprimento x Largura x Altura cm):</label>
                     <input type="text" id="dimensoes" placeholder="Ex: 15 x 7.5 x 0.8 cm">
                 </div>
-
-
             </div>
 
             <button type="submit" id="btn-submeter">Publicar Produto na Loja</button>
@@ -279,7 +275,10 @@
 
     <div class="form-section" style="margin-top: 40px; border-top: 2px solid #ddd; padding-top: 20px;">
     <h2>Gestão de Encomendas Recebidas</h2>
-    <button type="button" onclick="carregarEncomendasVendedor()" style="background: #28a745; margin-bottom: 15px;">🔄 Atualizar Lista</button>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button type="button" onclick="carregarEncomendasVendedor()" style="background: #28a745; width: auto; padding: 10px 20px;">🔄 Atualizar Lista</button>
+        <button type="button" onclick="exportarEncomendasCSV()" style="background: #17a2b8; border-color: #17a2b8; color: white; width: auto; padding: 10px 20px;">📥 Exportar CSV</button>
+    </div>
     
     <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; font-size: 14px; background: white;">
@@ -309,131 +308,118 @@
 
     <div class="painel-seccao" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
     <h2>Controlo de Inventário / Stocks</h2>
+    <div style="display: flex; gap: 10px; margin-bottom: 15px;">
+        <button type="button" onclick="carregarInventarioCompleto()" style="background: #28a745; width: auto; padding: 10px 20px;">🔄 Atualizar Inventário</button>
+        <button type="button" onclick="exportarStocksCSV()" style="background: #17a2b8; border-color: #17a2b8; color: white; width: auto; padding: 10px 20px;">📥 Exportar CSV</button>
+    </div>
     <div style="overflow-x: auto;">
-        <table style="width: 100%; border-collapse: collapse; margin-top: 10px; font-family: Arial, sans-serif;">
-            <thead>
-                <tr style="background-color: #232f3e; color: white; text-align: left;">
-                    <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Produto</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Categoria</th>
-                    <th style="padding: 10px; border: 1px solid #ddd;">Preço</th>
-                    <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Stock Atual</th>
-                </tr>
-            </thead>
-            <tbody id="tabela-stocks-body">
-                <tr>
-                    <td colspan="5" style="padding: 15px; text-align: center; color: #666;">A carregar inventário...</td>
-                </tr>
-            </tbody>
-        </table>
+        <table style="width:100%; border-collapse: collapse; font-size:13px; text-align: left;">
+    <thead>
+        <tr style="background: #232f3e; color: white;">
+            <th style="padding: 10px;">ID</th>
+            <th style="padding: 10px;">Imagem</th>
+            <th style="padding: 10px;">Nome / Categoria</th>
+            <th style="padding: 10px;">Preço</th>
+            <th style="padding: 10px;">Stock</th>
+            <th style="padding: 10px;">Fabricante / Marca</th>
+            <th style="padding: 10px;">Peso</th>
+            <th style="padding: 10px;">Dimensões</th>
+            <th style="padding: 10px;">Envio</th>
+            <th style="padding: 10px;">Portes</th>
+            <th style="padding: 10px; text-align: center; width: 40px; min-width: 40px;">Editar</th>
+            <th style="padding: 10px; text-align: center; width: 40px; min-width: 40px;">Apagar</th>
+        </tr>
+    </thead>
+    <tbody id="tabela-stocks-body">
+        <!-- Preenchido dinamicamente pelo JavaScript -->
+    </tbody>
+</table>
+    </div>
+</div>
+
+<!-- MODAL DE EDIÇÃO DE PRODUTO INTEGRADA COM OS CAMPOS ADICIONAIS -->
+<div id="modal-editar-produto" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 2000;">
+    <div style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 500px; max-height: 90vh; overflow-y: auto; box-sizing: border-box;">
+        <h3 style="margin-top: 0; border-bottom: 2px solid #ff9900; padding-bottom: 8px;">✏️ Editar Artigo</h3>
+        <form id="form-editar-produto" onsubmit="gravarEdicaoProduto(event)">
+            <input type="hidden" id="edit-id">
+            <div style="margin-bottom: 12px;">
+                <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Nome do Artigo:</label>
+                <input type="text" id="edit-nome" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Categoria:</label>
+                <input type="text" id="edit-categoria" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Preço (€):</label>
+                    <input type="number" id="edit-preco" step="0.01" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Stock:</label>
+                    <input type="number" id="edit-stock" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Dias Envio:</label>
+                    <input type="number" id="edit-dias" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Portes (€):</label>
+                    <input type="number" id="edit-portes" step="0.01" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Fabricante/Marca:</label>
+                    <input type="text" id="edit-fabricante" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Peso (kg):</label>
+                    <input type="text" id="edit-peso" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Dimensões:</label>
+                <input type="text" id="edit-dimensoes" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">URL da Imagem:</label>
+                <input type="text" id="edit-imagem" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+            </div>
+            <div style="margin-bottom: 12px;">
+                <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Descrição:</label>
+                <textarea id="edit-descricao" rows="3" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px; font-family:Arial;"></textarea>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 15px;">
+                <button type="button" onclick="fecharModalEdicao()" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight:bold;">Cancelar</button>
+                <button type="submit" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Salvar Alterações</button>
+            </div>
+        </form>
     </div>
 </div>
 
     <script>
-        const API_URL = "https://script.google.com/macros/s/AKfycbwTKdQqS2FbB3UZvBD0ulI4YYNk7XQQwGQh0mkYvcKIQSW4UWzOLq3Gmx4lWVF7WvyZXg/exec";
+        const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
 
-        document.addEventListener("DOMContentLoaded", function() {
-            let usuarioLogado = null;
-            
-            try {
-                const sessaoRaw = localStorage.getItem("usuario_logado");
-                if (sessaoRaw) {
-                    usuarioLogado = JSON.parse(sessaoRaw);
-                }
-            } catch (e) {
-                console.error("Erro ao ler sessão do localStorage");
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.encomendasGlobalMemoria = [];
+        window.produtosInventarioGlobal = [];
+
+        let usuarioLogado = null;
+        try {
+            const sessaoRaw = localStorage.getItem("usuario_logado");
+            if (sessaoRaw) {
+                usuarioLogado = JSON.parse(sessaoRaw);
             }
-
-            // Se o utilizador estiver autenticado, atualiza o cabeçalho dinamicamente
-            if (usuarioLogado && usuarioLogado.nome) {
-                const saudacao = document.getElementById("saudacao-texto");
-                if (saudacao) {
-                    saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
-                }
-            }
-            
-            // ... restante lógica do teu DOMContentLoaded (como carregar encomendas/stocks) ...
-        });
-
-
-        async function carregarStocksVendedor() {
-            const tbody = document.getElementById("tabela-stocks-body");
-            if (!tbody) return;
-
-            try {
-                // Reutiliza a ação que criámos para listar os produtos do Sheets
-                const resposta = await fetch(`${API_URL}?acao=listar_produtos`);
-                const produtos = await resposta.json();
-
-                if (!produtos || produtos.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="5" style="padding: 15px; text-align: center; color: #666;">Nenhum produto cadastrado na base de dados.</td></tr>`;
-                    return;
-                }
-
-                tbody.innerHTML = ""; // Limpa a mensagem de carregamento
-
-                produtos.forEach(prod => {
-                    const tr = document.createElement("tr");
-                    const stockNum = Number(prod.stock);
-                    
-                    // 🟥 REGRA DE NEGÓCIO: Se for <= 5, aplica fundo vermelho claro e texto vermelho escuro
-                    let estiloStock = "";
-                    let avisoTexto = "";
-                    
-                    if (stockNum === 0) {
-                        estiloStock = "background-color: #ffe6e6; color: #cc0000; font-weight: bold; text-align: center;";
-                        avisoTexto = " (ESGOTADO)";
-                    } else if (stockNum <= 5) {
-                        estiloStock = "background-color: #fff0f0; color: #cc0000; font-weight: bold; text-align: center;";
-                        avisoTexto = " (REPOR URGENTE)";
-                    } else {
-                        estiloStock = "color: green; font-weight: bold; text-align: center;";
-                    }
-
-                    tr.innerHTML = `
-                        <td style="padding: 10px; border: 1px solid #ddd;">${prod.id}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; font-weight: bold;">${prod.nome}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; color: #555;">${prod.categoria || 'N/A'}</td>
-                        <td style="padding: 10px; border: 1px solid #ddd;">${Number(prod.preco).toFixed(2)}€</td>
-                        <td style="padding: 10px; border: 1px solid #ddd; ${estiloStock}">
-                            ${stockNum} un.${avisoTexto}
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-
-            } catch (erro) {
-                console.error("Erro ao carregar stocks:", erro);
-                tbody.innerHTML = `<tr><td colspan="5" style="padding: 15px; text-align: center; color: red;">Erro ao ligar ao servidor de stocks.</td></tr>`;
-            }
+        } catch (e) {
+            console.error("Erro ao ler sessão do localStorage");
         }
 
-        // 🟩 Executa a função automaticamente quando o painel abre
-        carregarStocksVendedor();
-        
-        
-        
-        
-        // =========================================================================
-        // 1. 🚨 BLOQUEIO FÍSICO DE ROTAS E LEITURA DE SESSÃO (CORRE IMEDIATAMENTE)
-        // =========================================================================
-        let usuarioLogado = JSON.parse(localStorage.getItem("usuario_logado"));
-        const urlParams = new URLSearchParams(window.location.search);
-        const emailURL = urlParams.get('email');
-
-        if (emailURL) {
-            usuarioLogado = {
-                nome: urlParams.get('nome') || (usuarioLogado ? usuarioLogado.nome : ""),
-                email: emailURL,
-                morada: urlParams.get('morada') || (usuarioLogado ? usuarioLogado.morada : ""),
-                localidade: urlParams.get('localidade') || (usuarioLogado ? usuarioLogado.localidade : ""),
-                codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || (usuarioLogado ? usuarioLogado.codigo_postal : ""),
-                tipo: urlParams.get('tipo') || (usuarioLogado ? usuarioLogado.tipo : "comprador")
-            };
-            localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
-        }
-
-        // Validação estrita de privilégios antes de carregar o resto da página
         if (!usuarioLogado || !usuarioLogado.email) {
             alert("Sessão expirada. Por favor, faz login para aceder ao painel.");
             window.location.href = "autenticacao.html";
@@ -444,27 +430,415 @@
             console.log("Acesso autorizado ao painel de administração.");
         }
 
-        // =========================================================================
-        // 2. 🔍 CHAVES RELACIONAIS DO VENDEDOR ATIVO (AGORA SEGURAS APÓS A SESSÃO)
-        // =========================================================================
-        const idVendedorAtivo = (usuarioLogado && (usuarioLogado.id || usuarioLogado.id_utilizador)) ? (usuarioLogado.id || usuarioLogado.id_utilizador) : "SEM_ID";
-        const emailVendedor = usuarioLogado ? usuarioLogado.email : "teste_local@vendedor.com";
+        const idVendedorAtivo = usuarioLogado && usuarioLogado.email ? usuarioLogado.email.trim().toLowerCase() : "sem_email";
 
-        // =========================================================================
-        // 3. FUNÇÕES GERAIS DE NAVEGAÇÃO
-        // =========================================================================
-        function voltarParaLoja() {
-            if (usuarioLogado) {
-                window.location.href = `index.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada)}&localidade=${encodeURIComponent(usuarioLogado.localidade)}&codigo_postal=${encodeURIComponent(usuarioLogado.codigo_postal)}&tipo=${encodeURIComponent(usuarioLogado.tipo)}`;
-            } else {
-                window.location.href = "index.html";
+        document.addEventListener("DOMContentLoaded", function() {
+            if (usuarioLogado && usuarioLogado.nome) {
+                const saudacao = document.getElementById("saudacao-texto");
+                if (saudacao) {
+                    saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
+                }
+            }
+            carregarInventarioCompleto();
+            carregarEncomendasVendedor();
+        });
+
+        async function carregarInventarioCompleto() {
+            const tbody = document.getElementById("tabela-stocks-body");
+            if (!tbody) return;
+
+            tbody.innerHTML = `<tr><td colspan="12" style="padding:15px; text-align:center;">A carregar inventário...</td></tr>`;
+
+            try {
+                const { data: produtos, error } = await supabaseClient
+                    .from('produtos')
+                    .select('*')
+                    .order('id', { ascending: true });
+
+                if (error) throw error;
+
+                if (!produtos || produtos.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="12" style="padding:15px; text-align:center; color:#666;">Nenhum produto em inventário.</td></tr>`;
+                    return;
+                }
+
+                tbody.innerHTML = "";
+                window.produtosInventarioGlobal = produtos;
+
+                produtos.forEach(prod => {
+                    const preco = Number(prod.preco) || 0;
+                    const stock = Number(prod.stock) || 0;
+                    const portes = Number(prod.custo_transporte) || 0;
+                    
+                    const techObj = typeof prod.detalhes_tecnicos === "string" ? JSON.parse(prod.detalhes_tecnicos || "{}") : (prod.detalhes_tecnicos || {});
+                    let techTooltip = "";
+                    for (let [chave, valor] of Object.entries(techObj)) {
+                        techTooltip += `${chave}: ${valor}\n`;
+                    }
+
+                    let logObj = {};
+                    try {
+                        logObj = typeof prod.informacoes === "string" ? JSON.parse(prod.informacoes || "{}") : (prod.informacoes || {});
+                    } catch(e) { logObj = {}; }
+
+                    const fabricante = logObj.fabricante || '<span style="color:#aaa; font-style:italic;">N/D</span>';
+                    const peso = logObj.peso ? `${logObj.peso} kg` : '<span style="color:#aaa; font-style:italic;">N/D</span>';
+                    const dimensoes = logObj.dimensoes || '<span style="color:#aaa; font-style:italic;">N/D</span>';
+
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #ddd";
+
+                    tr.innerHTML = `
+                        <td style="padding: 8px; font-weight: bold;">${prod.id}</td>
+                        <td style="padding: 8px;">
+                            <img src="${prod.imagem_url || 'https://via.placeholder.com/50'}" style="width:35px; height:35px; object-fit:contain; border-radius:4px; background:white; border:1px solid #eee;">
+                        </td>
+                        <td style="padding: 8px;" title="${techTooltip ? 'Especificações Técnicas:\n' + techTooltip : 'Sem especificações técnicas.'}">
+                            <strong style="color: #0056b3; cursor: help; font-size:13px;">${prod.nome}</strong><br>
+                            <small style="color:#666; background:#eeb; padding:1px 3px; border-radius:3px; font-size:10px;">${prod.categoria}</small>
+                        </td>
+                        <td style="padding: 8px; font-weight: bold;">${preco.toFixed(2)}€</td>
+                        <td style="padding: 8px; font-weight: bold; color: ${stock <= 5 ? 'red' : 'green'};">${stock}</td>
+                        <td style="padding: 8px; color: #333;">${fabricante}</td>
+                        <td style="padding: 8px; color: #555;">${peso}</td>
+                        <td style="padding: 8px; color: #555; font-size: 11px;">${dimensoes}</td>
+                        <td style="padding: 8px; text-align:center;">${prod.dias_entrega || 8}d</td>
+                        <td style="padding: 8px;">${portes > 0 ? portes.toFixed(2) + '€' : '0€'}</td>
+                        
+                        <td style="padding: 8px; text-align: center; width: 40px; min-width: 40px;">
+                            <button onclick="prepararEdicaoSegura('${prod.id}')" title="Editar Artigo" style="background: #ff9900; color: #111; padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; width: 30px;">✏️</button>
+                        </td>
+                        <td style="padding: 8px; text-align: center; width: 40px; min-width: 40px;">
+                            <button onclick="apagarProdutoSupabase('${prod.id}')" title="Apagar Artigo" style="background: #dc3545; color: white; padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; width: 30px;">🗑️</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+
+            } catch (err) {
+                console.error("Erro ao carregar inventário:", err);
+                tbody.innerHTML = `<tr><td colspan="12" style="padding:15px; text-align:center; color:red;">⚠️ Erro ao ler inventário completo.</td></tr>`;
             }
         }
 
-        function terminarSessao() { 
-            localStorage.removeItem("usuario_logado"); 
-            localStorage.removeItem("carrinho"); 
-            window.location.href = "autenticacao.html"; 
+        function prepararEdicaoSegura(idProduto) {
+            if (!window.produtosInventarioGlobal) return;
+            const produtoEncontrado = window.produtosInventarioGlobal.find(p => String(p.id) === String(idProduto));
+            if (produtoEncontrado) {
+                abrirModalEdicao(produtoEncontrado);
+            }
+        }
+
+        function abrirModalEdicao(prod) {
+            document.getElementById("edit-id").value = prod.id;
+            document.getElementById("edit-nome").value = prod.nome || "";
+            document.getElementById("edit-categoria").value = prod.categoria || "";
+            document.getElementById("edit-preco").value = prod.preco || 0;
+            document.getElementById("edit-stock").value = prod.stock || 0;
+            document.getElementById("edit-dias").value = prod.dias_entrega || 8;
+            document.getElementById("edit-portes").value = prod.custo_transporte || 0;
+            document.getElementById("edit-imagem").value = prod.imagem_url || "";
+            document.getElementById("edit-descricao").value = prod.descricao || "";
+            
+            let logObj = {};
+            try {
+                logObj = typeof prod.informacoes === "string" ? JSON.parse(prod.informacoes || "{}") : (prod.informacoes || {});
+            } catch(e) { logObj = {}; }
+            
+            document.getElementById("edit-fabricante").value = logObj.fabricante || "";
+            document.getElementById("edit-peso").value = logObj.peso || "";
+            document.getElementById("edit-dimensoes").value = logObj.dimensoes || "";
+
+            document.getElementById("modal-editar-produto").style.display = "flex";
+        }
+
+        function fecharModalEdicao() {
+            document.getElementById("modal-editar-produto").style.display = "none";
+        }
+
+        async function gravarEdicaoProduto(event) {
+            event.preventDefault();
+            const idProd = document.getElementById("edit-id").value;
+            
+            const informacoesObj = {
+                fabricante: document.getElementById("edit-fabricante").value.trim(),
+                peso: document.getElementById("edit-peso").value.trim(),
+                dimensoes: document.getElementById("edit-dimensoes").value.trim()
+            };
+
+            try {
+                const { error } = await supabaseClient
+                    .from('produtos')
+                    .update({
+                        nome: document.getElementById("edit-nome").value.trim(),
+                        categoria: document.getElementById("edit-categoria").value.trim(),
+                        preco: parseFloat(document.getElementById("edit-preco").value) || 0,
+                        stock: parseInt(document.getElementById("edit-stock").value) || 0,
+                        dias_entrega: parseInt(document.getElementById("edit-dias").value) || 8,
+                        custo_transporte: parseFloat(document.getElementById("edit-portes").value) || 0,
+                        imagem_url: document.getElementById("edit-imagem").value.trim(),
+                        descricao: document.getElementById("edit-descricao").value.trim(),
+                        informacoes: informacoesObj
+                    })
+                    .eq('id', String(idProd));
+
+                if (error) throw error;
+
+                alert("🎉 Artigo atualizado com sucesso no Supabase!");
+                fecharModalEdicao();
+                carregarInventarioCompleto();
+            } catch (err) {
+                alert(`❌ Falha ao atualizar: ${err.message}`);
+            }
+        }
+
+        async function apagarProdutoSupabase(idProduto) {
+            if (!confirm(`⚠️ Pretendes mesmo apagar o produto com o ID #${idProduto}?`)) return;
+            try {
+                const { error } = await supabaseClient
+                    .from('produtos')
+                    .delete()
+                    .eq('id', String(idProduto));
+
+                if (error) throw error;
+                alert("🗑️ Produto eliminado com sucesso!");
+                carregarInventarioCompleto();
+            } catch (err) {
+                alert(`❌ Erro: ${err.message}`);
+            }
+        }
+
+        async function enviarNovoProdutoAoSheets(event) {
+            event.preventDefault();
+            if (!usuarioLogado || !usuarioLogado.email) return;
+
+            const botao = document.getElementById("btn-submeter");
+            const chaves = document.querySelectorAll(".detalhe-chave");
+            const valores = document.querySelectorAll(".detalhe-valor");
+            let detalhesTecnicosObj = {};
+            
+            chaves.forEach((chaveElemento, index) => {
+                const chave = chaveElemento.value.trim();
+                const valor = valores[index].value.trim();
+                if (chave && valor) { detalhesTecnicosObj[chave] = valor; }
+            });
+
+            const informacoesObj = {
+                fabricante: document.getElementById("fabricante").value.trim(),
+                peso: document.getElementById("peso").value.trim(),
+                dimensoes: document.getElementById("dimensoes").value.trim()
+            };
+
+            const idGerado = "PROD-" + new Date().getTime();
+
+            try {
+                botao.disabled = true;
+                botao.innerText = "A publicar artigo...";
+
+                const { error } = await supabaseClient
+                    .from('produtos')
+                    .insert([
+                        {
+                            id: idGerado,
+                            vendedor_id: idVendedorAtivo,
+                            nome: document.getElementById("nome").value.trim(),
+                            categoria: document.getElementById("categoria").value.trim(),
+                            imagem_url: document.getElementById("imagem_url").value.trim(),
+                            preco: parseFloat(document.getElementById("preco").value) || 0,
+                            stock: parseInt(document.getElementById("stock").value) || 0,
+                            descricao: document.getElementById("descricao").value.trim(),
+                            detalhes_tecnicos: detalhesTecnicosObj,
+                            informacoes: informacoesObj,
+                            dias_entrega: parseInt(document.getElementById("produto-dias-entrega").value) || 8,
+                            custo_transporte: parseFloat(document.getElementById("produto-custo-transporte").value) || 0
+                        }
+                    ]);
+
+                if (error) throw error;
+                alert(`🎉 Artigo publicado com sucesso! ID: ${idGerado}`);
+                document.getElementById("form-cadastro").reset();
+                carregarInventarioCompleto();
+            } catch (erro) {
+                alert("⚠️ Erro ao enviar o produto para o servidor.");
+            } finally {
+                botao.disabled = false;
+                botao.innerText = "Publicar Produto na Loja";
+            }
+        }
+
+        async function carregarEncomendasVendedor() {
+            const tbody = document.getElementById("tabela-encomendas-vendedor");
+            tbody.innerHTML = `<tr><td colspan="13" style="padding: 15px; text-align: center;">A carregar encomendas...</td></tr>`;
+            
+            try {
+                const { data: encomendas, error: errorEnc } = await supabaseClient
+                    .from('encomendas')
+                    .select('*')
+                    .order('data', { ascending: false });
+
+                if (errorEnc) throw errorEnc;
+                if (!encomendas || encomendas.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="13" style="padding: 15px; text-align: center; color: #666;">Nenhuma encomenda registada.</td></tr>`;
+                    return;
+                }
+
+                const { data: todosOsItens, error: errorItens } = await supabaseClient.from('itens_encomenda').select('*');
+                if (errorItens) throw errorItens;
+
+                const { data: todasAsAvaliacoes, error: errorAval } = await supabaseClient.from('avaliacoes').select('*');
+                if (errorAval) throw errorAval;
+
+                window.encomendasGlobalMemoria = encomendas.map(enc => {
+                    const itensDestaEncomenda = todosOsItens ? todosOsItens.filter(item => String(item.id_encomenda) === String(enc.id)) : [];
+                    const textoItensPlanos = itensDestaEncomenda.map(i => `${i.nome_produto} (${i.quantidade}x)`).join(" | ");
+                    return { ...enc, artigos_formatados: textoItensPlanos || enc.itens };
+                });
+                
+                tbody.innerHTML = "";
+                
+                window.encomendasGlobalMemoria.forEach(enc => {
+                    const dataFmt = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
+                    const estadoAtual = enc.status || "Pendente";
+                    const estadoLower = estadoAtual.toLowerCase();
+                    let badgeBg = "#fff3cd"; let badgeColor = "#856404";
+                    
+                    if (estadoLower === "em processamento") { badgeBg = "#cce5ff"; badgeColor = "#004085"; }
+                    else if (estadoLower === "enviado" || estadoLower === "entregue") { badgeBg = "#d4edda"; badgeColor = "#155724"; }
+
+                    const itensDestaEncomenda = todosOsItens ? todosOsItens.filter(item => String(item.id_encomenda) === String(enc.id)) : [];
+                    let textoArtigosHTML = "";
+                    itensDestaEncomenda.forEach(item => {
+                        textoArtigosHTML += `<div style="margin-bottom: 4px; border-bottom: 1px dashed #eee;">📦 <strong>${item.nome_produto}</strong> (${item.quantidade}x)</div>`;
+                    });
+
+                    const avaliacaoDestaEncomenda = todasAsAvaliacoes ? todasAsAvaliacoes.find(a => String(a.id_encomenda) === String(enc.id)) : null;
+                    const notaProd = avaliacaoDestaEncomenda ? "⭐ ".repeat(avaliacaoDestaEncomenda.nota_produto) : "N/D";
+                    const notaVend = avaliacaoDestaEncomenda ? "⭐ ".repeat(avaliacaoDestaEncomenda.nota_vendedor) : "N/D";
+                    const notaTrans = avaliacaoDestaEncomenda ? "⭐ ".repeat(avaliacaoDestaEncomenda.nota_transporte) : "N/D";
+                    const comentarioHTML = avaliacaoDestaEncomenda && avaliacaoDestaEncomenda.comentario ? `<br><small style="background:#f0f2f5; padding:2px; border-radius:4px;">💬 "${avaliacaoDestaEncomenda.comentario}"</small>` : "";
+
+                    const tr = document.createElement("tr");
+                    tr.style.borderBottom = "1px solid #ddd";
+                    tr.innerHTML = `
+                        <td style="padding: 10px; font-weight: bold;">${enc.id}</td>
+                        <td style="padding: 10px; font-size: 13px;">${dataFmt}</td>
+                        <td style="padding: 10px; font-size: 13px;"><strong>${enc.cliente_nome}</strong><br>${enc.cliente_email}${comentarioHTML}</td>
+                        <td style="padding: 10px; font-size: 13px;">${textoArtigosHTML || enc.itens}</td>
+                        <td style="padding: 10px; text-align: center; color: #ff9900;">${notaProd}</td>
+                        <td style="padding: 10px; text-align: center; color: #28a745;">${notaVend}</td>
+                        <td style="padding: 10px; text-align: center; color: #0056b3;">${notaTrans}</td>
+                        <td style="padding: 10px; font-size: 12px;">📍 ${enc.morada || "N/D"}, ${enc.localidade || "N/D"}</td>
+                        <td style="padding: 10px; font-family: monospace;">📞 ${enc.telemovel || "N/D"}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #b12704;">${Number(enc.total).toFixed(2)}€</td>
+                        <td style="padding: 10px; font-size: 12px;"><small>${enc.metodo_pagamento || "N/D"}</small></td>
+                        <td style="padding: 10px; text-align: center;"><span style="padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; background: ${badgeBg}; color: ${badgeColor};">${estadoAtual}</span></td>
+                        <td style="padding: 10px;">
+                            <select onchange="alterarEstadoNoSupabase('${enc.id}', this.value)" style="padding: 5px; font-size: 12px;">
+                                <option value="">-- Alterar --</option>
+                                <option value="Pendente">Pendente</option>
+                                <option value="Em Processamento">Em Processamento</option>
+                                <option value="Enviado">Enviado</option>
+                            </select>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch(e) {
+                console.error("Erro nas encomendas:", e);
+                tbody.innerHTML = `<tr><td colspan="13" style="padding: 15px; text-align: center; color: red;">⚠️ Erro ao carregar dados das encomendas.</td></tr>`;
+            }
+        }
+
+        async function alterarEstadoNoSupabase(idEncomenda, novoEstado) {
+            if(!novoEstado) return;
+            try {
+                const { error } = await supabaseClient.from('encomendas').update({ status: novoEstado }).eq('id', idEncomenda);
+                if (error) throw error;
+                alert("✓ Estado da encomenda atualizado!");
+                carregarEncomendasVendedor();
+            } catch(e) {
+                alert("Erro ao alterar estado.");
+            }
+        }
+
+        function exportarEncomendasCSV() {
+            if (!window.encomendasGlobalMemoria || window.encomendasGlobalMemoria.length === 0) {
+                alert("⚠️ Não há dados de encomendas carregados para exportar.");
+                return;
+            }
+
+            const cabecalhos = ["ID Encomenda", "Data", "Nome Cliente", "Email Cliente", "Artigos Comprados", "Morada", "Localidade", "Telemovel", "Total (EUR)", "Metodo Pagamento", "Estado"];
+            let linhas = [cabecalhos.join(";")];
+
+            window.encomendasGlobalMemoria.forEach(enc => {
+                const dataFmt = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
+                
+                const linha = [
+                    enc.id,
+                    dataFmt,
+                    `"${(enc.cliente_nome || '').replace(/"/g, '""')}"`,
+                    enc.cliente_email || '',
+                    `"${(enc.artigos_formatados || '').replace(/"/g, '""')}"`,
+                    `"${(enc.morada || '').replace(/"/g, '""')}"`,
+                    `"${(enc.localidade || '').replace(/"/g, '""')}"`,
+                    enc.telemovel || '',
+                    Number(enc.total || 0).toFixed(2),
+                    enc.metodo_pagamento || '',
+                    enc.status || 'Pendente'
+                ];
+                linhas.push(linha.join(";"));
+            });
+
+            descarregarFicheiroCSV(linhas.join("\n"), "Relatorio_Encomendas_Koolaction.csv");
+        }
+
+        function exportarStocksCSV() {
+            if (!window.produtosInventarioGlobal || window.produtosInventarioGlobal.length === 0) {
+                alert("⚠️ Não há dados de stocks carregados para exportar.");
+                return;
+            }
+
+            const cabecalhos = ["ID Artigo", "Nome Artigo", "Categoria", "Preco (EUR)", "Stock Disponivel", "Fabricante", "Peso (kg)", "Dimensoes", "Dias Entrega", "Custo Portes"];
+            let linhas = [cabecalhos.join(";")];
+
+            window.produtosInventarioGlobal.forEach(prod => {
+                let logObj = {};
+                try {
+                    logObj = typeof prod.informacoes === "string" ? JSON.parse(prod.informacoes || "{}") : (prod.informacoes || {});
+                } catch(e) { logObj = {}; }
+
+                const inlineName = prod.nome || '';
+                const linha = [
+                    prod.id,
+                    `"${inlineName.replace(/"/g, '""')}"`,
+                    prod.categoria || '',
+                    Number(prod.preco || 0).toFixed(2),
+                    prod.stock || 0,
+                    `"${(logObj.fabricante || 'N/D').replace(/"/g, '""')}"`,
+                    logObj.peso || 'N/D',
+                    `"${(logObj.dimensoes || 'N/D').replace(/"/g, '""')}"`,
+                    prod.dias_entrega || 8,
+                    Number(prod.custo_transporte || 0).toFixed(2)
+                ];
+                linhas.push(linha.join(";"));
+            });
+
+            descarregarFicheiroCSV(linhas.join("\n"), "Inventario_Stocks_Koolaction.csv");
+        }
+
+        function descarregarFicheiroCSV(conteudoTexto, nomeFicheiro) {
+            const blob = new Blob(["\uFEFF" + conteudoTexto], { type: "text/csv;charset=utf-8;" });
+            const link = document.createElement("a");
+            
+            if (link.download !== undefined) {
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", nomeFicheiro);
+                link.style.visibility = 'hidden';
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            }
         }
 
         function adicionarLinhaDetalhe() {
@@ -478,288 +852,22 @@
             container.appendChild(novaLinha);
         }
 
-        // =========================================================================
-        // 4. ENVIO E CADASTRO DE PRODUTO COESOS
-        // =========================================================================
-        async function enviarNovoProdutoAoSheets(event) {
-            event.preventDefault();
-            
-            // 1. Validação Crítica da Sessão: Garante que o vendedor está logado e ativo
-            if (!usuarioLogado || !usuarioLogado.email) {
-                alert("⚠️ Sessão expirada ou inválida. Por favor, faz login novamente.");
-                return;
-            }
-
-            const botao = document.getElementById("btn-submeter");
-
-            // 2. Extração dinâmica dos detalhes técnicos
-            const chaves = document.querySelectorAll(".detalhe-chave");
-            const valores = document.querySelectorAll(".detalhe-valor");
-            let detalhesTecnicosObj = {};
-            
-            chaves.forEach((chaveElemento, index) => {
-                const chave = chaveElemento.value.trim();
-                const valor = valores[index].value.trim();
-                if (chave && valor) { detalhesTecnicosObj[chave] = valor; }
-            });
-
-            // 3. Extração das informações complementares
-            const informacoesObj = {
-                fabricante: document.getElementById("fabricante").value.trim(),
-                peso: document.getElementById("peso").value.trim(),
-                dimensoes: document.getElementById("dimensoes").value.trim()
-            };
-
-            // 4. Captura do novo campo de estimativa de dias de entrega
-            const diasEntregaInput = document.getElementById("produto-dias-entrega");
-            const diasEntregaDigitado = diasEntregaInput ? diasEntregaInput.value.trim() : "";
-
-            // 🟩 CAPTURA O NOVO INPUT DO CUSTO DE TRANSPORTE
-            const custoTransporteInput = document.getElementById("produto-custo-transporte");
-            const custoTransporteDigitado = custoTransporteInput ? custoTransporteInput.value.trim() : "";
-
-            // 5. Construção do Payload Limpo (Mapeado de forma segura com a sessão ativa)
-            const payload = {
-                acao: "cadastrar_produto",
-                vendedor_email: usuarioLogado.email.trim().toLowerCase(), // 🟩 Protegido contra undefined
-                //vendedor_id: usuarioLogado.email.trim().toLowerCase(),    // 🟩 Vincula o produto ao email do vendedor
-                nome: document.getElementById("nome").value.trim(),
-                categoria: document.getElementById("categoria").value.trim(),
-                imagem_url: document.getElementById("imagem_url").value.trim(),
-                preco: parseFloat(document.getElementById("preco").value) || 0,
-                stock: parseInt(document.getElementById("stock").value) || 0,
-                descricao: document.getElementById("descricao").value.trim(),
-                detalhes_tecnicos: detalhesTecnicosObj,
-                informacoes: informacoesObj,
-                dias_entrega: diasEntregaDigitado ? parseInt(diasEntregaDigitado) : 8,
-
-                // 🟩 INJECTADO NO PAYLOAD PARA ENVIAR AO BACKEND
-                custo_transporte: custoTransporteDigitado ? parseFloat(custoTransporteDigitado) : 0.00
-            };
-
-            try {
-                botao.disabled = true;
-                botao.innerText = "A publicar artigo...";
-
-                const resposta = await fetch(API_URL, {
-                    method: "POST",
-                    mode: "cors",
-                    headers: { "Content-Type": "text/plain" },
-                    body: JSON.stringify(payload)
-                });
-
-                const resultado = await resposta.json();
-
-                // 🟩 CORREÇÃO DO ALERT: Em vez de ler resultado.mensagem (que não existe no teu script para sucesso), 
-                // validamos o status e criamos uma mensagem explícita e limpa.
-                if (resultado.status === "sucesso") {
-                    alert(`🎉 Artigo publicado com sucesso! Foi gerado o ID: ${resultado.id}`);
-                    
-                    // Limpa o formulário
-                    document.getElementById("form-cadastro").reset();
-                    
-                    // Faz o reset visual das linhas de propriedades dinâmicas
-                    document.getElementById("container-detalhes").innerHTML = `
-                        <div class="dinamico-row">
-                            <input type="text" placeholder="Propriedade" class="detalhe-chave" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                            <input type="text" placeholder="Valor" class="detalhe-valor" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px;">
-                        </div>
-                    `;
-                } else {
-                    // Se o servidor devolver erro, ele costuma enviar a mensagem (ex: "Acesso negado")
-                    alert(`❌ Erro: ${resultado.mensagem || "Não foi possível publicar o produto."}`);
-                }
-                
-            } catch (erro) {
-                console.error("Erro ao enviar produto:", erro);
-                alert("⚠️ Erro ao enviar o produto para o servidor.");
-            } finally {
-                botao.disabled = false;
-                botao.innerText = "Publicar Produto na Loja";
-            }
+        function irParaSecao(idSecao) {
+            const elemento = document.getElementById(idSecao);
+            if (elemento) { elemento.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
         }
 
-        // =========================================================================
-        // 5. GESTÃO DE ENCOMENDAS RECEBIDAS (ORGANIZADA EM COLUNAS SEPARADAS)
-        // =========================================================================
-        async function carregarEncomendasVendedor() {
-            const tbody = document.getElementById("tabela-encomendas-vendedor");
-            // Atualizado o colspan para 10 para cobrir as novas colunas
-            tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center;">A carregar encomendas...</td></tr>`;
-            
-            if (!usuarioLogado || !usuarioLogado.email) {
-                tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center; color: red;">⚠️ Sessão inválida. Por favor faça login.</td></tr>`;
-                return;
-            }
-
-            try {
-                const resposta = await fetch(`${API_URL}?acao=todas_encomendas`);
-                let encomendas = await resposta.json();
-                
-                if (typeof encomendas === "string") {
-                    encomendas = JSON.parse(encomendas);
-                }
-                
-                if (!encomendas || encomendas.length === 0) {
-                    tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center; color: #666;">Nenhuma encomenda registada no sistema.</td></tr>`;
-                    return;
-                }
-                
-                tbody.innerHTML = "";
-                
-                encomendas.forEach(enc => {
-                    const dataFmt = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
-                    const estadoAtual = enc.estado || "Pendente";
-                    const estadoLower = estadoAtual.toLowerCase();
-                    
-                    let badgeBg = "#fff3cd"; 
-                    let badgeColor = "#856404";
-                    
-                    if (estadoLower === "em processamento") {
-                        badgeBg = "#cce5ff";
-                        badgeColor = "#004085";
-                    } else if (estadoLower === "enviado" || estadoLower === "entregue") {
-                        badgeBg = "#d4edda";
-                        badgeColor = "#155724";
-                    }
-
-                    const tr = document.createElement("tr");
-                    tr.style.borderBottom = "1px solid #ddd";
-                    
-                    // 🟩 DISTRIBUIÇÃO LIMPA EM COLUNAS EXCLUSIVAS (ATUALIZADA COM 3 NOVAS COLUNAS DE AVALIAÇÃO)
-                   // 🟩 DISTRIBUIÇÃO EM COLUNAS (ATUALIZADA: NOTA DO PRODUTO VISÍVEL NO PAINEL)
-                    tr.innerHTML = `
-                        <td style="padding: 10px; font-weight: bold;">${enc.id_encomenda}</td>
-                        <td style="padding: 10px; font-size: 13px;">${dataFmt}<br><small style="color:#777;">às ${enc.hora || "00:00"}</small></td>
-                        
-                        <td style="padding: 10px; font-size: 13px;">
-                            <strong>${enc.cliente_nome}</strong><br>
-                            <small style="color: #666;">${enc.cliente_email}</small>
-                        </td>
-                        
-                        <td style="padding: 10px; font-weight: bold; color: #232f3e; font-size: 13px;">
-                            ${enc.itens || "Artigos da encomenda"}
-                        </td>
-
-                        <td style="padding: 10px; font-size: 13px; text-align: center; font-weight: bold; color: #ff9900;">
-                            ${enc.nota_produto || "N/D"}
-                        </td>
-
-                        <td style="padding: 10px; font-size: 13px; text-align: center; font-weight: bold; color: #28a745;">
-                            ${enc.nota_vendedor || "N/D"}
-                        </td>
-
-                        <td style="padding: 10px; font-size: 13px; text-align: center; font-weight: bold; color: #0056b3;">
-                            ${enc.nota_transporte || "N/D"}
-                        </td>
-                        
-                        <td style="padding: 10px; font-size: 12px; color: #333; max-width: 180px; line-height: 1.3;">
-                            📍 ${enc.entrega_morada || "N/D"}<br>
-                            ${enc.entrega_localidade || "N/D"} (${enc.entrega_cp || "N/D"})
-                        </td>
-                        
-                        <td style="padding: 10px; font-size: 13px; font-family: monospace;">
-                            📞 ${enc.entrega_telemovel || "N/D"}
-                        </td>
-                        
-                        <td style="padding: 10px; font-weight: bold; font-size: 13px;">
-                            <span style="font-size: 10px; color: #666; font-weight: normal; display: block; margin-bottom: 2px;">
-                                Portes: ${Number(enc.custo_transporte || 0).toFixed(2)}€
-                            </span>
-                            <span style="color: #b12704;">${Number(enc.total).toFixed(2)}€</span>
-                        </td>
-                        
-                        <td style="padding: 10px; font-size: 12px;">
-                            <small><strong>${enc.metodo_pagamento || "N/D"}</strong><br>${enc.detalhe_pagamento || ""}</small>
-                        </td>
-                        
-                        <td style="padding: 10px; text-align: center;">
-                            <span style="padding: 4px 8px; border-radius: 4px; font-size: 11px; font-weight: bold; text-transform: uppercase; background: ${badgeBg}; color: ${badgeColor}; display: inline-block;">
-                                ${estadoAtual}
-                            </span>
-                        </td>
-                        
-                        <td style="padding: 10px;">
-                            <select onchange="alterarEstadoNoSheets('${enc.id_encomenda}', this.value)" style="padding: 5px; font-size: 12px; border-radius: 4px;">
-                                <option value="">-- Alterar --</option>
-                                <option value="Pendente">Pendente</option>
-                                <option value="Em Processamento">Em Processamento</option>
-                                <option value="Enviado">Enviado</option>
-                            </select>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-            } catch(e) {
-                console.error("Erro ao renderizar:", e);
-                tbody.innerHTML = `<tr><td colspan="10" style="padding: 15px; text-align: center; color: red; font-weight: bold;">⚠️ Erro ao carregar dados do Sheets. Por favor tente mais tarde.</td></tr>`;
-            }
+        function terminarSessao() { 
+            localStorage.removeItem("usuario_logado");
+            localStorage.removeItem("carrinho");
+            window.location.href = "autenticacao.html";
         }
 
-        async function alterarEstadoNoSheets(idEncomenda, novoEstado) {
-            if (!novoEstado) return;
-            
-            if (!confirm(`Deseja alterar o estado da encomenda ${idEncomenda} para "${novoEstado}"?`)) {
-                carregarEncomendasVendedor(); 
-                return;
-            }
-            
-            const payload = {
-                acao: "atualizar_status",
-                vendedor_email: emailVendedor,
-                id_encomenda: idEncomenda,
-                novo_estado: novoEstado
-            };
-            
-            try {
-                const resposta = await fetch(API_URL, {
-                    method: "POST",
-                    mode: "cors",
-                    headers: { "Content-Type": "text/plain" },
-                    body: JSON.stringify(payload)
-                });
-                const resultado = await resposta.json();
-                alert(resultado.mensagem);
-                carregarEncomendasVendedor(); 
-            } catch(e) {
-                alert("Erro ao comunicar mudança ao servidor.");
-                carregarEncomendasVendedor();
-            }
-        }
-
-        // Executa a listagem de forma limpa no arranque
-        carregarEncomendasVendedor();
-
-        // 🟩 REDUNDÂNCIA DE SEGURANÇA CONTRA CACHE DO LIVE SERVER
-        // Se o HTML teimar em chamar o nome alternativo, redirecionamos para a função correta
-        const processarCadastroProduto = cadastrarProduto;
-
-        // 🟩 REDUNDÂNCIA CONTRA ERROS DE TRANSIÇÃO E CACHE
-        // Se o HTML chamar qualquer uma das variações de nome, garantimos que aponta para a função real
-        window.processarCadastroProduto = cadastrarProduto;
-        window.cadastrarProduto = cadastrarProduto;
-
-        // Se o ID do vendedor falhar na sessão, força um ID de teste para o formulário não travar
-        if (typeof idVendedorAtivo === "undefined" || idVendedorAtivo === "SEM_ID") {
-            window.idVendedorAtivo = "USR-TESTE-LOCAL";
-        }
-
-        // 🟥 DESTRUIDOR DE CACHE: Mapeia todos os nomes possíveis para a função nova
         window.processarCadastroProduto = enviarNovoProdutoAoSheets;
         window.cadastrarProduto = enviarNovoProdutoAoSheets;
         window.enviarNovoProdutoAoSheets = enviarNovoProdutoAoSheets;
-
-        // 🟩 FUNÇÃO DE ANCORAGEM SUAVE
-        function irParaSecao(idSecao) {
-            const elemento = document.getElementById(idSecao);
-            if (elemento) {
-                elemento.scrollIntoView({ 
-                    behavior: 'smooth', // Faz o efeito de deslizar suavemente em vez de dar um salto seco
-                    block: 'start'      // Alinha o topo da secção com o topo do ecrã
-                });
-            }
-        }
-        
+        window.carregarEncomendasVendedor = carregarEncomendasVendedor;
+        window.alterarEstadoNoSheets = alterarEstadoNoSupabase;
     </script>
 </body>
 </html>
