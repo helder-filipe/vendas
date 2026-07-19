@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="Content-Security-Policy" content="
   default-src 'self'; 
-  script-src 'self' 'unsafe-inline'; 
+  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-  img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com; 
+  img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com https://*.google.com https://*.googleusercontent.com; 
   connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com;
   font-src 'self' https://fonts.gstatic.com;
 ">
@@ -458,19 +458,22 @@
                 .replace(/\//g, "&#x2F;");
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
+        document.addEventListener("DOMContentLoaded", async function() {
+            // 1. Forçar o carregamento imediato dos produtos antes de qualquer outra lógica
+            await carregarProdutos();
+
             const urlParams = new URLSearchParams(window.location.search);
             const emailURL = urlParams.get('email');
 
             if (emailURL) {
                 usuarioLogado = {
-                    nome: urlParams.get('nome') || "",
-                    email: emailURL,
-                    morada: urlParams.get('morada') || "",
-                    localidade: urlParams.get('localidade') || "",
-                    codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || "",
-                    telemovel: urlParams.get('telemovel') || "", 
-                    tipo: urlParams.get('tipo') || "comprador"
+                    nome: decodeURIComponent(urlParams.get('nome') || ""),
+                    email: decodeURIComponent(emailURL),
+                    morada: decodeURIComponent(urlParams.get('morada') || ""),
+                    localidade: decodeURIComponent(urlParams.get('localidade') || ""),
+                    codigo_postal: decodeURIComponent(urlParams.get('codigo_postal') || urlParams.get('cp') || ""),
+                    telemovel: decodeURIComponent(urlParams.get('telemovel') || ""), 
+                    tipo: decodeURIComponent(urlParams.get('tipo') || "comprador")
                 };
                 localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
             } else {
@@ -495,7 +498,6 @@
                 if (btnEncomendas) btnEncomendas.style.display = "inline-block";
                 if (btnLogout) btnLogout.style.display = "inline-block";
                 if (btnLogin) btnLogin.style.display = "none";
-
                 if (btnVendedor) {
                     btnVendedor.style.display = (usuarioLogado.tipo === "vendedor") ? "inline-block" : "none";
                 }
