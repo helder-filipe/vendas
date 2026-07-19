@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self'; 
+  script-src 'self' 'unsafe-inline'; 
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+  img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com; 
+  connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com;
+  font-src 'self' https://fonts.gstatic.com;
+">
     <title>Koolaction</title>
     
     <link rel="icon" type="image/x-icon" href="koolaction.ico">
@@ -51,12 +59,10 @@
         .btn-cat { background: transparent; color: white; border: 1px solid transparent; padding: 6px 12px; font-size: 14px; white-space: nowrap; cursor: pointer; }
         .btn-cat:hover, .btn-cat.active { border-color: white; border-radius: 4px; background: rgba(255,255,255,0.1); }
         
-        /* ==========================================================================
-           ESTRUTURA INDESTRUTÍVEL: GRID PARA DESKTOP
-           ========================================================================== */
+        /* GRID PARA DESKTOP */
         .content-grid { 
             display: grid; 
-            grid-template-columns: 1fr 340px; /* Montra expande (1fr), Carrinho fixo (340px) */
+            grid-template-columns: 1fr 340px; 
             gap: 30px; 
             align-items: start;
             width: 100%;
@@ -64,11 +70,9 @@
         }
         
         /* Montra de Produtos (Esquerda) */
-        .vitrine-seccao { 
-            min-width: 0; 
-        }
+        .vitrine-seccao { min-width: 0; }
         
-        /* Grelha de Produtos (Múltiplas colunas automáticas no computador!) */
+        /* Grelha de Produtos */
         .vitrine { 
             display: grid; 
             grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); 
@@ -76,7 +80,7 @@
             width: 100%; 
         }
         
-        /* Carrinho de Compras (Direita) */
+        /* CARRINHO FLUTUANTE STICKY CORRIGIDO */
         .carrinho-seccao { 
             background: white; 
             padding: 20px; 
@@ -84,8 +88,12 @@
             box-shadow: 0 2px 5px rgba(0,0,0,0.1); 
             height: fit-content; 
             box-sizing: border-box; 
+            position: sticky;
+            top: 85px; 
+            scroll-margin-top: 85px;
+            max-height: calc(100vh - 120px);
+            overflow-y: auto;
         }
-        /* ========================================================================== */
 
         /* Cartão de Produto */
         .produto-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); display: flex; flex-direction: column; justify-content: space-between; cursor: pointer; transition: transform 0.2s; box-sizing: border-box; }
@@ -112,7 +120,7 @@
         .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 13px; }
         .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; background: #f9f9f9; }
         
-        /* 🟩 CSS ADICIONADO: Mini-cartões de recomendação dentro do Modal */
+        /* Mini-cartões de recomendação dentro do Modal */
         .mini-recomendado-card {
             background: #f9f9f9;
             border: 1px solid #e2e2e2;
@@ -130,7 +138,7 @@
         .mini-recomendado-card h4 { font-size: 11px; margin: 5px 0 3px 0; height: 28px; overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; color: #007bff; font-weight: normal; }
         .mini-recomendado-card p { font-size: 12px; margin: 0; color: #b12704; font-weight: bold; }
 
-        /* Rodapé Fixo e Isento de Erros */
+        /* Rodapé Fixo */
         footer { background: #131a22; color: #a6b1bb; font-size: 12px; width: 100%; box-sizing: border-box; }
         .footer-container { max-width: 1200px; margin: 0 auto; padding: 20px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 20px; }
         .footer-col { flex: 1; min-width: 200px; }
@@ -141,7 +149,6 @@
         
         .payment-badges { display: flex; gap: 5px; flex-wrap: wrap; margin-top: 6px; }
         .badge-pay { background: #232f3e; color: #bdc4c9; padding: 2px 6px; border-radius: 3px; font-size: 10px; font-weight: bold; text-transform: uppercase; border: 1px solid #3a4553; }
-
         .footer-bottom { background: #19222d; text-align: center; padding: 12px 20px; font-size: 11px; color: #8492a0; border-top: 1px solid #232f3e; }
         .footer-bottom-links { margin-top: 3px; }
         .footer-bottom-links a { color: #8492a0; text-decoration: none; margin: 0 8px; }
@@ -173,13 +180,12 @@
         .btn-logout { background: #6c757d; padding: 8px 15px; font-size: 13px; }
         .btn-vendedor { background: #ff9900; color: #111; font-weight: bold; display: none; }
 
-        /* REGRAS AUTOMÁTICAS APENAS PARA TELEMÓVEL */
         @media (max-width: 768px) {
             .content-grid { 
                 grid-template-columns: 1fr; 
                 gap: 20px; 
             }
-            .carrinho-seccao { grid-row: 1; width: 100%; }
+            .carrinho-seccao { grid-row: 1; width: 100%; position: static; max-height: none; }
             .vitrine-seccao { grid-row: 2; width: 100%; }
         }
     </style>
@@ -198,108 +204,101 @@
                 <input type="text" id="input-pesquisa" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
             </div>
 
-           
+            <div class="user-menu">
+                <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
 
-            
+                <button id="btn-perfil-header" onclick="window.location.href='perfil.html'" style="
+                    display: none; 
+                    align-items: center;
+                    gap: 6px;
+                    background-color: #ffd814;
+                    color: #0f1111;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #fcd200;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                " 
+                onmouseover="this.style.backgroundColor='#f7ca00'" 
+                onmouseout="this.style.backgroundColor='#ffd814'">
+                    👤 O Meu Perfil
+                </button>
 
+                <a id="btn-login-header" href="#" onclick="window.location.href='autenticacao.html'" style="
+                    display: none;
+                    align-items: center;
+                    background-color: #37475a;
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    text-decoration: none;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #485769;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#485769'" 
+                onmouseout="this.style.backgroundColor='#37475a'">
+                    🔑 Iniciar Sessão
+                </a>
+                
+                <button id="btn-encomendas-header" onclick="irParaEncomendasComSeguranca(event)" style="
+                    display: none; 
+                    align-items: center;
+                    background-color: #232f3e; 
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #37475a;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#37475a'" 
+                onmouseout="this.style.backgroundColor='#232f3e'">
+                    📦 As Minhas Encomendas
+                </button>
 
-           
-            
-                <div class="user-menu">
-                    <span id="saudacao-texto" class="saudacao-user">A carregar sessão...</span>
+                <button id="btn-painel-vendedor" class="btn-vendedor" onclick="abrirPainelVendedor()" style="
+                    display: none; 
+                    align-items: center;
+                    background-color: #232f3e; 
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #37475a;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#37475a'" 
+                onmouseout="this.style.backgroundColor='#232f3e'">
+                    Painel do Vendedor ⚙️
+                </button>
 
-                    <button id="btn-perfil-header" onclick="window.location.href='perfil.html'" style="
-                        display: none; 
-                        align-items: center;
-                        gap: 6px;
-                        background-color: #ffd814;
-                        color: #0f1111;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-weight: bold;
-                        font-size: 13px;
-                        border: 1px solid #fcd200;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    " 
-                    onmouseover="this.style.backgroundColor='#f7ca00'" 
-                    onmouseout="this.style.backgroundColor='#ffd814'">
-                        👤 O Meu Perfil
-                    </button>
-
-                    <a id="btn-login-header" href="#" onclick="window.location.href='autenticacao.html'" style="
-                        display: none;
-                        align-items: center;
-                        background-color: #37475a;
-                        color: white;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        text-decoration: none;
-                        font-weight: bold;
-                        font-size: 13px;
-                        border: 1px solid #485769;
-                        transition: background 0.2s;
-                    "
-                    onmouseover="this.style.backgroundColor='#485769'" 
-                    onmouseout="this.style.backgroundColor='#37475a'">
-                        🔑 Iniciar Sessão
-                    </a>
-                    
-                    <button id="btn-encomendas-header" onclick="window.location.href='encomendas.html'" style="
-                        display: none; 
-                        align-items: center;
-                        background-color: #232f3e; 
-                        color: white;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-weight: bold;
-                        font-size: 13px;
-                        border: 1px solid #37475a;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    "
-                    onmouseover="this.style.backgroundColor='#37475a'" 
-                    onmouseout="this.style.backgroundColor='#232f3e'">
-                        📦 As Minhas Encomendas
-                    </button>
-
-                    <button id="btn-painel-vendedor" class="btn-vendedor" onclick="window.location.href='painel-vendedor.html'" style="
-                        display: none; 
-                        align-items: center;
-                        background-color: #232f3e; 
-                        color: white;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-weight: bold;
-                        font-size: 13px;
-                        border: 1px solid #37475a;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    "
-                    onmouseover="this.style.backgroundColor='#37475a'" 
-                    onmouseout="this.style.backgroundColor='#232f3e'">
-                        Painel do Vendedor ⚙️
-                    </button>
-
-                    <button id="btn-logout-header" class="btn-logout" onclick="terminarSessao()" style="
-                        display: none; 
-                        align-items: center;
-                        background-color: #cc0c39; 
-                        color: white;
-                        padding: 8px 16px;
-                        border-radius: 20px;
-                        font-weight: bold;
-                        font-size: 13px;
-                        border: 1px solid #b12704;
-                        cursor: pointer;
-                        transition: background 0.2s;
-                    "
-                    onmouseover="this.style.backgroundColor='#b12704'" 
-                    onmouseout="this.style.backgroundColor='#cc0c39'">
-                        🚪 Sair
-                    </button>
-                </div>
-    </div>
+                <button id="btn-logout-header" class="btn-logout" onclick="terminarSessao()" style="
+                    display: none; 
+                    align-items: center;
+                    background-color: #cc0c39; 
+                    color: white;
+                    padding: 8px 16px;
+                    border-radius: 20px;
+                    font-weight: bold;
+                    font-size: 13px;
+                    border: 1px solid #b12704;
+                    cursor: pointer;
+                    transition: background 0.2s;
+                "
+                onmouseover="this.style.backgroundColor='#b12704'" 
+                onmouseout="this.style.backgroundColor='#cc0c39'">
+                    🚪 Sair
+                </button>
+            </div>
+        </div>
 
         <div class="nav-categorias">
             <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
@@ -331,7 +330,7 @@
                     <div id="carrinho-itens">O carrinho está vazio.</div>
                     <h3 style="margin-top: 20px; text-align: right;">Total: <span id="carrinho-total">0.00</span>€</h3>
                     
-                    <form id="formulario-checkout" class="checkout-form" onsubmit="processarCheckout(event)">
+                    <form id="formulario-checkout" class="checkout-form" onsubmit="finalizarCompra(event)">
                         <h3>Dados de Envio</h3>
                         <div class="form-group"><label>Nome Completo:</label><input type="text" id="nome" required></div>
                         <div class="form-group"><label>E-mail:</label><input type="email" id="email" required readonly style="background: #f5f5f5; color: #777;"></div>
@@ -345,13 +344,14 @@
                             <input type="tel" id="telemovel-entrega" placeholder="9XXXXXXXX" required>
                         </div>
                         
-                        <button type="button" onclick="finalizarCompra(event)" id="btn-finalizar-compra" class="btn-checkout">Finalizar Encomenda</button>
+                        <button type="submit" id="btn-finalizar-compra" class="btn-checkout">Finalizar Encomenda</button>
                     </form>
                 </div>
             </div>
         </div>
     </div>
 
+    <!-- Modais -->
     <div id="modal-detalhes" class="modal" onclick="fecharModalExterno(event)">
         <div class="modal-content">
             <span class="close-modal" onclick="fecharModal()">&times;</span>
@@ -381,16 +381,28 @@
                         <h4 style="color: #232f3e; margin-bottom: 12px; display: flex; align-items: center; gap: 8px;">
                             <span>💬</span> Avaliações dos Clientes
                         </h4>
-                        
-                        <div id="modal-resumo-avaliacao" style="background: #f9f9f9; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 15px;">
-                            </div>
-
-                        <div id="modal-lista-comentarios" style="max-height: 200px; overflow-y: auto; padding-right: 5px;">
-                            </div>
+                        <div id="modal-resumo-avaliacao" style="background: #f9f9f9; padding: 15px; border-radius: 8px; display: flex; align-items: center; gap: 15px; margin-bottom: 15px;"></div>
+                        <div id="modal-lista-comentarios" style="max-height: 200px; overflow-y: auto; padding-right: 5px;"></div>
                     </div>
-
-
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-pagamento" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1001;">
+        <div style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 400px; box-sizing: border-box; font-family: Arial, sans-serif;">
+            <h3 style="margin-top: 0; text-align: center; color: #333;">Método de Pagamento</h3>
+            
+            <div style="display: flex; gap: 10px; margin-bottom: 20px;">
+                <button type="button" onclick="selecionarMetodo('mbway')" id="btn-opcao-mbway" style="flex: 1; padding: 12px; border: 1px solid #ccc; background: #f4f4f4; color: #333; cursor: pointer; border-radius: 4px; font-weight: bold; transition: all 0.2s;">MB WAY</button>
+                <button type="button" onclick="selecionarMetodo('ref')" id="btn-opcao-ref" style="flex: 1; padding: 12px; border: 1px solid #ccc; background: #f4f4f4; color: #333; cursor: pointer; border-radius: 4px; font-weight: bold; transition: all 0.2s;">Ref. Multibanco</button>
+            </div>
+
+            <div id="detalhes-pagamento" style="margin-bottom: 20px; min-height: 100px; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px dashed #ccc;"></div>
+
+            <div style="display: flex; gap: 10px;">
+                <button type="button" onclick="fecharModalPagamento()" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
+                <button type="button" id="btn-confirmar-pagamento" onclick="processarFluxoPagamento()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Simular Pagamento</button>
             </div>
         </div>
     </div>
@@ -404,7 +416,6 @@
                 <p>8125-401 Quarteira, Portugal</p>
                 <p>NIF: 509 123 456 | suporte@alphamarket.pt</p>
             </div>
-
             <div class="footer-col">
                 <h3>Métodos de Pagamento</h3>
                 <div class="payment-badges">
@@ -415,7 +426,6 @@
                     <div class="badge-pay">PayPal</div>
                 </div>
             </div>
-
             <div class="footer-col">
                 <h3>Deixa-nos Ajudar-te</h3>
                 <a href="#ajuda">Centro de Apoio ao Cliente</a>
@@ -423,7 +433,6 @@
                 <a href="#devolucoes">Políticas de Devolução</a>
             </div>
         </div>
-
         <div class="footer-bottom">
             <p>&copy; 2026 AlphaMarket S.A. Todos os direitos reservados.</p>
             <div class="footer-bottom-links">
@@ -436,11 +445,20 @@
     </footer>
 
     <script>
-       // 🟩 CONTROLO SEGURO DO CABEÇALHO (CORRIGIDO E SEGURO)
-        let usuarioLogado = null; // Declarado fora para ser acessível globalmente
+        let usuarioLogado = null;
+
+        function escaparHTML(texto) {
+            if (!texto) return "";
+            return String(texto)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\//g, "&#x2F;");
+        }
 
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Tentar ler primeiro os parâmetros do URL
             const urlParams = new URLSearchParams(window.location.search);
             const emailURL = urlParams.get('email');
 
@@ -451,26 +469,19 @@
                     morada: urlParams.get('morada') || "",
                     localidade: urlParams.get('localidade') || "",
                     codigo_postal: urlParams.get('codigo_postal') || urlParams.get('cp') || "",
-                    telemovel: urlParams.get('telemovel') || "", // 🟩 ADICIONADO AQUI
+                    telemovel: urlParams.get('telemovel') || "", 
                     tipo: urlParams.get('tipo') || "comprador"
                 };
                 localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
-                
-                // Limpa os parâmetros do URL para ficar limpo (comentado conforme tinhas)
-                // window.history.replaceState({}, document.title, window.location.pathname);
             } else {
-                // 2. Se não houver URL, tenta ler do localStorage
                 try {
                     const sessaoRaw = localStorage.getItem("usuario_logado");
-                    if (sessaoRaw) {
-                        usuarioLogado = JSON.parse(sessaoRaw);
-                    }
+                    if (sessaoRaw) usuarioLogado = JSON.parse(sessaoRaw);
                 } catch (e) {
                     console.warn("Nenhuma sessão ativa detetada.");
                 }
             }
 
-            // Referências aos elementos do menu
             const saudacaoTexto = document.getElementById("saudacao-texto");
             const btnPerfil = document.getElementById("btn-perfil-header");
             const btnLogin = document.getElementById("btn-login-header");
@@ -478,7 +489,6 @@
             const btnVendedor = document.getElementById("btn-painel-vendedor");
             const btnEncomendas = document.getElementById("btn-encomendas-header");
 
-            // 3. Renderização visual do menu
             if (usuarioLogado && usuarioLogado.nome) {
                 if (saudacaoTexto) saudacaoTexto.innerText = "Olá, " + usuarioLogado.nome + "!";
                 if (btnPerfil) btnPerfil.style.display = "inline-flex";
@@ -487,38 +497,31 @@
                 if (btnLogin) btnLogin.style.display = "none";
 
                 if (btnVendedor) {
-                    if (usuarioLogado.tipo === "vendedor") {
-                        btnVendedor.style.display = "inline-block";
-                    } else {
-                        btnVendedor.style.display = "none";
-                    }
+                    btnVendedor.style.display = (usuarioLogado.tipo === "vendedor") ? "inline-block" : "none";
                 }
             } else {
                 if (saudacaoTexto) saudacaoTexto.innerText = "Olá, Visitante!";
                 if (btnLogin) btnLogin.style.display = "inline-flex";
-                
                 if (btnPerfil) btnPerfil.style.display = "none";
                 if (btnEncomendas) btnEncomendas.style.display = "none";
                 if (btnVendedor) btnVendedor.style.display = "none";
                 if (btnLogout) btnLogout.style.display = "none";
             }
 
-            // Atualiza o carrinho após carregar a sessão
             if (typeof atualizarInterfaceCarrinho === "function") {
                 atualizarInterfaceCarrinho();
             }
         });
 
-    // 🟩 APENAS UMA DECLARAÇÃO DE CADA (Copia isto para o teu script)
-    function abrirPainelVendedor() {
-        if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
-            window.location.href = "painel-vendedor.html";
-        } else {
-            alert("Acesso negado.");
+        function abrirPainelVendedor() {
+            if (usuarioLogado && usuarioLogado.tipo === "vendedor") {
+                window.location.href = "painel-vendedor.html";
+            } else {
+                alert("Acesso negado.");
+            }
         }
-    }
 
-    function terminarSessao() { 
+        function terminarSessao() { 
             try {
                 localStorage.removeItem("usuario_logado"); 
                 localStorage.removeItem("carrinho"); 
@@ -526,1042 +529,695 @@
             window.location.href = "autenticacao.html"; 
         }
 
-// --- LÓGICA DE PRODUTOS, FILTROS E PESQUISA ---
-const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
-const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
+        const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
+        const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
 
-const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-let todosProdutos = []; 
-let categoriaAtual = "Todas"; 
-let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
-let metodoSelecionado = 'mbway';
-let referenciaGeradaParaEnvio = "";
+        let todosProdutos = []; 
+        let categoryAtual = "Todas"; 
+        let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
+        let metodoSelecionado = 'mbway';
+        let referenciaGeradaParaEnvio = "";
 
-
-
-async function carregarProdutos() {
-    try {
-        // 1. Procurar todos os produtos na tabela do Supabase
-        const { data: produtos, error: errorProd } = await supabaseClient
-            .from('produtos')
-            .select('*');
-
-        if (errorProd) {
-            console.error("Erro ao ler produtos do Supabase:", errorProd.message);
-            alert("Erro ao carregar a vitrina de produtos.");
-            return;
-        }
-
-        // 2. Procurar todas as avaliações registadas
-        const { data: avaliacoes, error: errorAval } = await supabaseClient
-            .from('avaliacoes')
-            .select('id_produto, nota_produto');
-
-        // 3. Processar e acoplar as médias calculadas em tempo real a cada produto
-        todosProdutos = produtos.map(prod => {
-            const listaNotasDoProd = avaliacoes 
-                ? avaliacoes.filter(a => String(a.id_produto) === String(prod.id)) 
-                : [];
-            
-            const totalVotos = listaNotasDoProd.length;
-            let mediaAvaliacao = 0;
-
-            if (totalVotos > 0) {
-                const soma = listaNotasDoProd.reduce((acc, current) => acc + Number(current.nota_produto), 0);
-                mediaAvaliacao = soma / totalVotos;
-            }
-
-            // Injeta as propriedades esperadas pela tua função renderizarVitrine
-            return {
-                ...prod,
-                total_votos: totalVotos,
-                media_avaliacao: mediaAvaliacao
-            };
-        });
-
-        // 4. Desenhar a vitrina com os dados processados
-        renderizarVitrine(todosProdutos);
-
-    } catch (erro) {
-        console.error("Erro inesperado ao carregar produtos:", erro);
-    }
-}
-
-function renderizarVitrine(lista) {
-    const vitrine = document.getElementById("produtos-content");
-    vitrine.innerHTML = "";
-    if (lista.length === 0) { vitrine.innerText = "Nenhum produto corresponde aos critérios."; return; }
-
-    // Sincroniza a lista global com o Sheets para as outras funções (detalhes/carrinho)
-    window.produtos = lista; 
-
-    lista.forEach(produto => {
-        const card = document.createElement("div");
-        card.className = "produto-card";
-        card.onclick = (e) => {
-            if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') abrirModalDetalhes(produto);
-        };
-        
-        const stockNum = Number(produto.stock);
-        const temStock = stockNum > 0;
-        
-        // 🟩 ALTERAÇÃO AQUI: Define a cor vermelha se o stock for baixo (<= 5) ou esgotado
-        const corStock = (stockNum <= 5) ? 'red' : 'green';
-        
-        // 🟩 ALTERAÇÃO AQUI: Texto dinâmico com alerta visual de urgência
-        const textoStock = (stockNum > 0 && stockNum <= 5) 
-            ? `⚠️ ÚLTIMAS UNIDADES: ${stockNum} un.` 
-            : `Disponível: ${stockNum} un.`;
-
-        // 🟩 CÁLCULO DINÂMICO PARA A EXIBIÇÃO EXCLUSIVA DA MÉDIA GLOBAL NA VITRINE
-        const temAvaliacao = produto.total_votos > 0;
-        const notaArredondada = temAvaliacao ? Math.round(produto.media_avaliacao) : 0;
-        const estrelasTexto = temAvaliacao ? "★".repeat(notaArredondada) + "☆".repeat(5 - notaArredondada) : "☆☆☆☆☆";
-
-        const exibicaoNotasHTML = temAvaliacao 
-            ? `<div style="font-size: 13px; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
-                <span style="color: #ff9900; font-weight: bold; font-size: 14px;">${produto.media_avaliacao.toFixed(1)}</span>
-                <span style="color: #ff9900; letter-spacing: 1px;">${estrelasTexto}</span>
-                <small style="color:#666; font-size: 11px;">(${produto.total_votos})</small>
-            </div>`
-            : `<div style="font-size: 12px; margin: 6px 0; color: #ccc; font-style: italic;">
-                ☆☆☆☆☆ Sem avaliações
-            </div>`;
-
-        // RENDERIZAÇÃO DO CARD COMPLETO
-        card.innerHTML = `
-            <img src="${produto.imagem_url || 'https://via.placeholder.com/150'}" alt="${produto.nome}">
-            <h3>${produto.nome}</h3>
-
-            ${exibicaoNotasHTML}
-            
-            <p><small style="color: ${corStock}; font-weight: ${stockNum <= 5 ? 'bold' : 'normal'}">${textoStock}</small></p>
-            <p><strong>${Number(produto.preco).toFixed(2)}€</strong></p>
-            
-            <p style="font-size: 12px; color: #cc6600; font-weight: bold; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
-                <span>🚚</span> Envio estimado: ${produto.dias_entrega || 8} dias úteis
-            </p>
-
-            <div style="margin-top: 10px; display:flex; gap:5px; ${!temStock ? 'display:none;' : ''}">
-                <input type="number" id="qtd-${produto.id}" value="1" min="1" max="${produto.stock}" style="width: 45px; text-align: center;">
-                
-                <button onclick="prepararAdicao('${produto.id}', '${produto.nome.replace(/'/g, "\\'")}', ${produto.preco}, ${produto.stock}, ${produto.custo_transporte || 0})" style="flex:1; font-size:12px; background:#ffd814; color:#0f1111; border:1px solid #fcd200; border-radius:20px; font-weight:bold; padding: 6px; cursor: pointer;">
-                    Adicionar
-                </button>
-            </div>
-            ${!temStock ? '<button disabled style="margin-top:10px; width:100%; border-radius:20px; padding: 6px;">Sem Stock</button>' : ''}
-        `;
-        vitrine.appendChild(card);
-    });
-}
-
-function executarFiltros() {
-    const termoPesquisa = document.getElementById("input-pesquisa").value.toLowerCase().trim();
-    let resultado = todosProdutos;
-
-    if (categoriaAtual !== "Todas") {
-        resultado = resultado.filter(p => p.categoria === categoriaAtual);
-    }
-
-    if (termoPesquisa !== "") {
-        resultado = resultado.filter(p => {
-            const nome = (p.nome || "").toLowerCase();
-            const desc = (p.descricao || "").toLowerCase();
-            const cat = (p.categoria || "").toLowerCase();
-            const tech = (p.detalhes_tecnicos || "").toLowerCase(); 
-
-            return nome.includes(termoPesquisa) || desc.includes(termoPesquisa) || cat.includes(termoPesquisa) || tech.includes(termoPesquisa);
-        });
-    }
-    renderizarVitrine(resultado);
-}
-
-function filtrarCategoria(categoria, botao) {
-    document.querySelectorAll(".btn-cat").forEach(btn => btn.classList.remove("active"));
-    botao.classList.add("active");
-    categoriaAtual = categoria;
-    document.getElementById("titulo-montra").innerText = categoria === "Todas" ? "Todos os Artigos" : categoria;
-    executarFiltros();
-}
-
-function toggleCarrinho() {
-    document.getElementById("carrinho-container").classList.toggle("minimizado");
-}
-
-// 🟩 FUNÇÃO ATUALIZADA NA ÍNTEGRA: ABERTURA COM DETALHES, PORTES DINÂMICOS E AVALIAÇÕES EM TEMPO REAL
-function abrirModalDetalhes(produto) {
-    document.getElementById("modal-img").src = produto.imagem_url || 'https://via.placeholder.com/150';
-    document.getElementById("modal-nome").innerText = produto.nome;
-    document.getElementById("modal-descricao").innerText = produto.descricao;
-    document.getElementById("modal-preco").innerText = Number(produto.preco).toFixed(2);
-
-    // 1. Preenchimento da Tabela Técnica
-    const tabelaTecnica = document.getElementById("table-tecnica"); 
-    tabelaTecnica.innerHTML = "";
-    try {
-        const techObj = typeof produto.detalhes_tecnicos === "string" ? JSON.parse(produto.detalhes_tecnicos || "{}") : (produto.detalhes_tecnicos || {});
-        if (Object.keys(techObj).length === 0) {
-            tabelaTecnica.innerHTML = "<tr><td>Sem especificações adicionais.</td></tr>";
-        } else { 
-            for (let [ch, val] of Object.entries(techObj)) {
-                tabelaTecnica.innerHTML += `<tr><td class="tech-label">${ch}</td><td>${val}</td></tr>`; 
-            } 
-        }
-    } catch(e) { 
-        tabelaTecnica.innerHTML = "<tr><td>Erro ao ler specifications.</td></tr>"; 
-    }
-
-    // 2. Preenchimento da Tabela Logística (CORRIGIDA COM TRANSPORTE DINÂMICO)
-    const tabelaLogistica = document.getElementById("table-logistica"); 
-    tabelaLogistica.innerHTML = "";
-    try {
-        const logObj = typeof produto.informacoes === "string" ? JSON.parse(produto.informacoes || "{}") : (produto.informacoes || {});
-        
-        // Mantém os teus campos originais
-        tabelaLogistica.innerHTML += `<tr><td class="tech-label">Fabricante</td><td>${logObj.fabricante || 'N/D'}</td></tr>`;
-        tabelaLogistica.innerHTML += `<tr><td class="tech-label">Peso do Artigo</td><td>${logObj.peso ? logObj.peso + ' kg' : 'N/D'}</td></tr>`;
-        tabelaLogistica.innerHTML += `<tr><td class="tech-label">Dimensões</td><td>${logObj.dimensoes || 'N/D'}</td></tr>`;
-        
-        // Exibição dos Dias de Entrega vindos da Coluna K do Sheets
-        const prazoEnvio = produto.dias_entrega || 8;
-        tabelaLogistica.innerHTML += `<tr><td class="tech-label" style="color: #cc6600; font-weight: bold;">🚚 Prazo de Envio</td><td style="color: #cc6600; font-weight: bold;">${prazoEnvio} dias úteis</td></tr>`;
-        
-        // 🟩 CORREÇÃO CRÍTICA: Lê o custo real do Sheets em vez de exibir o texto fixo anterior!
-        const custoTranspReal = parseFloat(produto.custo_transporte) || 0;
-        const textoTransporte = custoTranspReal > 0 ? `${custoTranspReal.toFixed(2)}€` : "Grátis";
-        
-        tabelaLogistica.innerHTML += `<tr><td class="tech-label" style="color: #0056b3; font-weight: bold;">💳 Transporte</td><td style="color: #0056b3; font-weight: bold;">${textoTransporte}</td></tr>`;
-
-    } catch(e) { 
-        tabelaLogistica.innerHTML = "<tr><td>Erro ao ler logística.</td></tr>"; 
-    }
-
-    // 3. Gestão do Botão de Adicionar ao Carrinho e Stock
-    const btnModalAdicionar = document.getElementById("modal-btn-adicionar");
-    if (Number(produto.stock) > 0) {
-        btnModalAdicionar.disabled = false; 
-        btnModalAdicionar.innerText = "Adicionar ao Carrinho";
-        
-        // Mantém a chamada segura para a tua função centralizada
-        btnModalAdicionar.onclick = () => { 
-            prepararAdicao(
-                produto.id, 
-                produto.nome, 
-                produto.preco, 
-                produto.stock, 
-                produto.custo_transporte || 0
-            ); 
-            fecharModal(); 
-        };
-    } else { 
-        btnModalAdicionar.disabled = true; 
-        btnModalAdicionar.innerText = "Esgotado"; 
-    }
-
-    gerarRecomendacoes(produto);
-
-    // 🟩 NOVA INTEGRAÇÃO: Carrega as classificações e comentários dinamicamente para este produto
-    carregarAvaliacoesNoModal(produto.id);
-
-    // Abre o modal
-    document.getElementById("modal-detalhes").style.display = "flex";
-}
-
-function gerarRecomendacoes(produtoAtual) {
-    const containerRecomendados = document.getElementById("modal-recomendados");
-    containerRecomendados.innerHTML = ""; 
-
-    let fabricanteAtual = "";
-    try { fabricanteAtual = JSON.parse(produtoAtual.informacoes || "{}").fabricante || ""; } catch(e){}
-
-    let candidatos = todosProdutos
-        .filter(p => p.id !== produtoAtual.id) 
-        .map(p => {
-            let pontuacao = 0;
-            if (p.categoria === produtoAtual.categoria) pontuacao += 2;
+        async function carregarProdutos() {
             try {
-                let fabCandidato = JSON.parse(p.informacoes || "{}").fabricante || "";
-                if (fabCandidato && fabCandidato.toLowerCase() === fabricanteAtual.toLowerCase()) pontuacao += 1;
-            } catch(e){}
-            return { produto: p, score: pontuacao };
-        })
-        .filter(c => c.score > 0) 
-        .sort((a, b) => b.score - a.score) 
-        .slice(0, 3);
+                const { data: produtos, error: errorProd } = await supabaseClient.from('produtos').select('*');
+                if (errorProd) {
+                    alert("Erro ao carregar a vitrina de produtos.");
+                    return;
+                }
 
-    if (candidatos.length === 0) {
-        containerRecomendados.innerHTML = "<span style='font-size:12px; color:#777;'>Sem artigos semelhantes de momento.</span>";
-        return;
-    }
+                const { data: avaliacoes, error: errorAval } = await supabaseClient.from('avaliacoes').select('id_produto, nota_produto');
 
-    candidatos.forEach(c => {
-        const p = c.produto;
-        const miniCard = document.createElement("div");
-        miniCard.className = "mini-recomendado-card";
-        miniCard.onclick = () => { abrirModalDetalhes(p); };
-        miniCard.innerHTML = `
-            <img src="${p.imagem_url || 'https://via.placeholder.com/150'}" alt="${p.nome}">
-            <h4>${p.nome}</h4>
-            <p>${Number(p.preco).toFixed(2)}€</p>
-        `;
-        containerRecomendados.appendChild(miniCard);
-    });
-}
+                todosProdutos = produtos.map(prod => {
+                    const listaNotasDoProd = avaliacoes ? avaliacoes.filter(a => String(a.id_produto) === String(prod.id)) : [];
+                    const totalVotos = listaNotasDoProd.length;
+                    let mediaAvaliacao = 0;
 
-
-// 🟩 FUNÇÃO MIGRADA: CARREGAR AVALIAÇÕES EM TEMPO REAL DIRETAMENTE DO SUPABASE NO MODAL
-async function carregarAvaliacoesNoModal(idProduto) {
-    const resumoContainer = document.getElementById("modal-resumo-avaliacao");
-    const listaContainer = document.getElementById("modal-lista-comentarios");
-    
-    if (!resumoContainer || !listaContainer) return;
-
-    resumoContainer.innerHTML = `<span style="font-size: 13px; color: #666;">A carregar classificações...</span>`;
-    listaContainer.innerHTML = "";
-
-    try {
-        // Consultar as avaliações deste produto específico no Supabase
-        const { data: listaAvaliacoes, error } = await supabaseClient
-            .from('avaliacoes')
-            .select('*')
-            .eq('id_produto', String(idProduto))
-            .order('data_avaliacao', { ascending: false });
-
-        if (error) throw error;
-
-        if (listaAvaliacoes && listaAvaliacoes.length > 0) {
-            const totalVotos = listaAvaliacoes.length;
-            
-            // Calcular a média baseada na coluna nota_produto
-            const somaNotas = listaAvaliacoes.reduce((acc, item) => acc + Number(item.nota_produto), 0);
-            const mediaGlobal = somaNotas / totalVotos;
-
-            const numEstrelas = Math.round(mediaGlobal);
-            const estrelasTexto = "★".repeat(numEstrelas) + "☆".repeat(5 - numEstrelas);
-            
-            resumoContainer.innerHTML = `
-                <div style="font-size: 32px; font-weight: bold; color: #111;">
-                    ${mediaGlobal.toFixed(1)}
-                </div>
-                <div>
-                    <div style="color: #ff9900; font-size: 18px; letter-spacing: 1px;">${estrelasTexto}</div>
-                    <small style="color: #666; font-size: 12px;">Média com base em ${totalVotos} avaliações</small>
-                </div>
-            `;
-
-            // Renderizar a Lista de Comentários recebidos
-            let comentariosHTML = "";
-            listaAvaliacoes.forEach(item => {
-                const notaItem = Number(item.nota_produto) || 5;
-                const estrelasItem = "★".repeat(notaItem) + "☆".repeat(5 - notaItem);
-                
-                // Formata a data se existir
-                const dataExibicao = item.data_avaliacao ? new Date(item.data_avaliacao).toLocaleDateString('pt-PT') : 'Recente';
-                const comentarioTexto = item.comentario && item.comentario.trim() !== "" 
-                    ? item.comentario 
-                    : `<span style="color:#aaa; font-style:italic;">Não deixou comentário de texto.</span>`;
-                
-                comentariosHTML += `
-                    <div style="border-bottom: 1px dashed #eee; padding: 10px 0; font-size: 13px;">
-                        <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-                            <strong style="color: #333;">👤 ${item.cliente_email.split('@')[0]}</strong>
-                            <small style="color: #999;">${dataExibicao}</small>
-                        </div>
-                        <div style="color: #ff9900; font-size: 12px; margin-bottom: 4px;">${estrelasItem}</div>
-                        <p style="margin: 0; color: #555; line-height: 1.4;">${comentarioTexto}</p>
-                    </div>
-                `;
-            });
-            listaContainer.innerHTML = comentariosHTML;
-
-        } else {
-            // Caso o produto ainda não tenha votos na tabela
-            resumoContainer.innerHTML = `
-                <div style="font-size: 18px; color: #ccc; letter-spacing: 1px;">☆☆☆☆☆</div>
-                <div style="font-size: 13px; color: #666;">Este produto ainda não recebeu avaliações. Seja o primeiro a comprar e avaliar!</div>
-            `;
-            listaContainer.innerHTML = `<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem comentários disponíveis.</p>`;
-        }
-
-    } catch (erro) {
-        console.error("Erro ao procurar avaliações do produto no Supabase:", erro);
-        resumoContainer.innerHTML = `<span style="color: red; font-size: 12px;">⚠️ Erro ao carregar avaliações.</span>`;
-    }
-}
-
-
-function fecharModal() { document.getElementById("modal-detalhes").style.display = "none"; }
-function fecharModalExterno(e) { if (e.target.id === "modal-detalhes") fecharModal(); }
-
-// 🟩 FUNÇÃO ATUALIZADA: CAPTURA E GUARDA O CUSTO DE TRANSPORTE NO CARRINHO
-function prepararAdicao(id, nome, preco, stock, custoTransporte) {
-    const inputQtd = document.getElementById(`qtd-${id}`);
-    const quantidade = inputQtd ? parseInt(inputQtd.value) : 1;
-
-    if (quantidade > parseInt(stock)) {
-        alert("⚠️ Quantidade superior ao stock disponível.");
-        return;
-    }
-
-    // Procura se o item já existe no carrinho para acumular
-    const itemExistente = carrinho.find(item => item.id_produto === id);
-
-    if (itemExistente) {
-        itemExistente.quantidade += quantidade;
-    } else {
-        // 🟩 CRÍTICO: O item agora leva a propriedade custo_transporte para o carrinho!
-        carrinho.push({
-            id_produto: id,
-            nome_produto: nome,
-            preco_unitario: parseFloat(preco),
-            quantidade: quantidade,
-            custo_transporte: parseFloat(custoTransporte) || 0.00
-        });
-    }
-
-    // Atualiza a interface visual e guarda no localStorage
-    atualizarInterfaceCarrinho();
-    //alert(`🎉 ${quantidade}x "${nome}" adicionado(s) ao carrinho!`);
-}
-
-function adicionarAoCarrinho(id, nome, preco, quantidade) {
-    const itemExistente = carrinho.find(item => item.id_produto === id);
-    const prodBase = todosProdutos.find(p => p.id === id);
-    const stockLimite = prodBase ? Number(prodBase.stock) : 999;
-
-    if (itemExistente) {
-        if (itemExistente.quantidade + quantity > stockLimite) {
-            alert(`Não podes adicionar mais unidades. Limite: ${stockLimite} un.`);
-            itemExistente.quantidade = stockLimite;
-        } else { itemExistente.quantidade += quantidade; }
-    } else { 
-        // 🟩 MANTIDO: Chaves corretas do teu array original
-        carrinho.push({ id_produto: id, nome_produto: nome, preco_unitario: Number(preco), quantidade: quantidade }); 
-    }
-    
-    document.getElementById("carrinho-container").classList.remove("minimizado");
-    atualizarInterfaceCarrinho();
-}
-
-function alterarQuantidadeCarrinho(id, delta) {
-    const item = carrinho.find(item => item.id_produto === id);
-    if (!item) return;
-    const prodBase = todosProdutos.find(p => p.id === id);
-    const stockLimite = prodBase ? Number(prodBase.stock) : 999;
-
-    if (item.quantidade + delta > stockLimite) { alert(`Stock máximo atingido (${stockLimite} un.).`); return; }
-    item.quantidade += delta;
-    if (item.quantidade <= 0) carrinho = carrinho.filter(i => i.id_produto !== id);
-    atualizarInterfaceCarrinho();
-}
-
-function removerDoCarrinho(id) {
-    carrinho = carrinho.filter(item => item.id_produto !== id);
-    atualizarInterfaceCarrinho();
-}
-
-// 🟩 FUNÇÃO CORRIGIDA E PROTEGIDA PARA ESVAZIAR O CARRINHO
-function esvaziarCarrinhoCompleto() {
-    // 1. Esvazia o array global em memória
-    carrinho = [];
-    
-    // 2. Remove o registo antigo da memória do browser para não voltar a carregar
-    localStorage.removeItem("carrinho");
-    
-    // 3. Limpa a variável global de contingência de valores
-    window.valorFinalEncomenda = 0;
-    
-    // 4. Atualiza obrigatoriamente a interface para redesenhar o ecrã como "Vazio"
-    atualizarInterfaceCarrinho();
-    
-    console.log("Carrinho esvaziado com sucesso.");
-}
-
-function atualizarInterfaceCarrinho() {
-    localStorage.setItem("carrinho", JSON.stringify(carrinho));
-    const contentorItens = document.getElementById("carrinho-itens");
-    const elementoTotal = document.getElementById("carrinho-total");
-    const formCheckout = document.getElementById("formulario-checkout");
-    const badge = document.getElementById("carrinho-badge");
-    const btnEsvaziar = document.getElementById("btn-esvaziar-tudo");
-    
-    const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
-    if (badge) badge.innerText = totalItens;
-
-    if (carrinho.length === 0) {
-        if (contentorItens) contentorItens.innerHTML = "O carrinho está vazio.";
-        if (elementoTotal) elementoTotal.innerText = "0.00";
-        
-        const elementoResumo = document.getElementById("resumo-valores-carrinho");
-        if (elementoResumo) elementoResumo.innerHTML = "";
-        
-        if (formCheckout) formCheckout.style.display = "none"; 
-        if (btnEsvaziar) btnEsvaziar.style.display = "none";
-        return;
-    }
-
-    if (contentorItens) contentorItens.innerHTML = "";
-    let totalAcumulado = 0;
-    if (btnEsvaziar) btnEsvaziar.style.display = "block";
-
-    // 🟩 NOVA REGRA MATEMÁTICA: Acumulador total do custo de transporte
-    let custoTransporteTotal = 0;
-
-    carrinho.forEach(item => {
-        const custoItem = item.preco_unitario * item.quantidade;
-        totalAcumulado += custoItem;
-
-        // 🟩 SOMA CUMULATIVA: Multiplica o custo de transporte unitário pela quantidade do item
-        const custoTranspUnitario = parseFloat(item.custo_transporte) || 0.00;
-        custoTransporteTotal += (custoTranspUnitario * item.quantidade);
-
-        const div = document.createElement("div");
-        div.className = "item-carrinho";
-        div.innerHTML = `
-            <div>
-                <strong>${item.nome_produto}</strong><br>
-                <div class="qtd-controlos">
-                    <button class="btn-qtd" onclick="alterarQuantidadeCarrinho('${item.id_produto}', -1)">-</button>
-                    <span>${item.quantidade}x</span>
-                    <button class="btn-qtd" onclick="alterarQuantidadeCarrinho('${item.id_produto}', 1)">+</button>
-                </div>
-            </div>
-            <div style="text-align: right;">
-                <span style="display:block; margin-bottom:5px;">${custoItem.toFixed(2)}€</span>
-                <button type="button" class="btn-remover" onclick="removerDoCarrinho('${item.id_produto}')">Remover</button>
-            </div>
-        `;
-        if (contentorItens) contentorItens.appendChild(div);
-    });
-    
-    // Montante global final (Produtos + Soma de todos os Transportes)
-    let totalFinal = totalAcumulado + custoTransporteTotal;
-    
-    // Alimenta a janela global para o fluxo de pagamento ler o valor correto
-    window.valorFinalEncomenda = totalFinal;
-
-    // Discriminação visual na interface do carrinho
-    let elementoResumo = document.getElementById("resumo-valores-carrinho");
-    if (!elementoResumo && elementoTotal) {
-        elementoResumo = document.createElement("div");
-        elementoResumo.id = "resumo-valores-carrinho";
-        elementoTotal.parentElement.insertBefore(elementoResumo, elementoTotal);
-    }
-
-    if (elementoResumo) {
-        elementoResumo.innerHTML = `
-            <div style="font-size: 14px; color: #555; line-height: 1.6; padding: 10px 0; border-top: 1px solid #eee; margin-top: 15px;">
-                <div style="display:flex; justify-content:space-between; margin-bottom: 4px;">
-                    <span>Subtotal de Artigos:</span>
-                    <span>${totalAcumulado.toFixed(2)}€</span>
-                </div>
-                <div style="display:flex; justify-content:space-between; color: #0056b3; font-weight: bold; margin-bottom: 4px;">
-                    <span>Custo de Transporte Total:</span>
-                    <span>${custoTransporteTotal > 0 ? custoTransporteTotal.toFixed(2) + '€' : 'Grátis'}</span>
-                </div>
-            </div>
-        `;
-    }
-
-    if (elementoTotal) elementoTotal.innerText = totalFinal.toFixed(2);
-    if (formCheckout) formCheckout.style.display = "block";
-    
-    // 🟩 INJEÇÃO SEGURA, BLINDADA E COM ATRASO DE SEGURANÇA (IDs EXATOS DO INDEX.HTML)
-    setTimeout(() => {
-        try {
-            const sessaoCheckoutRaw = localStorage.getItem("usuario_logado");
-            
-            if (sessaoCheckoutRaw) {
-                const usuarioCheckout = JSON.parse(sessaoCheckoutRaw);
-                
-                // Dentro do setTimeout da tua atualizarInterfaceCarrinho():
-                if (usuarioCheckout) {
-                    const inputNome = document.getElementById("nome");
-                    const inputEmail = document.getElementById("email");
-                    const inputMorada = document.getElementById("morada");
-                    const inputLocalidade = document.getElementById("localidade");
-                    const inputCp = document.getElementById("cp");
-                    const inputTelemovel = document.getElementById("telemovel-entrega");
-
-                    if (inputNome && !inputNome.value) inputNome.value = usuarioCheckout.nome || "";
-                    if (inputEmail && !inputEmail.value) inputEmail.value = usuarioCheckout.email || usuarioCheckout.cliente_email || "";
-                    if (inputMorada && !inputMorada.value) inputMorada.value = usuarioCheckout.morada || "";
-                    if (inputLocalidade && !inputLocalidade.value) inputLocalidade.value = usuarioCheckout.localidade || "";
-                    if (inputCp && !inputCp.value) inputCp.value = usuarioCheckout.codigo_postal || usuarioCheckout.cp || "";
-                    
-                    // Injeção limpa e direta do telemóvel
-                    if (inputTelemovel && !inputTelemovel.value) {
-                        inputTelemovel.value = usuarioCheckout.telemovel || "";
+                    if (totalVotos > 0) {
+                        const soma = listaNotasDoProd.reduce((acc, current) => acc + Number(current.nota_produto), 0);
+                        mediaAvaliacao = soma / totalVotos;
                     }
-                    
-                    console.log("Dados de envio pré-preenchidos com sucesso!");
-                }
-            }
-        } catch (erroDeLeitura) {
-            console.warn("Aviso: Não foi possível realizar o pré-preenchimento automático:", erroDeLeitura);
-        }
-    }, 2000);
-}
 
+                    return { ...prod, total_votos: totalVotos, media_avaliacao: mediaAvaliacao };
+                });
 
-
-// VARIÁVEL GLOBAL (Coloca no topo do teu script ou deixa o JS criar)
-window.dadosEntregaTemporarios = null;
-
-async function processarCheckout(event) {
-    if (event) event.preventDefault();
-
-    // 1. Validar se o carrinho tem itens
-    // (Ajusta o nome da variável se o teu carrinho se chamar de outra forma, ex: carrinho)
-    if (!listaItensDoCarrinho || listaItensDoCarrinho.length === 0) {
-        alert("O teu carrinho está vazio!");
-        return;
-    }
-
-    const botao = document.getElementById("btn-finalizar-compra"); // Ajusta o ID do teu botão se necessário
-    if (botao) {
-        botao.disabled = true;
-        botao.innerText = "A processar encomenda...";
-    }
-
-    // 2. Gerar ID Único da Encomenda
-    const idEncomenda = "ENC-" + new Date().getTime();
-    const dataAtual = new Date();
-    
-    // Formatar datas e horas no formato esperado pelas colunas do Supabase
-    const dataFormatada = dataAtual.toISOString().split('T')[0]; // yyyy-mm-dd
-    const horaFormatada = dataAtual.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-
-    // Recolha dos dados do formulário de envio/pagamento (Ajusta os IDs conforme o teu HTML)
-    const clienteNome = document.getElementById("checkout-nome")?.value || usuarioLogado?.nome || "Cliente";
-    const clienteEmail = document.getElementById("checkout-email")?.value || usuarioLogado?.email || "";
-    const morada = document.getElementById("checkout-morada")?.value || "";
-    const localidade = document.getElementById("checkout-localidade")?.value || "";
-    const cp = document.getElementById("checkout-cp")?.value || "";
-    const telemovel = document.getElementById("checkout-telemovel")?.value || "";
-    const metodoPagamento = document.getElementById("checkout-pagamento")?.value || "Não especificado";
-    const detalhePagamento = document.getElementById("checkout-detalhes-pagamento")?.value || "";
-
-    // Calcular o total e o resumo de itens para a tabela principal
-    let totalCompra = 0;
-    let maiorPrazoDias = 8; // Padrão
-    const linhasItens = [];
-
-    listaItensDoCarrinho.forEach(item => {
-        const qtd = Number(item.quantidade) || 1;
-        const preco = Number(item.preco) || 0;
-        totalCompra += (preco * qtd);
-
-        // Preparar a linha para a tabela itens_encomenda
-        linhasItens.push({
-            id_encomenda: idEncomenda,
-            id_produto: (item.id || item.id_produto).toString(),
-            nome_produto: item.nome,
-            quantidade: qtd,
-            preco_unitario: preco
-        });
-    });
-
-    // Calcular a data estimada de entrega
-    const dataEstimada = new Date();
-    dataEstimada.setDate(dataAtual.getDate() + maiorPrazoDias);
-    const dataEstimadaFormatada = dataEstimada.toISOString().split('T')[0];
-
-    try {
-        // STEP 1: Inserir o cabeçalho da encomenda na tabela 'encomendas'
-        const { error: errorEncomenda } = await supabaseClient
-            .from('encomendas')
-            .insert([
-                {
-                    id: idEncomenda,
-                    data: dataFormatada,
-                    hora: horaFormatada,
-                    cliente_nome: clienteNome,
-                    cliente_email: clienteEmail,
-                    morada: morada,
-                    localidade: localidade,
-                    cp: cp,
-                    telemovel: telemovel,
-                    itens: listaItensDoCarrinho.length + " artigo(s)",
-                    total: totalCompra,
-                    status: 'Pendente',
-                    metodo_pagamento: metodoPagamento,
-                    detalhe_pagamento: detalhePagamento,
-                    estimativa_entrega: dataEstimadaFormatada,
-                    entrega_real: null
-                }
-            ]);
-
-        if (errorEncomenda) throw new Error("Erro ao registar encomenda: " + errorEncomenda.message);
-
-        // STEP 2: Inserir todos os artigos de uma só vez na tabela 'itens_encomenda'
-        const { error: errorItens } = await supabaseClient
-            .from('itens_encomenda')
-            .insert(linhasItens);
-
-        if (errorItens) throw new Error("Erro ao registar itens da encomenda: " + errorItens.message);
-
-        // STEP 3: Atualizar os stocks dos produtos comprados (Loop individual)
-        for (const item of listaItensDoCarrinho) {
-            const idProd = item.id || item.id_produto;
-            const qtdComprada = Number(item.quantidade) || 1;
-
-            // 3.1 Procurar o stock atual do produto
-            const { data: produtoOriginal } = await supabaseClient
-                .from('produtos')
-                .select('stock')
-                .eq('id', idProd)
-                .single();
-
-            if (produtoOriginal) {
-                const stockAtual = Number(produtoOriginal.stock) || 0;
-                let novoStock = stockAtual - qtdComprada;
-                if (novoStock < 0) novoStock = 0;
-
-                // 3.2 Atualizar o novo stock na tabela
-                await supabaseClient
-                    .from('produtos')
-                    .update({ stock: novoStock })
-                    .eq('id', idProd);
+                renderizarVitrine(todosProdutos);
+            } catch (erro) {
+                console.error("Erro inesperado ao carregar produtos:", erro);
             }
         }
 
-        // Sucesso Total! 🎉
-        alert(`Encomenda finalizada com sucesso! ID: ${idEncomenda}`);
-        
-        // Limpar o carrinho e atualizar a interface (Ajusta para as tuas funções nativas)
-        listaItensDoCarrinho = [];
-        if (typeof atualizarInterfaceCarrinho === "function") atualizarInterfaceCarrinho();
-        if (typeof fecharModalCheckout === "function") fecharModalCheckout();
-        
-        // Redirecionar ou recarregar a página para atualizar a vitrina (com os novos stocks)
-        window.location.reload();
+        // =========================================================================
+        // RENDREIZAR VITRINE SUPABASE - ESCAPE RIGOROSO CONTRA INJEÇÃO DE CÓDIGO
+        // =========================================================================
+        function renderizarVitrine(lista) {
+            const vitrine = document.getElementById("produtos-content");
+            vitrine.innerHTML = "";
+            if (lista.length === 0) { vitrine.innerText = "Nenhum produto corresponde aos critérios."; return; }
 
-    } catch (erro) {
-        alert("Ocorreu um erro ao finalizar a compra.");
-        console.error(erro);
-    } finally {
-        if (botao) {
-            botao.disabled = false;
-            botao.innerText = "Finalizar Compra";
-        }
-    }
-}
+            window.produtos = lista; 
 
-function fecharModalPagamento() {
-    document.getElementById("modal-pagamento").style.display = "none";
-}
-
-function selecionarMetodo(metodo) {
-    metodoSelecionado = metodo;
-    const container = document.getElementById("detalhes-pagamento");
-    const btnMbway = document.getElementById("btn-opcao-mbway");
-    const btnRef = document.getElementById("btn-opcao-ref");
-    const btnConfirmar = document.getElementById("btn-confirmar-pagamento");
-
-    // Restaura estilos dos botões
-    btnMbway.style.background = "#f4f4f4"; btnMbway.style.color = "#333";
-    btnRef.style.background = "#f4f4f4"; btnRef.style.color = "#333";
-    btnConfirmar.style.display = "block"; // Garante que o botão de confirmar está visível
-
-    if (metodo === 'mbway') {
-        btnMbway.style.background = "#007bff"; btnMbway.style.color = "white";
-        
-        // 🟩 CAPTURA DINÂMICA: Lê o telemóvel que o utilizador acabou de digitar no carrinho
-        const tlmCarrinho = document.getElementById("telemovel-entrega") ? document.getElementById("telemovel-entrega").value.trim() : "";
-
-        // 🟩 INJEÇÃO AUTOMÁTICA: O valor vai direto para o input, mas está totalmente editável (sem readonly)
-        container.innerHTML = `
-            <div class="form-group" style="margin-top:10px;">
-                <label>Número de Telemóvel MB WAY:</label>
-                <input type="tel" id="pago-telemovel" value="${tlmCarrinho}" placeholder="9XXXXXXXX" maxlength="9" style="width:100%; padding:10px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
-            </div>
-        `;
-    } else {
-        btnRef.style.background = "#007bff"; btnRef.style.color = "white";
-        
-        // Gera uma referência fictícia para visualização se não existir
-        referenciaGeradaParaEnvio = Math.floor(100000000 + Math.random() * 900000000).toString().replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
-        
-        const totalExibido = document.getElementById("carrinho-total") ? document.getElementById("carrinho-total").innerText : "0.00";
-
-        container.innerHTML = `
-            <div style="line-height: 1.6; font-family: monospace;">
-                <strong>Entidade:</strong> 11249<br>
-                <strong>Referência:</strong> ${referenciaGeradaParaEnvio}<br>
-                <strong>Montante:</strong> ${totalExibido}€<br>
-                <span style="font-size:11px; color:#666; display:block; margin-top:5px;">* Válido por 24 horas. A encomenda será processada após validação.</span>
-            </div>
-        `;
-    }
-}
-
-async function processarFluxoPagamento() {
-    const botao = document.getElementById("btn-confirmar-pagamento");
-    
-    let detalhePagamento = "";
-    
-    if (metodoSelecionado === "mbway") {
-        // Tenta ler o input do modal, se não existir usa o do formulário de entrega
-        let tlm = document.getElementById("mbway-telemovel")?.value.trim();
-        if (!tlm && window.dadosEntregaTemporarios) {
-            tlm = window.dadosEntregaTemporarios.entrega_telemovel;
-        }
-
-        if (!tlm || tlm.length !== 9 || isNaN(tlm)) {
-            alert("⚠️ Por favor, introduza um número de MB WAY válido (9 dígitos).");
-            return;
-        }
-        detalhePagamento = "Telemóvel MB WAY: " + tlm;
-        
-    } else if (metodoSelecionado === "ref") {
-        // Captura o texto da referência gerada. Se estiver vazio, põe um texto padrão
-        const elementoRef = document.getElementById("detalhes-pagamento");
-        detalhePagamento = elementoRef ? elementoRef.innerText.replace(/\s+/g, ' ').trim() : "Referência Multibanco Gerada";
-    }
-
-    try {
-        if (botao) {
-            botao.disabled = true;
-            botao.innerText = "A processar...";
-        }
-
-        // 🟩 Chamada corrigida (Garante que o nome bate exatamente com a função abaixo)
-        await efetuarCompraSupabase(metodoSelecionado, detalhePagamento);
-
-    } catch (erro) {
-        alert("❌ Ocorreu um erro ao processar o seu pedido.");
-        console.error(erro);
-        if (botao) {
-            botao.disabled = false;
-            botao.innerText = "Confirmar Pagamento";
-        }
-    }
-}
-
-// 1. A TUA FUNÇÃO DE VALIDAÇÃO (Mantendo as tuas trancas originais)
-async function finalizarCompra(event) {
-    if (event) event.preventDefault(); 
-
-    // Captura os valores dos inputs editáveis do carrinho
-    const nomeDigitado = document.getElementById("nome").value.trim();
-    const emailDigitado = document.getElementById("email").value.trim();
-    const moradaDigitada = document.getElementById("morada").value.trim();
-    const localidadeDigitada = document.getElementById("localidade").value.trim();
-    const cpDigitado = document.getElementById("cp").value.trim();
-    
-    // Recolha do campo de telemóvel da encomenda
-    const tlmEntregaInput = document.getElementById("telemovel-entrega");
-    const tlmEntrega = tlmEntregaInput ? tlmEntregaInput.value.trim() : "";
-
-    // TRANCA 1: Validação do Nome Completo
-    const partesDoNome = nomeDigitado.split(/\s+/);
-    if (partesDoNome.length < 2 || partesDoNome[1] === "") {
-        alert("⚠️ Por favor, introduza o seu nome completo (pelo menos o primeiro nome e um apelido) para efeitos de envio.");
-        return; 
-    }
-
-    // TRANCA 2: Validação do Código-Postal (Formato XXXX-XXX)
-    const cpRegex = /^\d{4}-\d{3}$/;
-    if (!cpRegex.test(cpDigitado)) {
-        alert("⚠️ O Código-Postal introduzido não é válido! Por favor, use o formato correto (Ex: 8125-401).");
-        return; 
-    }
-
-    // TRANCA 3: Validação Obrigatória do Telemóvel (9 dígitos)
-    if (tlmEntrega.length !== 9 || isNaN(tlmEntrega)) {
-        alert("⚠️ Por favor, introduza um número de telemóvel válido (9 dígitos) para coordenação da entrega.");
-        return;
-    }
-
-    if (!carrinho || carrinho.length === 0) {
-        alert("⚠️ O seu carrinho está vazio.");
-        return;
-    }
-
-    // Guardar temporariamente os dados para o passo do pagamento
-    window.dadosEntregaTemporarios = {
-        cliente_nome: nomeDigitado,
-        cliente_email: emailDigitado,
-        entrega_morada: moradaDigitada,
-        entrega_localidade: localidadeDigitada,
-        entrega_cp: cpDigitado,
-        entrega_telemovel: tlmEntrega
-    };
-
-    // Abrir o modal de pagamento
-    document.getElementById("modal-pagamento").style.display = "flex";
-    
-    // Selecionar o método inicial
-    if (typeof selecionarMetodo === "function") selecionarMetodo('mbway');
-}
-
-async function efetuarCompraSupabase(metodoPagamento, detalhePagamento) {
-    if (!carrinho || carrinho.length === 0) {
-        alert("⚠️ O seu carrinho está vazio!");
-        return;
-    }
-    if (!window.dadosEntregaTemporarios) {
-        alert("⚠️ Dados de entrega não encontrados. Por favor, preencha o formulário novamente.");
-        return;
-    }
-
-    const dados = window.dadosEntregaTemporarios;
-    const idEncomenda = "ENC-" + new Date().getTime();
-    const dataAtual = new Date();
-    
-    const dataFormatada = dataAtual.toISOString().split('T')[0];
-    const horaFormatada = dataAtual.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
-
-    let totalCompra = 0;
-    const linhasItens = [];
-
-    carrinho.forEach(item => {
-        const qtd = Number(item.quantidade) || 1;
-        const preco = Number(item.preco_unitario || item.preco) || 0; //[cite: 1]
-        totalCompra += (preco * qtd);
-
-        linhasItens.push({
-            id_encomenda: idEncomenda,
-            id_produto: (item.id_produto).toString(), //[cite: 1]
-            nome_produto: item.nome_produto, //[cite: 1]
-            quantidade: qtd,
-            preco_unitario: preco
-        });
-    });
-
-    try {
-        // STEP 1: Gravar a encomenda principal
-        const { error: errorEncomenda } = await supabaseClient
-            .from('encomendas')
-            .insert([
-                {
-                    id: idEncomenda,
-                    data: dataFormatada.toString(),
-                    hora: horaFormatada.toString(),
-                    cliente_nome: dados.cliente_nome,
-                    cliente_email: dados.cliente_email,
-                    morada: dados.entrega_morada,
-                    localidade: dados.entrega_localidade,
-                    cp: dados.entrega_cp,
-                    telemovel: dados.entrega_telemovel.toString(),
-                    itens: carrinho.length + " artigo(s)",
-                    total: Number(totalCompra),
-                    status: 'Pendente',
-                    metodo_pagamento: metodoPagamento,
-                    detalhe_pagamento: detalhePagamento,
-                    estimativa_entrega: dataFormatada.toString(),
-                    entrega_real: null
-                }
-            ]);
-
-        if (errorEncomenda) {
-            console.error("Erro na tabela encomendas:", errorEncomenda.message);
-            throw new Error(errorEncomenda.message);
-        }
-
-        // STEP 2: Gravar os itens da encomenda
-        const { error: errorItens } = await supabaseClient
-            .from('itens_encomenda')
-            .insert(linhasItens);
-
-        if (errorItens) {
-            console.error("Erro na tabela itens_encomenda:", errorItens.message);
-            throw new Error(errorItens.message);
-        }
-
-        // STEP 3: Atualizar Stocks
-        for (const item of carrinho) {
-            const idProd = (item.id_produto).toString(); //[cite: 1]
-            const qtdComprada = Number(item.quantidade) || 1;
-
-            const { data: produtoOriginal } = await supabaseClient
-                .from('produtos')
-                .select('stock')
-                .eq('id', idProd)
-                .single();
-
-            if (produtoOriginal) {
-                let novoStock = (Number(produtoOriginal.stock) || 0) - qtdComprada;
-                if (novoStock < 0) novoStock = 0;
-
-                await supabaseClient
-                    .from('produtos')
-                    .update({ stock: novoStock })
-                    .eq('id', idProd);
-            }
-        }
-
-        // 🎉 TUDO GRAVADO COM SUCESSO!
-        alert(`🎉 Encomenda finalizada com sucesso!\nID: ${idEncomenda}`);
-        
-        // 🟩 CHAMADA NATIVA À TUA FUNÇÃO DE LIMPEZA[cite: 1]
-        esvaziarCarrinhoCompleto(); //[cite: 1]
-        
-        fecharModalPagamento(); 
-        
-        // Pequena pausa para garantir que o localStorage é atualizado antes de recarregar[cite: 1]
-        setTimeout(() => {
-            window.location.reload();
-        }, 200);
-
-    } catch (erro) {
-        alert("❌ Erro ao finalizar a compra no servidor.");
-        console.error(erro);
-    }
-}
-
-
-function irParaEncomendas() {
-    if (usuarioLogado) {
-        // 🟩 CORREÇÃO CRÍTICA DA SESSÃO: Passa as variáveis corretas para que o topo da página as leia bem sem estragar o objeto
-        window.location.href = `encomendas.html?nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada)}&localidade=${encodeURIComponent(usuarioLogado.localidade)}&codigo_postal=${encodeURIComponent(usuarioLogado.codigo_postal)}&tipo=${encodeURIComponent(usuarioLogado.tipo || 'comprador')}`;
-        window.location.href = "encomendas.html";
-    } else {
-        window.location.href = "encomendas.html";
-    }
-}
-
-carregarProdutos();
-atualizarInterfaceCarrinho();
-
-
-    // Função para redirecionar de forma ultra segura passando dados no URL (evita bloqueios locais file://)
-    function irParaEncomendasComSeguranca(event) {
-        if (event) event.preventDefault();
-        
-        if (usuarioLogado && usuarioLogado.email) {
-            const queryParams = `nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada || "")}&localidade=${encodeURIComponent(usuarioLogado.localidade || "")}&cp=${encodeURIComponent(usuarioLogado.codigo_postal || "")}&tipo=${encodeURIComponent(usuarioLogado.tipo || "comprador")}`;
-            window.location.href = `encomendas.html?${queryParams}`;
-        } else {
-            alert("Por favor, faça login primeiro.");
-            window.location.href = "autenticacao.html";
-        }
-    }
-
-    </script>
-
-        <div id="modal-pagamento" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); justify-content: center; align-items: center; z-index: 1001;">
-            <div style="background: white; padding: 25px; border-radius: 8px; width: 100%; max-width: 400px; box-sizing: border-box; font-family: Arial, sans-serif;">
-                <h3 style="margin-top: 0; text-align: center; color: #333;">Método de Pagamento</h3>
+            lista.forEach(produto => {
+                const card = document.createElement("div");
+                card.className = "produto-card";
+                card.onclick = (e) => {
+                    if (e.target.tagName !== 'BUTTON' && e.target.tagName !== 'INPUT') abrirModalDetalhes(produto);
+                };
                 
-                <div style="display: flex; gap: 10px; margin-bottom: 20px;">
-                    <button type="button" onclick="selecionarMetodo('mbway')" id="btn-opcao-mbway" style="flex: 1; padding: 12px; border: 1px solid #ccc; background: #f4f4f4; color: #333; cursor: pointer; border-radius: 4px; font-weight: bold; transition: all 0.2s;">MB WAY</button>
-                    <button type="button" onclick="selecionarMetodo('ref')" id="btn-opcao-ref" style="flex: 1; padding: 12px; border: 1px solid #ccc; background: #f4f4f4; color: #333; cursor: pointer; border-radius: 4px; font-weight: bold; transition: all 0.2s;">Ref. Multibanco</button>
-                </div>
+                const stockNum = Number(produto.stock);
+                const temStock = stockNum > 0;
+                const corStock = (stockNum <= 5) ? 'red' : 'green';
+                const textoStock = (stockNum > 0 && stockNum <= 5) ? `⚠️ ÚLTIMAS UNIDADES: ${stockNum} un.` : `Disponível: ${stockNum} un.`;
 
-                <div id="detalhes-pagamento" style="margin-bottom: 20px; min-height: 100px; background: #f9f9f9; padding: 15px; border-radius: 4px; border: 1px dashed #ccc;"></div>
+                const temAvaliacao = produto.total_votos > 0;
+                const notaArredondada = temAvaliacao ? Math.round(produto.media_avaliacao) : 0;
+                const estrelasTexto = temAvaliacao ? "★".repeat(notaArredondada) + "☆".repeat(5 - notaArredondada) : "☆☆☆☆☆";
 
-                <div style="display: flex; gap: 10px;">
-                    <button type="button" onclick="fecharModalPagamento()" style="flex: 1; padding: 10px; background: #666; color: white; border: none; border-radius: 4px; cursor: pointer;">Cancelar</button>
-                    <button type="button" id="btn-confirmar-pagamento" onclick="processarFluxoPagamento()" style="flex: 1; padding: 10px; background: #28a745; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold;">Simular Pagamento</button>
-                </div>
-            </div>
-        </div>
+                const exibicaoNotasHTML = temAvaliacao 
+                    ? `<div style="font-size: 13px; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
+                        <span style="color: #ff9900; font-weight: bold; font-size: 14px;">${produto.media_avaliacao.toFixed(1)}</span>
+                        <span style="color: #ff9900; letter-spacing: 1px;">${estrelasTexto}</span>
+                        <small style="color:#666; font-size: 11px;">(${produto.total_votos})</small>
+                    </div>`
+                    : `<div style="font-size: 12px; margin: 6px 0; color: #ccc; font-style: italic;">☆☆☆☆☆ Sem avaliações</div>`;
 
+                // 🟩 PROTEÇÃO ADICIONADA: Injetado escaparHTML() nas strings lidas do Supabase
+                card.innerHTML = `
+                    <img src="${escaparHTML(produto.imagem_url || 'https://via.placeholder.com/150')}" alt="${escaparHTML(produto.nome)}">
+                    <h3>${escaparHTML(produto.nome)}</h3>
+                    ${exibicaoNotasHTML}
+                    <p><small style="color: ${corStock}; font-weight: ${stockNum <= 5 ? 'bold' : 'normal'}">${textoStock}</small></p>
+                    <p><strong>${Number(produto.preco).toFixed(2)}€</strong></p>
+                    <p style="font-size: 12px; color: #cc6600; font-weight: bold; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
+                        <span>🚚</span> Envio estimado: ${Number(produto.dias_entrega || 8)} dias úteis
+                    </p>
+                    <div style="margin-top: 10px; display:flex; gap:5px; ${!temStock ? 'display:none;' : ''}">
+                        <input type="number" id="qtd-${escaparHTML(String(produto.id))}" value="1" min="1" max="${produto.stock}" style="width: 45px; text-align: center;">
+                        
+                        <button id="btn-add-${escaparHTML(String(produto.id))}" onclick="prepararAdicao('${escaparHTML(String(produto.id))}', '${escaparHTML(produto.nome).replace(/'/g, "\\'")}', ${produto.preco}, ${produto.stock}, ${produto.custo_transporte || 0}, this)" style="
+                            flex:1; 
+                            font-size:12px; 
+                            background:#ffd814; 
+                            color:#0f1111; 
+                            border:1px solid #fcd200; 
+                            border-radius:20px; 
+                            font-weight:bold; 
+                            padding: 6px; 
+                            cursor: pointer;
+                            transition: background 0.2s, color 0.2s, border-color 0.2s;
+                        "
+                        onmouseover="this.style.backgroundColor='#f7ca00'"
+                        onmouseout="if(!this.dataset.adicionado){ this.style.backgroundColor='#ffd814'; }">
+                            Adicionar
+                        </button>
+                    </div>
+                    ${!temStock ? '<button disabled style="margin-top:10px; width:100%; border-radius:20px; padding: 6px;">Sem Stock</button>' : ''}
+                `;
+                vitrine.appendChild(card);
+            });
+        }
+
+        function executarFiltros() {
+            const termoPesquisa = document.getElementById("input-pesquisa").value.toLowerCase().trim();
+            let resultado = todosProdutos;
+
+            if (categoriaAtual !== "Todas") resultado = resultado.filter(p => p.categoria === categoriaAtual);
+
+            if (termoPesquisa !== "") {
+                resultado = resultado.filter(p => {
+                    return (p.nome || "").toLowerCase().includes(termoPesquisa) || 
+                           (p.descricao || "").toLowerCase().includes(termoPesquisa) || 
+                           (p.categoria || "").toLowerCase().includes(termoPesquisa) || 
+                           (p.detalhes_tecnicos || "").toLowerCase().includes(termoPesquisa);
+                });
+            }
+            renderizarVitrine(resultado);
+        }
+
+        function filtrarCategoria(categoria, botao) {
+            document.querySelectorAll(".btn-cat").forEach(btn => btn.classList.remove("active"));
+            botao.classList.add("active");
+            categoriaAtual = categoria;
+            document.getElementById("titulo-montra").innerText = categoria === "Todas" ? "Todos os Artigos" : categoria;
+            executarFiltros();
+        }
+
+        function toggleCarrinho() { document.getElementById("carrinho-container").classList.toggle("minimizado"); }
+
+        // =========================================================================
+        // ABRIR MODAL DETALHES - PREVENÇÃO NAS TABELAS DE ESPECIFICAÇÃO DO SUPABASE
+        // =========================================================================
+        function abrirModalDetalhes(produto) {
+            document.getElementById("modal-img").src = produto.imagem_url || 'https://via.placeholder.com/150';
+            document.getElementById("modal-nome").innerText = produto.nome;
+            document.getElementById("modal-descricao").innerText = produto.descricao;
+            document.getElementById("modal-preco").innerText = Number(produto.preco).toFixed(2);
+
+            const tabelaTecnica = document.getElementById("table-tecnica"); 
+            tabelaTecnica.innerHTML = "";
+            try {
+                const techObj = typeof produto.detalhes_tecnicos === "string" ? JSON.parse(produto.detalhes_tecnicos || "{}") : (produto.detalhes_tecnicos || {});
+                if (Object.keys(techObj).length === 0) {
+                    tabelaTecnica.innerHTML = "<tr><td>Sem especificações adicionais.</td></tr>";
+                } else { 
+                    for (let [ch, val] of Object.entries(techObj)) {
+                        tabelaTecnica.innerHTML += `<tr><td class="tech-label">${escaparHTML(ch)}</td><td>${escaparHTML(String(val))}</td></tr>`; 
+                    } 
+                }
+            } catch(e) { tabelaTecnica.innerHTML = "<tr><td>Erro ao ler especificações.</td></tr>"; }
+
+            const tabelaLogistica = document.getElementById("table-logistica"); 
+            tabelaLogistica.innerHTML = "";
+            try {
+                const logObj = typeof produto.informacoes === "string" ? JSON.parse(produto.informacoes || "{}") : (produto.informacoes || {});
+                tabelaLogistica.innerHTML += `<tr><td class="tech-label">Fabricante</td><td>${escaparHTML(logObj.fabricante || 'N/D')}</td></tr>`;
+                tabelaLogistica.innerHTML += `<tr><td class="tech-label">Peso do Artigo</td><td>${escaparHTML(logObj.peso ? logObj.peso + ' kg' : 'N/D')}</td></tr>`;
+                tabelaLogistica.innerHTML += `<tr><td class="tech-label">Dimensões</td><td>${escaparHTML(logObj.dimensoes || 'N/D')}</td></tr>`;
+                
+                const prazoEnvio = produto.dias_entrega || 8;
+                tabelaLogistica.innerHTML += `<tr><td class="tech-label" style="color: #cc6600; font-weight: bold;">🚚 Prazo de Envio</td><td style="color: #cc6600; font-weight: bold;">${Number(prazoEnvio)} dias úteis</td></tr>`;
+                
+                const custoTranspReal = parseFloat(produto.custo_transporte) || 0;
+                tabelaLogistica.innerHTML += `<tr><td class="tech-label" style="color: #0056b3; font-weight: bold;">💳 Transporte</td><td style="color: #0056b3; font-weight: bold;">${custoTranspReal > 0 ? custoTranspReal.toFixed(2) + '€' : 'Grátis'}</td></tr>`;
+            } catch(e) { tabelaLogistica.innerHTML = "<tr><td>Erro ao ler logística.</td></tr>"; }
+
+            const btnModalAdicionar = document.getElementById("modal-btn-adicionar");
+            if (Number(produto.stock) > 0) {
+                btnModalAdicionar.disabled = false; 
+                btnModalAdicionar.innerText = "Adicionar ao Carrinho";
+                btnModalAdicionar.onclick = (e) => { 
+                    prepararAdicao(produto.id, produto.nome, produto.preco, produto.stock, produto.custo_transporte || 0, e.target); 
+                    fecharModal(); 
+                };
+            } else { 
+                btnModalAdicionar.disabled = true; 
+                btnModalAdicionar.innerText = "Esgotado"; 
+            }
+
+            gerarRecomendacoes(produto);
+            carregarAvaliacoesNoModal(produto.id);
+            document.getElementById("modal-detalhes").style.display = "flex";
+        }
+
+        function gerarRecomendacoes(produtoAtual) {
+            const containerRecomendados = document.getElementById("modal-recomendados");
+            containerRecomendados.innerHTML = ""; 
+
+            let fabricanteAtual = "";
+            try { fabricanteAtual = JSON.parse(produtoAtual.informacoes || "{}").fabricante || ""; } catch(e){}
+
+            let candidatos = todosProdutos
+                .filter(p => p.id !== produtoAtual.id) 
+                .map(p => {
+                    let pontuacao = 0;
+                    if (p.categoria === produtoAtual.categoria) pontuacao += 2;
+                    try {
+                        let fabCandidato = JSON.parse(p.informacoes || "{}").fabricante || "";
+                        if (fabCandidato && fabCandidato.toLowerCase() === fabricanteAtual.toLowerCase()) pontuacao += 1;
+                    } catch(e){}
+                    return { produto: p, score: pontuacao };
+                })
+                .filter(c => c.score > 0) 
+                .sort((a, b) => b.score - a.score) 
+                .slice(0, 3);
+
+            if (candidatos.length === 0) {
+                containerRecomendados.innerHTML = "<span style='font-size:12px; color:#777;'>Sem artigos semelhantes de momento.</span>";
+                return;
+            }
+
+            candidatos.forEach(c => {
+                const p = c.produto;
+                const miniCard = document.createElement("div");
+                miniCard.className = "mini-recomendado-card";
+                miniCard.onclick = () => { abrirModalDetalhes(p); };
+                // 🟩 PROTEÇÃO ADICIONADA: Filtro de escape nos elementos dinâmicos recomendados
+                miniCard.innerHTML = `<img src="${escaparHTML(p.imagem_url || 'https://via.placeholder.com/150')}" alt="${escaparHTML(p.nome)}"><h4>${escaparHTML(p.nome)}</h4><p>${Number(p.preco).toFixed(2)}€</p>`;
+                containerRecomendados.appendChild(miniCard);
+            });
+        }
+
+        async function carregarAvaliacoesNoModal(idProduto) {
+            const resumoContainer = document.getElementById("modal-resumo-avaliacao");
+            const listaContainer = document.getElementById("modal-lista-comentarios");
             
+            if (!resumoContainer || !listaContainer) return;
+            resumoContainer.innerHTML = `<span style="font-size: 13px; color: #666;">A carregar classificações...</span>`;
+            listaContainer.innerHTML = "";
 
+            try {
+                const { data: listaAvaliacoes, error } = await supabaseClient
+                    .from('avaliacoes')
+                    .select('*')
+                    .eq('id_produto', String(idProduto))
+                    .order('data_avaliacao', { ascending: false });
 
+                if (error) throw error;
+
+                if (listaAvaliacoes && listaAvaliacoes.length > 0) {
+                    const totalVotos = listaAvaliacoes.length;
+                    const somaNotas = listaAvaliacoes.reduce((acc, item) => acc + Number(item.nota_produto), 0);
+                    const mediaGlobal = somaNotas / totalVotos;
+
+                    const numEstrelas = Math.round(mediaGlobal);
+                    resumoContainer.innerHTML = `
+                        <div style="font-size: 32px; font-weight: bold; color: #111;">${mediaGlobal.toFixed(1)}</div>
+                        <div>
+                            <div style="color: #ff9900; font-size: 18px; letter-spacing: 1px;">${"★".repeat(numEstrelas)}${"☆".repeat(5 - numEstrelas)}</div>
+                            <small style="color: #666; font-size: 12px;">Média com base em ${totalVotos} avaliações</small>
+                        </div>`;
+
+                    listaAvaliacoes.forEach(item => {
+                        const notaItem = Number(item.nota_produto) || 5;
+                        const estrelasItem = "★".repeat(notaItem) + "☆".repeat(5 - notaItem);
+                        const dataExibicao = item.data_avaliacao ? new Date(item.data_avaliacao).toLocaleDateString('pt-PT') : 'Recente';
+                        
+                        const divComentario = document.createElement("div");
+                        divComentario.style.borderBottom = "1px dashed #eee";
+                        divComentario.style.padding = "10px 0";
+                        divComentario.style.fontSize = "13px";
+
+                        const divTopo = document.createElement("div");
+                        divTopo.style.display = "flex";
+                        divTopo.style.justifyContent = "space-between";
+                        divTopo.style.marginBottom = "4px";
+                        
+                        const forteUsuario = document.createElement("strong");
+                        forteUsuario.textContent = `👤 ${item.cliente_email ? item.cliente_email.split('@')[0] : 'Cliente'}`;
+                        
+                        const smallData = document.createElement("small");
+                        smallData.style.color = "#999";
+                        smallData.textContent = dataExibicao;
+                        
+                        divTopo.appendChild(forteUsuario);
+                        divTopo.appendChild(smallData);
+
+                        const divEstrelas = document.createElement("div");
+                        divEstrelas.style.color = "#ff9900";
+                        divEstrelas.style.fontSize = "12px";
+                        divEstrelas.style.marginBottom = "4px";
+                        divEstrelas.textContent = estrelasItem;
+
+                        const pTexto = document.createElement("p");
+                        pTexto.style.margin = "0";
+                        pTexto.style.color = "#555";
+                        pTexto.style.lineHeight = "1.4";
+                        
+                        if (item.comentario && item.comentario.trim() !== "") {
+                            pTexto.textContent = item.comentario; 
+                        } else {
+                            pTexto.innerHTML = `<span style="color:#aaa; font-style:italic;">Não deixou comentário de texto.</span>`;
+                        }
+
+                        divComentario.appendChild(divTopo);
+                        divComentario.appendChild(divEstrelas);
+                        divComentario.appendChild(pTexto);
+                        
+                        listaContainer.appendChild(divComentario);
+                    });
+
+                } else {
+                    resumoContainer.innerHTML = `
+                        <div style="font-size: 18px; color: #ccc; letter-spacing: 1px;">☆☆☆☆☆</div>
+                        <div style="font-size: 13px; color: #666;">Este produto ainda não recebeu avaliações.</div>`;
+                    listaContainer.innerHTML = `<p style="font-size: 12px; color: #999; text-align: center; margin-top: 10px;">Sem comentários disponíveis.</p>`;
+                }
+            } catch (erro) {
+                resumoContainer.innerHTML = `<span style="color: red; font-size: 12px;">⚠️ Erro ao carregar avaliações.</span>`;
+            }
+        }
+
+        function fecharModal() { document.getElementById("modal-detalhes").style.display = "none"; }
+        function fecharModalExterno(e) { if (e.target.id === "modal-detalhes") fecharModal(); }
+
+        function prepararAdicao(id, nome, preco, stock, custoTransporte, botaoElemento) {
+            const inputQtd = document.getElementById(`qtd-${id}`);
+            const quantidade = inputQtd ? parseInt(inputQtd.value) : 1;
+
+            if (quantidade > parseInt(stock)) { alert("⚠️ Quantidade superior ao stock disponível."); return; }
+
+            const itemExistente = carrinho.find(item => item.id_produto === id);
+            if (itemExistente) {
+                itemExistente.quantidade += quantidade;
+            } else {
+                carrinho.push({ id_produto: id, nome_produto: nome, preco_unitario: parseFloat(preco), quantidade: quantity = quantidade, custo_transporte: parseFloat(custoTransporte) || 0.00 });
+            }
+
+            const carrinhoSec = document.getElementById("carrinho-container");
+            if (carrinhoSec && carrinhoSec.classList.contains("minimizado")) {
+                carrinhoSec.classList.remove("minimizado");
+            }
+
+            if (botaoElemento && botaoElemento.tagName === "BUTTON") {
+                botaoElemento.disabled = true;
+                botaoElemento.dataset.adicionado = "true";
+                const textoOriginal = botaoElemento.innerText;
+                const estiloOriginalBg = botaoElemento.style.backgroundColor;
+                const estiloOriginalBorder = botaoElemento.style.borderColor;
+                const estiloOriginalColor = botaoElemento.style.color;
+
+                botaoElemento.innerText = "✓ Adicionado!";
+                botaoElemento.style.backgroundColor = "#28a745";
+                botaoElemento.style.borderColor = "#218838";
+                botaoElemento.style.color = "white";
+
+                setTimeout(() => {
+                    botaoElemento.innerText = textoOriginal;
+                    botaoElemento.style.backgroundColor = estiloOriginalBg;
+                    botaoElemento.style.borderColor = estiloOriginalBorder;
+                    botaoElemento.style.color = estiloOriginalColor;
+                    botaoElemento.disabled = false;
+                    delete botaoElemento.dataset.adicionado;
+                }, 1000);
+            }
+
+            atualizarInterfaceCarrinho();
+        }
+
+        function alterarQuantidadeCarrinho(id, delta) {
+            const item = carrinho.find(item => item.id_produto === id);
+            if (!item) return;
+            const prodBase = todosProdutos.find(p => p.id === id);
+            const stockLimite = prodBase ? Number(prodBase.stock) : 999;
+
+            if (item.quantidade + delta > stockLimite) { alert(`Stock máximo atingido (${stockLimite} un.).`); return; }
+            item.quantidade += delta;
+            if (item.quantidade <= 0) carrinho = carrinho.filter(i => i.id_produto !== id);
+            atualizarInterfaceCarrinho();
+        }
+
+        function removerDoCarrinho(id) {
+            carrinho = carrinho.filter(item => item.id_produto !== id);
+            atualizarInterfaceCarrinho();
+        }
+
+        function esvaziarCarrinhoCompleto() {
+            carrinho = [];
+            localStorage.removeItem("carrinho");
+            window.valorFinalEncomenda = 0;
+            atualizarInterfaceCarrinho();
+        }
+
+        function atualizarInterfaceCarrinho() {
+            localStorage.setItem("carrinho", JSON.stringify(carrinho));
+            const contentorItens = document.getElementById("carrinho-itens");
+            const elementoTotal = document.getElementById("carrinho-total");
+            const formCheckout = document.getElementById("formulario-checkout");
+            const badge = document.getElementById("carrinho-badge");
+            const btnEsvaziar = document.getElementById("btn-esvaziar-tudo");
+            
+            const totalItens = carrinho.reduce((acc, item) => acc + item.quantidade, 0);
+            if (badge) badge.innerText = totalItens;
+
+            if (carrinho.length === 0) {
+                if (contentorItens) contentorItens.innerHTML = "O carrinho está vazio.";
+                if (elementoTotal) elementoTotal.innerText = "0.00";
+                const elementoResumo = document.getElementById("resumo-valores-carrinho");
+                if (elementoResumo) elementoResumo.innerHTML = "";
+                if (formCheckout) formCheckout.style.display = "none"; 
+                if (btnEsvaziar) btnEsvaziar.style.display = "none";
+                return;
+            }
+
+            if (contentorItens) contentorItens.innerHTML = "";
+            let totalAcumulado = 0;
+            if (btnEsvaziar) btnEsvaziar.style.display = "block";
+
+            let custoTransporteTotal = 0;
+
+            carrinho.forEach(item => {
+                const custoItem = item.preco_unitario * item.quantidade;
+                totalAcumulado += custoItem;
+                custoTransporteTotal += ((parseFloat(item.custo_transporte) || 0.00) * item.quantidade);
+
+                const div = document.createElement("div");
+                div.className = "item-carrinho";
+                // 🟩 PROTEÇÃO ADICIONADA: Proteção de escape de dados na linha interna do carrinho
+                div.innerHTML = `
+                    <div>
+                        <strong>${escaparHTML(item.nome_produto)}</strong><br>
+                        <div class="qtd-controlos">
+                            <button class="btn-qtd" onclick="alterarQuantidadeCarrinho('${escaparHTML(item.id_produto)}', -1)">-</button>
+                            <span>${Number(item.quantidade)}x</span>
+                            <button class="btn-qtd" onclick="alterarQuantidadeCarrinho('${escaparHTML(item.id_produto)}', 1)">+</button>
+                        </div>
+                    </div>
+                    <div style="text-align: right;">
+                        <span style="display:block; margin-bottom:5px;">${custoItem.toFixed(2)}€</span>
+                        <button type="button" class="btn-remover" onclick="removerDoCarrinho('${escaparHTML(item.id_produto)}')">Remover</button>
+                    </div>`;
+                if (contentorItens) contentorItens.appendChild(div);
+            });
+            
+            let totalFinal = totalAcumulado + custoTransporteTotal;
+            window.valorFinalEncomenda = totalFinal;
+
+            let elementoResumo = document.getElementById("resumo-valores-carrinho");
+            if (!elementoResumo && elementoTotal) {
+                elementoResumo = document.createElement("div");
+                elementoResumo.id = "resumo-valores-carrinho";
+                elementoTotal.parentElement.insertBefore(elementoResumo, elementoTotal);
+            }
+
+            if (elementoResumo) {
+                elementoResumo.innerHTML = `
+                    <div style="font-size: 14px; color: #555; line-height: 1.6; padding: 10px 0; border-top: 1px solid #eee; margin-top: 15px;">
+                        <div style="display:flex; justify-content:space-between; margin-bottom: 4px;"><span>Subtotal de Artigos:</span><span>${totalAcumulado.toFixed(2)}€</span></div>
+                        <div style="display:flex; justify-content:space-between; color: #0056b3; font-weight: bold; margin-bottom: 4px;"><span>Custo de Transporte Total:</span><span>${custoTransporteTotal > 0 ? custoTransporteTotal.toFixed(2) + '€' : 'Grátis'}</span></div>
+                    </div>`;
+            }
+
+            if (elementoTotal) elementoTotal.innerText = totalFinal.toFixed(2);
+            if (formCheckout) formCheckout.style.display = "block";
+            
+            setTimeout(() => {
+                try {
+                    const sessaoCheckoutRaw = localStorage.getItem("usuario_logado");
+                    if (sessaoCheckoutRaw) {
+                        const usuarioCheckout = JSON.parse(sessaoCheckoutRaw);
+                        if (usuarioCheckout) {
+                            const inputNome = document.getElementById("nome");
+                            const inputEmail = document.getElementById("email");
+                            const inputMorada = document.getElementById("morada");
+                            const inputLocalidade = document.getElementById("localidade");
+                            const inputCp = document.getElementById("cp");
+                            const inputTelemovel = document.getElementById("telemovel-entrega");
+
+                            if (inputNome && !inputNome.value) inputNome.value = usuarioCheckout.nome || "";
+                            if (inputEmail && !inputEmail.value) inputEmail.value = usuarioCheckout.email || "";
+                            if (inputMorada && !inputMorada.value) inputMorada.value = usuarioCheckout.morada || "";
+                            if (inputLocalidade && !inputLocalidade.value) inputLocalidade.value = usuarioCheckout.localidade || "";
+                            if (inputCp && !inputCp.value) inputCp.value = usuarioCheckout.codigo_postal || usuarioCheckout.cp || "";
+                            if (inputTelemovel && !inputTelemovel.value) inputTelemovel.value = usuarioCheckout.telemovel || "";
+                        }
+                    }
+                } catch (erroDeLeitura) {}
+            }, 1000);
+        }
+
+        window.dadosEntregaTemporarios = null;
+
+        async function finalizarCompra(event) {
+            if (event) event.preventDefault(); 
+
+            const nomeDigitado = document.getElementById("nome").value.trim();
+            const emailDigitado = document.getElementById("email").value.trim();
+            const moradaDigitada = document.getElementById("morada").value.trim();
+            const localidadeDigitada = document.getElementById("localidade").value.trim();
+            const cpDigitado = document.getElementById("cp").value.trim();
+            
+            const tlmEntregaInput = document.getElementById("telemovel-entrega");
+            const tlmEntrega = tlmEntregaInput ? tlmEntregaInput.value.trim() : "";
+
+            const partesDoNome = nomeDigitado.split(/\s+/);
+            if (partesDoNome.length < 2 || partesDoNome[1] === "") {
+                alert("⚠️ Por favor, introduza o seu nome completo.");
+                return; 
+            }
+
+            const cpRegex = /^\d{4}-\d{3}$/;
+            if (!cpRegex.test(cpDigitado)) {
+                alert("⚠️ O Código-Postal introduzido não é válido! (Formato: XXXX-XXX).");
+                return; 
+            }
+
+            if (tlmEntrega.length !== 9 || isNaN(tlmEntrega)) {
+                alert("⚠️ Por favor, introduza um número de telemóvel válido (9 dígitos).");
+                return;
+            }
+
+            if (!carrinho || carrinho.length === 0) { alert("⚠️ O seu carrinho está vazio."); return; }
+
+            window.dadosEntregaTemporarios = {
+                cliente_nome: nomeDigitado,
+                cliente_email: emailDigitado,
+                entrega_morada: moradaDigitada,
+                entrega_localidade: localidadeDigitada,
+                entrega_cp: cpDigitado,
+                entrega_telemovel: tlmEntrega
+            };
+
+            document.getElementById("modal-pagamento").style.display = "flex";
+            if (typeof selecionarMetodo === "function") selecionarMetodo('mbway');
+        }
+
+        function fecharModalPagamento() { document.getElementById("modal-pagamento").style.display = "none"; }
+
+        function selecionarMetodo(metodo) {
+            metodoSelecionado = metodo;
+            const container = document.getElementById("detalhes-pagamento");
+            const btnMbway = document.getElementById("btn-opcao-mbway");
+            const btnRef = document.getElementById("btn-opcao-ref");
+            const btnConfirmar = document.getElementById("btn-confirmar-pagamento");
+
+            btnMbway.style.background = "#f4f4f4"; btnMbway.style.color = "#333";
+            btnRef.style.background = "#f4f4f4"; btnRef.style.color = "#333";
+            if (btnConfirmar) btnConfirmar.style.display = "block";
+
+            if (metodo === 'mbway') {
+                btnMbway.style.background = "#007bff"; btnMbway.style.color = "white";
+                const tlmCarrinho = document.getElementById("telemovel-entrega") ? document.getElementById("telemovel-entrega").value.trim() : "";
+                container.innerHTML = `
+                    <div class="form-group" style="margin-top:10px;">
+                        <label>Número de Telemóvel MB WAY:</label>
+                        <input type="tel" id="pago-telemovel" value="${escaparHTML(tlmCarrinho)}" placeholder="9XXXXXXXX" maxlength="9" style="width:100%; padding:10px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                    </div>`;
+            } else {
+                btnRef.style.background = "#007bff"; btnRef.style.color = "white";
+                referenciaGeradaParaEnvio = Math.floor(100000000 + Math.random() * 900000000).toString().replace(/(\d{3})(\d{3})(\d{3})/, '$1 $2 $3');
+                const totalExibido = document.getElementById("carrinho-total") ? document.getElementById("carrinho-total").innerText : "0.00";
+
+                container.innerHTML = `
+                    <div style="line-height: 1.6; font-family: monospace;">
+                        <strong>Entidade:</strong> 11249<br>
+                        <strong>Referência:</strong> ${escaparHTML(referenciaGeradaParaEnvio)}<br>
+                        <strong>Montante:</strong> ${totalExibido}€
+                    </div>`;
+            }
+        }
+
+        async function processarFluxoPagamento() {
+            const botao = document.getElementById("btn-confirmar-pagamento");
+            let detalhePagamento = "";
+            
+            if (metodoSelecionado === "mbway") {
+                let tlm = document.getElementById("pago-telemovel")?.value.trim();
+                if (!tlm && window.dadosEntregaTemporarios) tlm = window.dadosEntregaTemporarios.entrega_telemovel;
+
+                if (!tlm || tlm.length !== 9 || isNaN(tlm)) {
+                    alert("⚠️ Por favor, introduza um número de MB WAY válido.");
+                    return;
+                }
+                detalhePagamento = "Telemóvel MB WAY: " + tlm;
+            } else if (metodoSelecionado === "ref") {
+                detalhePagamento = "Ent: 11249 | Ref: " + referenciaGeradaParaEnvio;
+            }
+
+            try {
+                if (botao) { botao.disabled = true; botao.innerText = "A processar..."; }
+                await efetuarCompraSupabase(metodoSelecionado, detalhePagamento);
+            } catch (erro) {
+                alert("❌ Ocorreu um erro ao processar o seu pedido.");
+                if (botao) { botao.disabled = false; botao.innerText = "Simular Pagamento"; }
+            }
+        }
+
+        async function efetuarCompraSupabase(metodoPagamento, detalhePagamento) {
+            if (!carrinho || carrinho.length === 0) { alert("⚠️ O seu carrinho está vazio!"); return; }
+            if (!window.dadosEntregaTemporarios) { alert("⚠️ Dados de entrega não encontrados."); return; }
+
+            const dados = window.dadosEntregaTemporarios;
+            const idEncomenda = "ENC-" + new Date().getTime();
+            const dataAtual = new Date();
+            
+            const dataFormatada = dataAtual.toISOString().split('T')[0];
+            const horaFormatada = dataAtual.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' });
+
+            let totalCompra = 0;
+            const linhasItens = [];
+
+            carrinho.forEach(item => {
+                const qtd = Number(item.quantidade) || 1;
+                const preco = Number(item.preco_unitario || item.preco) || 0;
+                totalCompra += (preco * qtd);
+
+                linhasItens.push({
+                    id_encomenda: idEncomenda,
+                    id_produto: (item.id_produto).toString(),
+                    nome_produto: item.nome_produto,
+                    quantidade: qtd,
+                    preco_unitario: preco
+                });
+            });
+
+            try {
+                const { error: errorEncomenda } = await supabaseClient
+                    .from('encomendas')
+                    .insert([
+                        {
+                            id: idEncomenda,
+                            data: dataFormatada.toString(),
+                            hora: horaFormatada.toString(),
+                            cliente_nome: dados.cliente_nome,
+                            cliente_email: dados.cliente_email,
+                            morada: dados.entrega_morada,
+                            localidade: dados.entrega_localidade,
+                            cp: dados.entrega_cp,
+                            telemovel: dados.entrega_telemovel.toString(),
+                            itens: carrinho.length + " artigo(s)",
+                            total: Number(totalCompra),
+                            status: 'Pendente',
+                            metodo_pagamento: metodoPagamento === 'mbway' ? 'MB WAY' : 'Referência Multibanco',
+                            detalhe_pagamento: detalhePagamento,
+                            estimativa_entrega: dataFormatada.toString(),
+                            entrega_real: null
+                        }
+                    ]);
+
+                if (errorEncomenda) throw new Error(errorEncomenda.message);
+
+                const { error: errorItens } = await supabaseClient.from('itens_encomenda').insert(linhasItens);
+                if (errorItens) throw new Error(errorItens.message);
+
+                for (const item of carrinho) {
+                    const idProd = (item.id_produto).toString();
+                    const qtdComprada = Number(item.quantidade) || 1;
+
+                    const { data: produtoOriginal } = await supabaseClient.from('produtos').select('stock').eq('id', idProd).single();
+                    if (produtoOriginal) {
+                        let novoStock = (Number(produtoOriginal.stock) || 0) - qtdComprada;
+                        if (novoStock < 0) novoStock = 0;
+
+                        await supabaseClient.from('produtos').update({ stock: novoStock }).eq('id', idProd);
+                    }
+                }
+
+                alert(`🎉 Encomenda finalizada com sucesso!\nID: ${idEncomenda}`);
+                esvaziarCarrinhoCompleto();
+                fecharModalPagamento(); 
+                
+                setTimeout(() => { window.location.reload(); }, 200);
+            } catch (erro) {
+                alert("❌ Erro ao finalizar a compra no servidor.");
+                console.error(erro);
+            }
+        }
+
+        function irParaEncomendasComSeguranca(event) {
+            if (event) event.preventDefault();
+            if (usuarioLogado && usuarioLogado.email) {
+                const queryParams = `nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada || "")}&localidade=${encodeURIComponent(usuarioLogado.localidade || "")}&cp=${encodeURIComponent(usuarioLogado.codigo_postal || "")}&tipo=${encodeURIComponent(usuarioLogado.tipo || "comprador")}`;
+                window.location.href = `encomendas.html?${queryParams}`;
+            } else {
+                alert("Por favor, faça login primeiro.");
+                window.location.href = "autenticacao.html";
+            }
+        }
+
+        carregarProdutos();
+        atualizarInterfaceCarrinho();
+    </script>
 </body>
 </html>

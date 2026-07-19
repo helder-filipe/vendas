@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self'; 
+  script-src 'self' 'unsafe-inline'; 
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+  img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com; 
+  connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com;
+  font-src 'self' https://fonts.gstatic.com;
+">
     <title>Painel do Vendedor - Cadastro de Produtos</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; background: #f4f4f4; color: #333; }
@@ -187,7 +195,7 @@
 
     <div class="admin-container">
         <h1>Cadastro de Produto</h1>
-        <form id="form-cadastro" onsubmit="enviarNovoProdutoAoSheets(event)">
+        <form id="form-cadastro" onsubmit="enviarNovoProdutoAoSupabase(event)">
             
             <div class="form-section">
                 <h2>1. Informações Básicas</h2>
@@ -273,7 +281,7 @@
         </form>
     </div>
 
-    <div class="form-section" style="margin-top: 40px; border-top: 2px solid #ddd; padding-top: 20px;">
+    <div class="form-section" style="max-width: 1250px; margin: 40px auto 0 auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
     <h2>Gestão de Encomendas Recebidas</h2>
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <button type="button" onclick="carregarEncomendasVendedor()" style="background: #28a745; width: auto; padding: 10px 20px;">🔄 Atualizar Lista</button>
@@ -284,29 +292,29 @@
             <table style="width: 100%; border-collapse: collapse; font-size: 14px; background: white;">
                 <thead>
                     <tr style="background: #232f3e; color: white; text-align: left;">
-                        <th style="padding: 13px;">ID</th>
-                        <th style="padding: 13px;">Data</th>
-                        <th style="padding: 13px;">Cliente</th>
-                        <th style="padding: 13px;">Artigos</th>
-                        <th style="padding: 13px;">Avaliação Produto</th>
-                        <th style="padding: 13px;">Avaliação Transporte</th>
-                        <th style="padding: 13px;">Avaliação Fornecedor</th>
-                        <th style="padding: 13px;">Dados de Envio</th> 
-                        <th style="padding: 13px;">Telemóvel</th>     
-                        <th style="padding: 13px;">Total</th>
-                        <th style="padding: 13px;">Pagamento</th>
-                        <th style="padding: 13px;">Estado Atual</th>
-                        <th style="padding: 13px;">Ações</th>
+                        <th style="padding: 13px; border: 1px solid #ddd;">ID</th>
+                        <th style="padding: 13px; border: 1px solid #ddd;">Data</th>
+                        <th style="padding: 13px; border: 1px solid #ddd;">Cliente</th>
+                        <th style="padding: 13px; border: 1px solid #ddd;">Artigos</th>
+                        <th style="padding: 13px; border: 1px solid #ddd; text-align: center;">Avaliação Produto</th>
+                        <th style="padding: 13px; border: 1px solid #ddd; text-align: center;">Avaliação Transporte</th>
+                        <th style="padding: 13px; border: 1px solid #ddd; text-align: center;">Avaliação Fornecedor</th>
+                        <th style="padding: 13px; border: 1px solid #ddd;">Dados de Envio</th> 
+                        <th style="padding: 13px; border: 1px solid #ddd;">Telemóvel</th>     
+                        <th style="padding: 13px; border: 1px solid #ddd;">Total</th>
+                        <th style="padding: 13px; border: 1px solid #ddd;">Pagamento</th>
+                        <th style="padding: 13px; border: 1px solid #ddd; text-align: center;">Estado Atual</th>
+                        <th style="padding: 13px; border: 1px solid #ddd; text-align: center;">Ações</th>
                     </tr>
                 </thead>
                 <tbody id="tabela-encomendas-vendedor">
-                    <tr><td colspan="8" style="padding: 15px; text-align: center; color: #666;">Clique em Atualizar Lista para carregar os dados.</td></tr>
+                    <tr><td colspan="13" style="padding: 15px; text-align: center; color: #666;">Clique em Atualizar Lista para carregar os dados.</td></tr>
                 </tbody>
             </table>
         </div>
     </div>
 
-    <div class="painel-seccao" style="background: white; padding: 20px; border-radius: 8px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
+    <div class="painel-seccao" style="max-width: 1250px; margin: 20px auto; background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05);">
     <h2>Controlo de Inventário / Stocks</h2>
     <div style="display: flex; gap: 10px; margin-bottom: 15px;">
         <button type="button" onclick="carregarInventarioCompleto()" style="background: #28a745; width: auto; padding: 10px 20px;">🔄 Atualizar Inventário</button>
@@ -316,18 +324,18 @@
         <table style="width:100%; border-collapse: collapse; font-size:13px; text-align: left;">
     <thead>
         <tr style="background: #232f3e; color: white;">
-            <th style="padding: 10px;">ID</th>
-            <th style="padding: 10px;">Imagem</th>
-            <th style="padding: 10px;">Nome / Categoria</th>
-            <th style="padding: 10px;">Preço</th>
-            <th style="padding: 10px;">Stock</th>
-            <th style="padding: 10px;">Fabricante / Marca</th>
-            <th style="padding: 10px;">Peso</th>
-            <th style="padding: 10px;">Dimensões</th>
-            <th style="padding: 10px;">Envio</th>
-            <th style="padding: 10px;">Portes</th>
-            <th style="padding: 10px; text-align: center; width: 40px; min-width: 40px;">Editar</th>
-            <th style="padding: 10px; text-align: center; width: 40px; min-width: 40px;">Apagar</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">ID</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Imagem</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Nome / Categoria</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Preço</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Stock</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Fabricante / Marca</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Peso</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Dimensões</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: center;">Envio</th>
+            <th style="padding: 10px; border: 1px solid #ddd;">Portes</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: center; width: 50px;">Editar</th>
+            <th style="padding: 10px; border: 1px solid #ddd; text-align: center; width: 50px;">Apagar</th>
         </tr>
     </thead>
     <tbody id="tabela-stocks-body">
@@ -426,11 +434,20 @@
         } else if (usuarioLogado.tipo !== "vendedor") {
             alert("Acesso negado. Esta área é exclusiva para vendedores.");
             window.location.href = "index.html"; 
-        } else {
-            console.log("Acesso autorizado ao painel de administração.");
         }
 
         const idVendedorAtivo = usuarioLogado && usuarioLogado.email ? usuarioLogado.email.trim().toLowerCase() : "sem_email";
+
+        function escaparHTML(texto) {
+            if (!texto) return "";
+            return String(texto)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\//g, "&#x2F;");
+        }
 
         document.addEventListener("DOMContentLoaded", function() {
             if (usuarioLogado && usuarioLogado.nome) {
@@ -443,6 +460,9 @@
             carregarEncomendasVendedor();
         });
 
+        // =========================================================================
+        // CONTROLO DE INVENTÁRIO - TOTALMENTE BLINDADO CONTRA ATAQUES XSS
+        // =========================================================================
         async function carregarInventarioCompleto() {
             const tbody = document.getElementById("tabela-stocks-body");
             if (!tbody) return;
@@ -481,35 +501,36 @@
                         logObj = typeof prod.informacoes === "string" ? JSON.parse(prod.informacoes || "{}") : (prod.informacoes || {});
                     } catch(e) { logObj = {}; }
 
-                    const fabricante = logObj.fabricante || '<span style="color:#aaa; font-style:italic;">N/D</span>';
-                    const peso = logObj.peso ? `${logObj.peso} kg` : '<span style="color:#aaa; font-style:italic;">N/D</span>';
-                    const dimensoes = logObj.dimensoes || '<span style="color:#aaa; font-style:italic;">N/D</span>';
+                    const fabricante = logObj.fabricante || 'N/D';
+                    const peso = logObj.peso ? `${logObj.peso} kg` : 'N/D';
+                    const dimensoes = logObj.dimensoes || 'N/D';
 
                     const tr = document.createElement("tr");
                     tr.style.borderBottom = "1px solid #ddd";
 
+                    // 🟩 PROTEÇÃO ADICIONADA: Injetado escaparHTML() para higienização estrita de dados textuais lidos
                     tr.innerHTML = `
-                        <td style="padding: 8px; font-weight: bold;">${prod.id}</td>
-                        <td style="padding: 8px;">
-                            <img src="${prod.imagem_url || 'https://via.placeholder.com/50'}" style="width:35px; height:35px; object-fit:contain; border-radius:4px; background:white; border:1px solid #eee;">
+                        <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">${escaparHTML(String(prod.id))}</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">
+                            <img src="${escaparHTML(prod.imagem_url || 'https://via.placeholder.com/50')}" style="width:35px; height:35px; object-fit:contain; border-radius:4px; background:white; border:1px solid #eee;">
                         </td>
-                        <td style="padding: 8px;" title="${techTooltip ? 'Especificações Técnicas:\n' + techTooltip : 'Sem especificações técnicas.'}">
-                            <strong style="color: #0056b3; cursor: help; font-size:13px;">${prod.nome}</strong><br>
-                            <small style="color:#666; background:#eeb; padding:1px 3px; border-radius:3px; font-size:10px;">${prod.categoria}</small>
+                        <td style="padding: 8px; border: 1px solid #ddd;" title="${techTooltip ? 'Especificações Técnicas:\n' + escaparHTML(techTooltip) : 'Sem especificações técnicas.'}">
+                            <strong style="color: #0056b3; cursor: help; font-size:13px;">${escaparHTML(prod.nome)}</strong><br>
+                            <small style="color:#666; background:#eeb; padding:1px 3px; border-radius:3px; font-size:10px;">${escaparHTML(prod.categoria)}</small>
                         </td>
-                        <td style="padding: 8px; font-weight: bold;">${preco.toFixed(2)}€</td>
-                        <td style="padding: 8px; font-weight: bold; color: ${stock <= 5 ? 'red' : 'green'};">${stock}</td>
-                        <td style="padding: 8px; color: #333;">${fabricante}</td>
-                        <td style="padding: 8px; color: #555;">${peso}</td>
-                        <td style="padding: 8px; color: #555; font-size: 11px;">${dimensoes}</td>
-                        <td style="padding: 8px; text-align:center;">${prod.dias_entrega || 8}d</td>
-                        <td style="padding: 8px;">${portes > 0 ? portes.toFixed(2) + '€' : '0€'}</td>
+                        <td style="padding: 8px; font-weight: bold; border: 1px solid #ddd;">${preco.toFixed(2)}€</td>
+                        <td style="padding: 8px; font-weight: bold; text-align: center; border: 1px solid #ddd; color: ${stock <= 5 ? 'red' : 'green'};">${stock}</td>
+                        <td style="padding: 8px; color: #333; border: 1px solid #ddd;">${escaparHTML(fabricante)}</td>
+                        <td style="padding: 8px; color: #555; border: 1px solid #ddd;">${escaparHTML(peso)}</td>
+                        <td style="padding: 8px; color: #555; font-size: 11px; border: 1px solid #ddd;">${escaparHTML(dimensoes)}</td>
+                        <td style="padding: 8px; text-align:center; border: 1px solid #ddd;">${Number(prod.dias_entrega || 8)}d</td>
+                        <td style="padding: 8px; border: 1px solid #ddd;">${portes > 0 ? portes.toFixed(2) + '€' : '0.00€'}</td>
                         
-                        <td style="padding: 8px; text-align: center; width: 40px; min-width: 40px;">
-                            <button onclick="prepararEdicaoSegura('${prod.id}')" title="Editar Artigo" style="background: #ff9900; color: #111; padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; width: 30px;">✏️</button>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 50px;">
+                            <button onclick="prepararEdicaoSegura('${escaparHTML(String(prod.id))}')" title="Editar Artigo" style="background: #ff9900; color: #111; padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; width: 35px;">✏️</button>
                         </td>
-                        <td style="padding: 8px; text-align: center; width: 40px; min-width: 40px;">
-                            <button onclick="apagarProdutoSupabase('${prod.id}')" title="Apagar Artigo" style="background: #dc3545; color: white; padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; width: 30px;">🗑️</button>
+                        <td style="padding: 8px; border: 1px solid #ddd; text-align: center; width: 50px;">
+                            <button onclick="apagarProdutoSupabase('${escaparHTML(String(prod.id))}')" title="Apagar Artigo" style="background: #dc3545; color: white; padding: 4px; border-radius: 4px; border: none; cursor: pointer; font-size: 12px; font-weight: bold; width: 35px;">🗑️</button>
                         </td>
                     `;
                     tbody.appendChild(tr);
@@ -530,6 +551,7 @@
         }
 
         function abrirModalEdicao(prod) {
+            // Os inputs em formato de formulário (.value) aceitam a atribuição com segurança nativa do DOM
             document.getElementById("edit-id").value = prod.id;
             document.getElementById("edit-nome").value = prod.nome || "";
             document.getElementById("edit-categoria").value = prod.categoria || "";
@@ -608,7 +630,7 @@
             }
         }
 
-        async function enviarNovoProdutoAoSheets(event) {
+        async function enviarNovoProdutoAoSupabase(event) {
             event.preventDefault();
             if (!usuarioLogado || !usuarioLogado.email) return;
 
@@ -666,6 +688,9 @@
             }
         }
 
+        // =========================================================================
+        // LISTAR ENCOMENDAS - TOTALMENTE PROTEGIDO CONTRA XSS NO CLIENTE E COMENTÁRIO
+        // =========================================================================
         async function carregarEncomendasVendedor() {
             const tbody = document.getElementById("tabela-encomendas-vendedor");
             tbody.innerHTML = `<tr><td colspan="13" style="padding: 15px; text-align: center;">A carregar encomendas...</td></tr>`;
@@ -708,32 +733,36 @@
                     const itensDestaEncomenda = todosOsItens ? todosOsItens.filter(item => String(item.id_encomenda) === String(enc.id)) : [];
                     let textoArtigosHTML = "";
                     itensDestaEncomenda.forEach(item => {
-                        textoArtigosHTML += `<div style="margin-bottom: 4px; border-bottom: 1px dashed #eee;">📦 <strong>${item.nome_produto}</strong> (${item.quantidade}x)</div>`;
+                        textoArtigosHTML += `<div style="margin-bottom: 4px; border-bottom: 1px dashed #eee;">📦 <strong>${escaparHTML(item.nome_produto)}</strong> (${Number(item.quantidade)}x)</div>`;
                     });
 
                     const avaliacaoDestaEncomenda = todasAsAvaliacoes ? todasAsAvaliacoes.find(a => String(a.id_encomenda) === String(enc.id)) : null;
                     const notaProd = avaliacaoDestaEncomenda ? "⭐ ".repeat(avaliacaoDestaEncomenda.nota_produto) : "N/D";
                     const notaVend = avaliacaoDestaEncomenda ? "⭐ ".repeat(avaliacaoDestaEncomenda.nota_vendedor) : "N/D";
                     const notaTrans = avaliacaoDestaEncomenda ? "⭐ ".repeat(avaliacaoDestaEncomenda.nota_transporte) : "N/D";
-                    const comentarioHTML = avaliacaoDestaEncomenda && avaliacaoDestaEncomenda.comentario ? `<br><small style="background:#f0f2f5; padding:2px; border-radius:4px;">💬 "${avaliacaoDestaEncomenda.comentario}"</small>` : "";
-
+                    
+                    const comentarioProtegido = avaliacaoDestaEncomenda && avaliacaoDestaEncomenda.comentario ? escaparHTML(avaliacaoDestaEncomenda.comentario) : "";
+                    const comentarioHTML = comentarioProtegido ? `<br><small style="background:#f0f2f5; padding:2px; border-radius:4px; display:inline-block; margin-top:4px;">💬 "${comentarioProtegido}"</small>` : "";
+                    
                     const tr = document.createElement("tr");
                     tr.style.borderBottom = "1px solid #ddd";
+                    
+                    // 🟩 HIGIENIZAÇÃO RIGOROSA: Aplicação de escape em todas as propriedades que aceitam inputs de clientes
                     tr.innerHTML = `
-                        <td style="padding: 10px; font-weight: bold;">${enc.id}</td>
-                        <td style="padding: 10px; font-size: 13px;">${dataFmt}</td>
-                        <td style="padding: 10px; font-size: 13px;"><strong>${enc.cliente_nome}</strong><br>${enc.cliente_email}${comentarioHTML}</td>
-                        <td style="padding: 10px; font-size: 13px;">${textoArtigosHTML || enc.itens}</td>
-                        <td style="padding: 10px; text-align: center; color: #ff9900;">${notaProd}</td>
-                        <td style="padding: 10px; text-align: center; color: #28a745;">${notaVend}</td>
-                        <td style="padding: 10px; text-align: center; color: #0056b3;">${notaTrans}</td>
-                        <td style="padding: 10px; font-size: 12px;">📍 ${enc.morada || "N/D"}, ${enc.localidade || "N/D"}</td>
-                        <td style="padding: 10px; font-family: monospace;">📞 ${enc.telemovel || "N/D"}</td>
-                        <td style="padding: 10px; font-weight: bold; color: #b12704;">${Number(enc.total).toFixed(2)}€</td>
-                        <td style="padding: 10px; font-size: 12px;"><small>${enc.metodo_pagamento || "N/D"}</small></td>
-                        <td style="padding: 10px; text-align: center;"><span style="padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; background: ${badgeBg}; color: ${badgeColor};">${estadoAtual}</span></td>
-                        <td style="padding: 10px;">
-                            <select onchange="alterarEstadoNoSupabase('${enc.id}', this.value)" style="padding: 5px; font-size: 12px;">
+                        <td style="padding: 10px; font-weight: bold; border: 1px solid #ddd;">${escaparHTML(String(enc.id))}</td>
+                        <td style="padding: 10px; font-size: 13px; border: 1px solid #ddd;">${dataFmt}</td>
+                        <td style="padding: 10px; font-size: 13px; border: 1px solid #ddd;"><strong>${escaparHTML(enc.cliente_nome)}</strong><br>${escaparHTML(enc.cliente_email)}${comentarioHTML}</td>
+                        <td style="padding: 10px; font-size: 13px; border: 1px solid #ddd;">${textoArtigosHTML || escaparHTML(enc.itens)}</td>
+                        <td style="padding: 10px; text-align: center; color: #ff9900; border: 1px solid #ddd;">${notaProd}</td>
+                        <td style="padding: 10px; text-align: center; color: #28a745; border: 1px solid #ddd;">${notaVend}</td>
+                        <td style="padding: 10px; text-align: center; color: #0056b3; border: 1px solid #ddd;">${notaTrans}</td>
+                        <td style="padding: 10px; font-size: 12px; border: 1px solid #ddd;">📍 ${escaparHTML(enc.morada || "N/D")}, ${escaparHTML(enc.localidade || "N/D")}</td>
+                        <td style="padding: 10px; font-family: monospace; border: 1px solid #ddd;">📞 ${escaparHTML(String(enc.telemovel || "N/D"))}</td>
+                        <td style="padding: 10px; font-weight: bold; color: #b12704; border: 1px solid #ddd;">${Number(enc.total).toFixed(2)}€</td>
+                        <td style="padding: 10px; font-size: 12px; border: 1px solid #ddd;"><small>${escaparHTML(enc.metodo_pagamento || "N/D")}</small></td>
+                        <td style="padding: 10px; text-align: center; border: 1px solid #ddd;"><span style="padding: 4px; border-radius: 4px; font-size: 11px; font-weight: bold; background: ${badgeBg}; color: ${badgeColor};">${escaparHTML(estadoAtual)}</span></td>
+                        <td style="padding: 10px; border: 1px solid #ddd; text-align: center;">
+                            <select onchange="alterarEstadoNoSupabase('${escaparHTML(String(enc.id))}', this.value)" style="padding: 5px; font-size: 12px;">
                                 <option value="">-- Alterar --</option>
                                 <option value="Pendente">Pendente</option>
                                 <option value="Em Processamento">Em Processamento</option>
@@ -751,6 +780,10 @@
 
         async function alterarEstadoNoSupabase(idEncomenda, novoEstado) {
             if(!novoEstado) return;
+            if(!confirm(`Deseja alterar o estado da encomenda ${idEncomenda} para "${novoEstado}"?`)) {
+                carregarEncomendasVendedor();
+                return;
+            }
             try {
                 const { error } = await supabaseClient.from('encomendas').update({ status: novoEstado }).eq('id', idEncomenda);
                 if (error) throw error;
@@ -773,7 +806,7 @@
             window.encomendasGlobalMemoria.forEach(enc => {
                 const dataFmt = enc.data ? new Date(enc.data).toLocaleDateString('pt-PT') : 'N/D';
                 
-                const linha = [
+                const line = [
                     enc.id,
                     dataFmt,
                     `"${(enc.cliente_nome || '').replace(/"/g, '""')}"`,
@@ -786,7 +819,7 @@
                     enc.metodo_pagamento || '',
                     enc.status || 'Pendente'
                 ];
-                linhas.push(linha.join(";"));
+                linhas.push(line.join(";"));
             });
 
             descarregarFicheiroCSV(linhas.join("\n"), "Relatorio_Encomendas_Koolaction.csv");
@@ -808,7 +841,7 @@
                 } catch(e) { logObj = {}; }
 
                 const inlineName = prod.nome || '';
-                const linha = [
+                const line = [
                     prod.id,
                     `"${inlineName.replace(/"/g, '""')}"`,
                     prod.categoria || '',
@@ -820,7 +853,7 @@
                     prod.dias_entrega || 8,
                     Number(prod.custo_transporte || 0).toFixed(2)
                 ];
-                linhas.push(linha.join(";"));
+                linhas.push(line.join(";"));
             });
 
             descarregarFicheiroCSV(linhas.join("\n"), "Inventario_Stocks_Koolaction.csv");
@@ -863,9 +896,9 @@
             window.location.href = "autenticacao.html";
         }
 
-        window.processarCadastroProduto = enviarNovoProdutoAoSheets;
-        window.cadastrarProduto = enviarNovoProdutoAoSheets;
-        window.enviarNovoProdutoAoSheets = enviarNovoProdutoAoSheets;
+        window.processarCadastroProduto = enviarNovoProdutoAoSupabase;
+        window.cadastrarProduto = enviarNovoProdutoAoSupabase;
+        window.enviarNovoProdutoAoSheets = enviarNovoProdutoAoSupabase;
         window.carregarEncomendasVendedor = carregarEncomendasVendedor;
         window.alterarEstadoNoSheets = alterarEstadoNoSupabase;
     </script>

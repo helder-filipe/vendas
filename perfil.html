@@ -3,6 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Content-Security-Policy" content="
+  default-src 'self'; 
+  script-src 'self' 'unsafe-inline'; 
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+  img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com; 
+  connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com;
+  font-src 'self' https://fonts.gstatic.com;
+">
     <title>O Meu Perfil - Loja Online</title>
     <style>
         body {
@@ -188,9 +196,6 @@
         <!-- Lado Esquerdo: Logótipo da Koolaction -->
         <div class="logo-container" onclick="window.location.href='index.html'" style="display: flex; align-items: center; cursor: pointer; gap: 15px;">
             <img src="koolaction.png" alt="Logo" style="height: 70px; width: auto; object-fit: contain; display: block;">
-            
-            
-            </span>
         </div>
 
         <!-- Lado Direito: Menu de Utilizador Alinhado e Proporcional -->
@@ -232,7 +237,7 @@
             </button>
 
             <!-- 📦 As Minhas Encomendas -->
-            <button onclick="window.location.href='encomendas.html'" style="
+            <button onclick="irParaEncomendasComSeguranca(event)" style="
                 display: inline-flex;
                 align-items: center;
                 justify-content: center;
@@ -333,7 +338,7 @@
         </form>
     </div>
 
-        <script>
+    <script>
         const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
 
@@ -341,8 +346,18 @@
 
         let usuarioLogado = null;
 
+        function escaparHTML(texto) {
+            if (!texto) return "";
+            return String(texto)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;")
+                .replace(/\//g, "&#x2F;");
+        }
+
         document.addEventListener("DOMContentLoaded", function() {
-            // 1. Recupera a sessão local de forma segura
             try {
                 const sessaoRaw = localStorage.getItem("usuario_logado");
                 if (sessaoRaw) {
@@ -352,33 +367,28 @@
                 console.error("Erro ao ler sessão do localStorage");
             }
 
-            // 2. Proteção de Rota: Se não houver e-mail na sessão, redireciona para login
             if (!usuarioLogado || !usuarioLogado.email || usuarioLogado.email === "undefined") {
                 alert("⚠️ Precisas de iniciar sessão para aceder ao teu perfil.");
                 window.location.href = "autenticacao.html";
                 return;
             }
 
-            // 3. Atualiza o cabeçalho dinamicamente
             const saudacao = document.getElementById("saudacao-texto");
             if (saudacao && usuarioLogado.nome) {
-                saudacao.innerText = `Olá, ${usuarioLogado.nome}!`;
+                saudacao.innerText = `Olá, ${escaparHTML(usuarioLogado.nome)}!`;
             }
 
-            // 4. Arranca o carregamento dos dados do Supabase
             carregarDadosDoPerfil();
         });
 
         // =========================================================================
-        // 1. CARREGAR DADOS DO PERFIL (SUPABASE) - CORRIGIDO PARA FILE:///
+        // 1. CARREGAR DADOS DO PERFIL (SUPABASE)
         // =========================================================================
         async function carregarDadosDoPerfil() {
             const form = document.getElementById("form-perfil");
             const loading = document.getElementById("loading-perfil");
 
-            // Garante que o e-mail está limpo e sem caracteres ocultos do browser
             if (!usuarioLogado || !usuarioLogado.email) {
-                // Se o localStorage falhou devido ao file:///, tenta ler o input se já tiver sido preenchido
                 const inputEmail = document.getElementById("perfil-email");
                 if (inputEmail && inputEmail.value) {
                     usuarioLogado = { email: inputEmail.value.trim().toLowerCase() };
@@ -394,8 +404,8 @@
                 const { data: utilizador, error } = await supabaseClient
                     .from('utilizadores')
                     .select('*')
-                    .ilike('email', emailBusca) // Mudado para ilike no carregamento também
-                    .maybeSingle(); // Evita dar erro estrito se falhar a leitura única
+                    .ilike('email', emailBusca)
+                    .maybeSingle();
 
                 if (error) throw error;
 
@@ -408,7 +418,7 @@
                     atribuirValorSeguro("perfil-localidade", utilizador.localidade);
 
                     const saudacao = document.getElementById("saudacao-texto");
-                    if (saudacao) saudacao.innerText = `Olá, ${utilizador.nome}!`;
+                    if (saudacao) saudacao.innerText = `Olá, ${escaparHTML(utilizador.nome)}!`;
                 }
 
                 if (loading) loading.style.display = "none";
@@ -421,8 +431,8 @@
             }
         }
         
-       // =========================================================================
-        // 2. GUARDAR ALTERAÇÕES DO PERFIL (SUPABASE - COM LIMPEZA DE ESPAÇOS ABSOLUTA)
+        // =========================================================================
+        // 2. GUARDAR ALTERAÇÕES DO PERFIL (SUPABASE)
         // =========================================================================
         async function guardarAlteracoesPerfil(event) {
             event.preventDefault();
@@ -436,7 +446,6 @@
             const inputEmail = document.getElementById("perfil-email");
             let emailAtual = inputEmail ? inputEmail.value : "";
 
-            // 🟩 LIMPEZA ABSOLUTA: Remove TODOS os espaços em branco (início, fim e meio) e caracteres ocultos
             emailAtual = emailAtual.replace(/\s+/g, '').toLowerCase().trim();
 
             const nomeDigitado = document.getElementById("perfil-nome")?.value.trim();
@@ -455,7 +464,6 @@
             }
 
             try {
-                // UPDATE na tabela utilizadores
                 const { data, error } = await supabaseClient
                     .from('utilizadores')
                     .update({
@@ -470,15 +478,13 @@
 
                 if (error) throw error;
 
-                // 🟩 Se continuar a não encontrar, vamos mostrar o e-mail sem espaços nos parêntesis para validar
                 if (!data || data.length === 0) {
-                    alert(`⚠️ Aviso: O e-mail [${emailAtual}] não foi encontrado na tabela 'utilizadores'. Nenhuma linha foi alterada.`);
+                    alert(`⚠️ Aviso: O e-mail [${escaparHTML(emailAtual)}] não foi encontrado na tabela 'utilizadores'. Nenhuma linha foi alterada.`);
                     return;
                 }
 
-                mostrarFeedback("🎉 Perfil guardado e atualizado com sucesso no Supabase!", "sucesso");
+                mostrarFeedback("🎉 Perfil guardado e updated com sucesso no Supabase!", "sucesso");
                 
-                // Sincroniza a sessão do localStorage
                 const novoObjetoSessao = {
                     ...usuarioLogado,
                     nome: nomeDigitado,
@@ -490,7 +496,7 @@
                 localStorage.setItem("usuario_logado", JSON.stringify(novoObjetoSessao));
                 
                 const saudacao = document.getElementById("saudacao-texto");
-                if (saudacao) saudacao.innerText = `Olá, ${nomeDigitado}!`;
+                if (saudacao) saudacao.innerText = `Olá, ${escaparHTML(nomeDigitado)}!`;
 
             } catch (erro) {
                 console.error("Erro detalhado ao gravar no Supabase:", erro.message || erro);
@@ -504,7 +510,6 @@
             }
         }
 
-        // --- FUNÇÕES UTILITÁRIAS ---
         function atribuirValorSeguro(idElemento, valor) {
             const elemento = document.getElementById(idElemento);
             if (elemento) {
@@ -515,10 +520,21 @@
         function mostrarFeedback(texto, tipo) {
             const feedback = document.getElementById("mensagem-feedback");
             if (feedback) {
-                feedback.innerText = texto;
+                feedback.textContent = texto; // Usar textContent para mitigar XSS de forma nativa
                 feedback.className = `feedback-mensagem ${tipo === "sucesso" ? "feedback-sucesso" : "feedback-erro"}`;
                 feedback.style.display = "block";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
+            }
+        }
+
+        function irParaEncomendasComSeguranca(event) {
+            if (event) event.preventDefault();
+            if (usuarioLogado && usuarioLogado.email) {
+                const queryParams = `nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada || "")}&localidade=${encodeURIComponent(usuarioLogado.localidade || "")}&cp=${encodeURIComponent(usuarioLogado.codigo_postal || usuarioLogado.cp || "")}&tipo=${encodeURIComponent(usuarioLogado.tipo || "comprador")}`;
+                window.location.href = `encomendas.html?${queryParams}`;
+            } else {
+                alert("Por favor, faça login primeiro.");
+                window.location.href = "autenticacao.html";
             }
         }
 
@@ -527,6 +543,109 @@
             localStorage.removeItem("carrinho");
             window.location.href = "index.html";
         }
+
+        document.addEventListener("DOMContentLoaded", function() {
+        const inputCP = document.getElementById("codigo_postal"); // Garante que o ID coincide com o teu HTML
+        const inputTelemovel = document.getElementById("telemovel");
+        const formPerfil = document.getElementById("form-perfil"); // O teu elemento <form>
+
+        // 1. MÁSCARA EM TEMPO REAL PARA O CÓDIGO POSTAL (Padrão de Portugal: XXXX-XXX)
+        if (inputCP) {
+            inputCP.addEventListener("input", function(e) {
+            // Remove tudo o que não for número
+            let valor = e.target.value.replace(/\D/g, "");
+            
+            // Limita ao máximo de 7 dígitos numéricos
+            if (valor.length > 7) valor = valor.slice(0, 7);
+            
+            // Aplica o hífen após o 4º dígito
+            if (valor.length > 4) {
+                e.target.value = valor.slice(0, 4) + "-" + valor.slice(4);
+            } else {
+                e.target.value = valor;
+            }
+            
+            validarCampoCP(inputCP);
+            });
+        }
+
+        // 2. MÁSCARA EM TEMPO REAL PARA O TELEMÓVEL (Apenas números, máximo 9 dígitos)
+        if (inputTelemovel) {
+            inputTelemovel.addEventListener("input", function(e) {
+            // Remove qualquer caractere que não seja número
+            let valor = e.target.value.replace(/\D/g, "");
+            
+            // Limita a 9 dígitos (padrão nacional móvel)
+            if (valor.length > 9) valor = valor.slice(0, 9);
+            
+            e.target.value = valor;
+            validarCampoTelemovel(inputTelemovel);
+            });
+        }
+
+        // 3. FUNÇÕES DE VALIDAÇÃO VISUAL (UX)
+        function validarCampoCP(input) {
+            const regexCP = /^\d{4}-\d{3}$/;
+            if (regexCP.test(input.value)) {
+            marcarComoValido(input);
+            return true;
+            } else {
+            marcarComoInvalido(input, "O formato deve ser 1234-123");
+            return false;
+            }
+        }
+
+        function validarCampoTelemovel(input) {
+            // Valida se tem exatamente 9 dígitos e se começa por 9 (opcional, mas recomendado em PT)
+            const regexTel = /^9\d{8}$/;
+            if (regexTel.test(input.value)) {
+            marcarComoValido(input);
+            return true;
+            } else {
+            marcarComoInvalido(input, "Deve conter 9 dígitos e começar por 9");
+            return false;
+            }
+        }
+
+        function marcarComoValido(input) {
+            input.style.borderColor = "#28a745"; // Verde
+            input.style.backgroundColor = "#f8fff9";
+            const erroElemento = input.nextElementSibling;
+            if (erroElemento && erroElemento.classList.contains("erro-mensagem")) {
+            erroElemento.textContent = "";
+            }
+        }
+
+        function marcarComoInvalido(input, mensagem) {
+            input.style.borderColor = "#dc3545"; // Vermelho
+            input.style.backgroundColor = "#fff8f8";
+            
+            // Procura ou cria uma pequena label de erro logo abaixo do input
+            let erroElemento = input.nextElementSibling;
+            if (!erroElemento || !erroElemento.classList.contains("erro-mensagem")) {
+            erroElemento = document.createElement("small");
+            erroElemento.classList.add("erro-mensagem");
+            erroElemento.style.color = "#dc3545";
+            erroElemento.style.display = "block";
+            erroElemento.style.marginTop = "4px";
+            input.parentNode.insertBefore(erroElemento, input.nextSibling);
+            }
+            erroElemento.textContent = mensagem;
+        }
+
+        // 4. VALIDAÇÃO FINAL NO SUBMIT DO FORMULÁRIO
+        if (formPerfil) {
+            formPerfil.addEventListener("submit", function(e) {
+            const cpValido = validarCampoCP(inputCP);
+            const telValido = validarCampoTelemovel(inputTelemovel);
+
+            if (!cpValido || !telValido) {
+                e.preventDefault(); // Bloqueia o envio para o Sheets/Supabase se houver erros[cite: 1]
+                alert("Por favor, corrige os campos marcados a vermelho antes de guardar.");
+            }
+            });
+        }
+        });
     </script>
 </body>
 </html>
