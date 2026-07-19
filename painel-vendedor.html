@@ -3,8 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="
-  default-src 'self'; 
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*;
   script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
   style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
   img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com https://*.google.com https://*.googleusercontent.com; 
@@ -218,8 +217,8 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="imagem_url">URL da Imagem Principal:</label>
-                        <input type="url" id="imagem_url" placeholder="https://exemplo.com/imagem.jpg">
+                        <label for="imagem_ficheiro">Imagem do Produto (Upload):</label>
+                        <input type="file" id="imagem_ficheiro" accept="image/*" required>
                     </div>
                 </div>
                 <div class="form-row">
@@ -413,7 +412,13 @@
         const SUPABASE_URL = "https://jbyhbofonlyogbadzcfu.supabase.co";
         const SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpieWhib2Zvbmx5b2diYWR6Y2Z1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODQxMjA0NDcsImV4cCI6MjA5OTY5NjQ0N30.FxzxgcokFS_zfm0HKquAky9oVqEvSpPTYWzhIPXLvcU";
 
-        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // Inicialização avançada garantindo que a sessão de login é enviada no cabeçalho do Storage
+        const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+        auth: {
+            persistSession: true,
+            autoRefreshToken: true
+        }
+        });
 
         window.encomendasGlobalMemoria = [];
         window.produtosInventarioGlobal = [];
@@ -578,6 +583,45 @@
             document.getElementById("modal-editar-produto").style.display = "none";
         }
 
+        async function fazerUploadImagem(inputFicheiro) {
+        const file = inputFicheiro.files[0];
+        if (!file) return null;
+
+        try {
+            // Gera um nome único para o ficheiro
+            const extensao = file.name.split('.').pop();
+            const nomeFicheiro = `${Date.now()}-${Math.random().toString(36).substring(2, 7)}.${extensao}`;
+            
+            // Conversão binária segura para evitar rejeição do cabeçalho do ficheiro
+            const arrayBuffer = await file.arrayBuffer();
+
+            // Envia o ficheiro para o storage passando o content-type correto
+            const { data: uploadData, error: uploadError } = await supabaseClient
+                .storage
+                .from('produtos-imagens')
+                .upload(nomeFicheiro, arrayBuffer, {
+                    contentType: file.type,
+                    upsert: false
+                });
+
+            if (uploadError) {
+                console.error("Erro detalhado do Supabase Storage:", uploadError);
+                throw new Error(uploadError.message);
+            }
+
+            // Captura do URL público de acordo com a API v2
+            const { data } = supabaseClient
+                .storage
+                .from('produtos-imagens')
+                .getPublicUrl(nomeFicheiro);
+
+            return data.publicUrl;
+
+        } catch (err) {
+            console.error("Erro apanhado no fluxo de upload:", err);
+            throw new Error(err.message || "Falha ao carregar a imagem para o servidor.");
+        }
+    }
         async function gravarEdicaoProduto(event) {
             event.preventDefault();
             const idProd = document.getElementById("edit-id").value;
@@ -630,19 +674,35 @@
             }
         }
 
+       
         async function enviarNovoProdutoAoSupabase(event) {
-            event.preventDefault();
-            if (!usuarioLogado || !usuarioLogado.email) return;
+        event.preventDefault();
+        if (!usuarioLogado || !usuarioLogado.email) return;
 
-            const botao = document.getElementById("btn-submeter");
+        const botao = document.getElementById("btn-submeter");
+        const inputFicheiro = document.getElementById("imagem_ficheiro");
+
+        try {
+            botao.disabled = true;
+            botao.innerText = "A carregar imagem...";
+
+            let urlImagemFinal = "https://via.placeholder.com/150"; 
+            if (inputFicheiro && inputFicheiro.files.length > 0) {
+                urlImagemFinal = await fazerUploadImagem(inputFicheiro);
+            }
+
+            botao.innerText = "A publicar artigo...";
+
             const chaves = document.querySelectorAll(".detalhe-chave");
             const valores = document.querySelectorAll(".detalhe-valor");
             let detalhesTecnicosObj = {};
             
             chaves.forEach((chaveElemento, index) => {
-                const chave = chaveElemento.value.trim();
-                const valor = valores[index].value.trim();
-                if (chave && valor) { detalhesTecnicosObj[chave] = valor; }
+                const sampleChave = chaveElemento.value.trim();
+                const sampleValor = valores[index].value.trim();
+                if (sampleChave && sampleValor) { 
+                    detalhesTecnicosObj[sampleChave] = sampleValor; 
+                }
             });
 
             const informacoesObj = {
@@ -653,40 +713,39 @@
 
             const idGerado = "PROD-" + new Date().getTime();
 
-            try {
-                botao.disabled = true;
-                botao.innerText = "A publicar artigo...";
+            const { error } = await supabaseClient
+                .from('produtos')
+                .insert([
+                {
+                    id: idGerado,
+                    // Garante que se idVendedorAtivo falhar, usa o email do localStorage ou um texto padrão
+                    vendedor_id: idVendedorAtivo || (usuarioLogado ? usuarioLogado.email : "geral@loja.com"),
+                    nome: document.getElementById("nome").value.trim(),
+                    categoria: document.getElementById("categoria").value.trim(),
+                    imagem_url: urlImagemFinal, 
+                    preco: parseFloat(document.getElementById("preco").value) || 0,
+                    stock: parseInt(document.getElementById("stock").value) || 0,
+                    descricao: document.getElementById("descricao").value.trim(),
+                    detalhes_tecnicos: detalhesTecnicosObj,
+                    informacoes: informacoesObj,
+                    dias_entrega: parseInt(document.getElementById("produto-dias-entrega").value) || 8,
+                    custo_transporte: parseFloat(document.getElementById("produto-custo-transporte").value) || 0
+                }
+                ]);
 
-                const { error } = await supabaseClient
-                    .from('produtos')
-                    .insert([
-                        {
-                            id: idGerado,
-                            vendedor_id: idVendedorAtivo,
-                            nome: document.getElementById("nome").value.trim(),
-                            categoria: document.getElementById("categoria").value.trim(),
-                            imagem_url: document.getElementById("imagem_url").value.trim(),
-                            preco: parseFloat(document.getElementById("preco").value) || 0,
-                            stock: parseInt(document.getElementById("stock").value) || 0,
-                            descricao: document.getElementById("descricao").value.trim(),
-                            detalhes_tecnicos: detalhesTecnicosObj,
-                            informacoes: informacoesObj,
-                            dias_entrega: parseInt(document.getElementById("produto-dias-entrega").value) || 8,
-                            custo_transporte: parseFloat(document.getElementById("produto-custo-transporte").value) || 0
-                        }
-                    ]);
+            if (error) throw error;
+            
+            alert("Artigo publicado com sucesso! 🎉");
+            document.getElementById("form-cadastro").reset();
+            carregarInventarioCompleto();
 
-                if (error) throw error;
-                alert(`🎉 Artigo publicado com sucesso! ID: ${idGerado}`);
-                document.getElementById("form-cadastro").reset();
-                carregarInventarioCompleto();
-            } catch (erro) {
-                alert("⚠️ Erro ao enviar o produto para o servidor.");
-            } finally {
-                botao.disabled = false;
-                botao.innerText = "Publicar Produto na Loja";
-            }
+        } catch (erro) {
+            alert("Erro ao enviar o produto: " + erro.message);
+        } finally {
+            botao.disabled = false;
+            botao.innerText = "Publicar Produto na Loja";
         }
+    }
 
         // =========================================================================
         // LISTAR ENCOMENDAS - TOTALMENTE PROTEGIDO CONTRA XSS NO CLIENTE E COMENTÁRIO
