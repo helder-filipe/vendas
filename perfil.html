@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta http-equiv="Content-Security-Policy" content="default-src 'self' https://*.supabase.co; script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.supabase.co; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; img-src 'self' data: blob: https://*;
-  script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net; 
-  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
-  img-src 'self' data: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com https://*.google.com https://*.googleusercontent.com; 
-  connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com;
-  font-src 'self' https://fonts.gstatic.com;
-">
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self' https://*.supabase.co; 
+      script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://*.supabase.co; 
+      style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; 
+      font-src 'self' https://fonts.gstatic.com; 
+      img-src 'self' data: blob: https://*.supabase.co https://images.unsplash.com https://via.placeholder.com https://*.google.com https://*.googleusercontent.com; 
+      connect-src 'self' https://*.supabase.co https://script.google.com https://script.googleusercontent.com;
+    ">
     <title>O Meu Perfil - Loja Online</title>
     <style>
         body {
@@ -20,43 +21,31 @@
             color: #333;
         }
 
-        /* Menu de Navegação Superior (Estilo Amazon) */
-        header {
-            background-color: #232f3e;
-            color: white;
-            padding: 15px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        .top-bar {
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            background: white; 
+            padding: 12px 20px; 
+            border-radius: 8px; 
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+            margin-bottom: 25px;
+            position: sticky;
+            top: 0;
+            z-index: 1000;
         }
 
-        header h1 {
-            margin: 0;
-            font-size: 20px;
-            cursor: pointer;
-        }
+        .logo-container { display: flex; align-items: center; cursor: pointer; gap: 15px; }
+        .logo-container img { height: 70px; width: auto; object-fit: contain; display: block; }
 
-        .nav-links {
-            display: flex;
-            gap: 15px;
+        .user-menu {
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            height: 36px;
         }
+        .saudacao-user { font-size: 13px; font-weight: bold; color: #555; margin-right: 10px; display: inline-block; vertical-align: middle; }
 
-        .nav-links a {
-            color: white;
-            text-decoration: none;
-            font-size: 14px;
-            font-weight: bold;
-            padding: 8px 12px;
-            border-radius: 4px;
-            transition: background 0.2s;
-        }
-
-        .nav-links a:hover {
-            background-color: #37475a;
-        }
-
-        /* Container Principal */
         .container-perfil {
             max-width: 650px;
             margin: 40px auto;
@@ -75,7 +64,14 @@
             font-size: 22px;
         }
 
-        /* Alerta de feedback */
+        .container-perfil h3 {
+            margin-top: 30px;
+            color: #232f3e;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 8px;
+            font-size: 18px;
+        }
+
         .feedback-mensagem {
             padding: 12px;
             border-radius: 6px;
@@ -96,9 +92,9 @@
             border: 1px solid #fad2cf;
         }
 
-        /* Formulário de Perfil */
         .form-grupo {
             margin-bottom: 18px;
+            position: relative;
         }
 
         .form-grupo label {
@@ -131,7 +127,23 @@
             cursor: not-allowed;
         }
 
-        /* Linha dupla para campos menores (CP e Localidade, etc) */
+        .input-password-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-toggle-password {
+            position: absolute;
+            right: 10px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            color: #666;
+            padding: 5px;
+        }
+
         .linha-dupla {
             display: flex;
             gap: 15px;
@@ -141,7 +153,6 @@
             flex: 1;
         }
 
-        /* Botões */
         .btn-guardar {
             width: 100%;
             padding: 12px;
@@ -167,6 +178,24 @@
             cursor: not-allowed;
         }
 
+        .btn-alterar-pass {
+            width: 100%;
+            padding: 12px;
+            background-color: #232f3e;
+            color: white;
+            border: 1px solid #37475a;
+            border-radius: 20px;
+            font-size: 15px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 10px;
+        }
+
+        .btn-alterar-pass:hover {
+            background-color: #37475a;
+        }
+
         .loading-indicador {
             text-align: center;
             font-size: 14px;
@@ -178,38 +207,16 @@
 </head>
 <body>
 
-    <!-- 🟩 CABEÇALHO UNIFORMIZADO (ESTILO INDEX / ENCOMENDAS) -->
-    <header class="top-bar" style="
-        display: flex; 
-        justify-content: space-between; 
-        align-items: center; 
-        background: white; 
-        padding: 12px 20px; 
-        border-radius: 8px; 
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        margin-bottom: 25px;
-        position: sticky;
-        top: 0;
-        z-index: 1000;
-    ">
-        <!-- Lado Esquerdo: Logótipo da Koolaction -->
-        <div class="logo-container" onclick="window.location.href='index.html'" style="display: flex; align-items: center; cursor: pointer; gap: 15px;">
-            <img src="koolaction.png" alt="Logo" style="height: 70px; width: auto; object-fit: contain; display: block;">
+    <header class="top-bar">
+        <div class="logo-container" onclick="window.location.href='index.html'">
+            <img src="koolaction.png" alt="Logo">
         </div>
 
-        <!-- Lado Direito: Menu de Utilizador Alinhado e Proporcional -->
-        <div class="user-menu" style="
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            height: 36px;
-        ">
-            <!-- Saudação Dinâmica -->
-            <span id="saudacao-texto" class="saudacao-user" style="font-size: 13px; font-weight: bold; color: #555; margin-right: 10px; display: inline-block; vertical-align: middle;">
+        <div class="user-menu">
+            <span id="saudacao-texto" class="saudacao-user">
                 A carregar sessão...
             </span>
 
-            <!-- 🛒 Voltar à Vitrina -->
             <button onclick="window.location.href='index.html'" style="
                 display: inline-flex;
                 align-items: center;
@@ -235,7 +242,6 @@
                 🛒 Voltar à Loja
             </button>
 
-            <!-- 📦 As Minhas Encomendas -->
             <button onclick="irParaEncomendasComSeguranca(event)" style="
                 display: inline-flex;
                 align-items: center;
@@ -261,7 +267,6 @@
                 📦 As Minhas Encomendas
             </button>
 
-            <!-- 🚪 Sair / Logout -->
             <button onclick="fazerLogout()" style="
                 display: inline-flex;
                 align-items: center;
@@ -312,7 +317,7 @@
 
             <div class="form-grupo">
                 <label for="perfil-telemovel">Telemóvel de Contacto</label>
-                <input type="tel" id="perfil-telemovel" required placeholder="Ex: 912345678" pattern="[0-9]{9,15}">
+                <input type="tel" id="perfil-telemovel" required placeholder="Ex: 912345678">
             </div>
 
             <div class="form-grupo">
@@ -332,9 +337,36 @@
             </div>
 
             <button type="submit" id="btn-submit-perfil" class="btn-guardar">
-                Guardar Alterações
+                Guardar Alterações do Perfil
             </button>
         </form>
+
+        <!-- 🔑 SECÇÃO PARA ALTERAR A PALAVRA-PASSE NO SUPABASE -->
+        <div id="seccao-password" style="display: none;">
+            <h3>🔒 Alterar Palavra-Passe</h3>
+            
+            <form id="form-alterar-password" onsubmit="alterarPasswordSupabase(event)">
+                <div class="form-grupo">
+                    <label for="nova-password">Nova Palavra-Passe</label>
+                    <div class="input-password-wrapper">
+                        <input type="password" id="nova-password" minlength="6" placeholder="Mínimo 6 caracteres" required>
+                        <button type="button" class="btn-toggle-password" onclick="toggleVisibilidade('nova-password', this)">👁️</button>
+                    </div>
+                </div>
+
+                <div class="form-grupo">
+                    <label for="confirmar-password">Confirmar Nova Palavra-Passe</label>
+                    <div class="input-password-wrapper">
+                        <input type="password" id="confirmar-password" minlength="6" placeholder="Repete a nova palavra-passe" required>
+                        <button type="button" class="btn-toggle-password" onclick="toggleVisibilidade('confirmar-password', this)">👁️</button>
+                    </div>
+                </div>
+
+                <button type="submit" id="btn-submit-password" class="btn-alterar-pass">
+                    Atualizar Palavra-Passe
+                </button>
+            </form>
+        </div>
     </div>
 
     <script>
@@ -357,13 +389,30 @@
         }
 
         document.addEventListener("DOMContentLoaded", function() {
-            try {
-                const sessaoRaw = localStorage.getItem("usuario_logado");
-                if (sessaoRaw) {
-                    usuarioLogado = JSON.parse(sessaoRaw);
+            // 1. Ler Sessão via URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const emailURL = urlParams.get('email');
+
+            if (emailURL) {
+                usuarioLogado = {
+                    nome: urlParams.get('nome') || "",
+                    email: emailURL,
+                    morada: urlParams.get('morada') || "",
+                    localidade: urlParams.get('localidade') || "",
+                    codigo_postal: urlParams.get('cp') || urlParams.get('codigo_postal') || "",
+                    telemovel: urlParams.get('telemovel') || "",
+                    tipo: urlParams.get('tipo') || "comprador"
+                };
+                try {
+                    localStorage.setItem("usuario_logado", JSON.stringify(usuarioLogado));
+                } catch (e) {}
+            } else {
+                try {
+                    const sessaoRaw = localStorage.getItem("usuario_logado");
+                    if (sessaoRaw) usuarioLogado = JSON.parse(sessaoRaw);
+                } catch (e) {
+                    console.error("Erro ao ler sessão do localStorage");
                 }
-            } catch (e) {
-                console.error("Erro ao ler sessão do localStorage");
             }
 
             if (!usuarioLogado || !usuarioLogado.email || usuarioLogado.email === "undefined") {
@@ -377,6 +426,7 @@
                 saudacao.innerText = `Olá, ${escaparHTML(usuarioLogado.nome)}!`;
             }
 
+            configurarMascarasEValidacoes();
             carregarDadosDoPerfil();
         });
 
@@ -385,17 +435,8 @@
         // =========================================================================
         async function carregarDadosDoPerfil() {
             const form = document.getElementById("form-perfil");
+            const seccaoPass = document.getElementById("seccao-password");
             const loading = document.getElementById("loading-perfil");
-
-            if (!usuarioLogado || !usuarioLogado.email) {
-                const inputEmail = document.getElementById("perfil-email");
-                if (inputEmail && inputEmail.value) {
-                    usuarioLogado = { email: inputEmail.value.trim().toLowerCase() };
-                } else {
-                    if (loading) loading.style.display = "none";
-                    return;
-                }
-            }
 
             const emailBusca = usuarioLogado.email.replace(/[\u200B-\u200D\uFEFF]/g, "").trim().toLowerCase();
 
@@ -418,23 +459,42 @@
 
                     const saudacao = document.getElementById("saudacao-texto");
                     if (saudacao) saudacao.innerText = `Olá, ${escaparHTML(utilizador.nome)}!`;
+                } else {
+                    carregarContingenciaLocal();
                 }
 
-                if (loading) loading.style.display = "none";
-                if (form) form.style.display = "block";
-
             } catch (erro) {
-                console.warn("Erro ao ler do Supabase:", erro.message || erro);
+                console.warn("Erro ao ler do Supabase, a usar dados locais...", erro.message || erro);
+                carregarContingenciaLocal();
+            } finally {
                 if (loading) loading.style.display = "none";
                 if (form) form.style.display = "block";
+                if (seccaoPass) seccaoPass.style.display = "block";
             }
         }
-        
+
+        function carregarContingenciaLocal() {
+            atribuirValorSeguro("perfil-nome", usuarioLogado.nome);
+            atribuirValorSeguro("perfil-email", usuarioLogado.email);
+            atribuirValorSeguro("perfil-telemovel", usuarioLogado.telemovel);
+            atribuirValorSeguro("perfil-morada", usuarioLogado.morada);
+            atribuirValorSeguro("perfil-cp", usuarioLogado.codigo_postal || usuarioLogado.cp);
+            atribuirValorSeguro("perfil-localidade", usuarioLogado.localidade);
+        }
+
         // =========================================================================
         // 2. GUARDAR ALTERAÇÕES DO PERFIL (SUPABASE)
         // =========================================================================
         async function guardarAlteracoesPerfil(event) {
             event.preventDefault();
+
+            const inputCP = document.getElementById("perfil-cp");
+            const inputTelemovel = document.getElementById("perfil-telemovel");
+
+            if (!validarCampoCP(inputCP) || !validarCampoTelemovel(inputTelemovel)) {
+                alert("Por favor, corrige os campos marcados a vermelho antes de guardar.");
+                return;
+            }
 
             const btnSubmit = document.getElementById("btn-submit-perfil");
             if (btnSubmit) {
@@ -443,24 +503,13 @@
             }
 
             const inputEmail = document.getElementById("perfil-email");
-            let emailAtual = inputEmail ? inputEmail.value : "";
-
-            emailAtual = emailAtual.replace(/\s+/g, '').toLowerCase().trim();
+            let emailAtual = inputEmail ? inputEmail.value.replace(/\s+/g, '').toLowerCase().trim() : "";
 
             const nomeDigitado = document.getElementById("perfil-nome")?.value.trim();
             const telemovelDigitado = document.getElementById("perfil-telemovel")?.value.trim();
             const moradaDigitada = document.getElementById("perfil-morada")?.value.trim();
             const cpDigitado = document.getElementById("perfil-cp")?.value.trim();
             const localidadeDigitada = document.getElementById("perfil-localidade")?.value.trim();
-
-            if (!emailAtual) {
-                alert("⚠️ Erro: Não foi possível identificar o e-mail do utilizador.");
-                if (btnSubmit) {
-                    btnSubmit.disabled = false;
-                    btnSubmit.innerText = "Guardar Alterações";
-                }
-                return;
-            }
 
             try {
                 const { data, error } = await supabaseClient
@@ -477,12 +526,7 @@
 
                 if (error) throw error;
 
-                if (!data || data.length === 0) {
-                    alert(`⚠️ Aviso: O e-mail [${escaparHTML(emailAtual)}] não foi encontrado na tabela 'utilizadores'. Nenhuma linha foi alterada.`);
-                    return;
-                }
-
-                mostrarFeedback("🎉 Perfil guardado e updated com sucesso no Supabase!", "sucesso");
+                mostrarFeedback("🎉 Perfil guardado e atualizado com sucesso no Supabase!", "sucesso");
                 
                 const novoObjetoSessao = {
                     ...usuarioLogado,
@@ -499,27 +543,82 @@
 
             } catch (erro) {
                 console.error("Erro detalhado ao gravar no Supabase:", erro.message || erro);
-                alert(`❌ Erro do Supabase: ${erro.message || "Verifica a consola do browser."}`);
                 mostrarFeedback("❌ Ocorreu um erro ao guardar na base de dados.", "erro");
             } finally {
                 if (btnSubmit) {
                     btnSubmit.disabled = false;
-                    btnSubmit.innerText = "Guardar Alterações";
+                    btnSubmit.innerText = "Guardar Alterações do Perfil";
                 }
+            }
+        }
+
+        // =========================================================================
+        // 3. ALTERAR PALAVRA-PASSE NO SUPABASE AUTH
+        // =========================================================================
+        async function alterarPasswordSupabase(event) {
+            event.preventDefault();
+
+            const novaPassword = document.getElementById("nova-password").value;
+            const confirmarPassword = document.getElementById("confirmar-password").value;
+            const btnSubmitPass = document.getElementById("btn-submit-password");
+
+            if (novaPassword.length < 6) {
+                mostrarFeedback("⚠️ A palavra-passe deve ter pelo menos 6 caracteres.", "erro");
+                return;
+            }
+
+            if (novaPassword !== confirmarPassword) {
+                mostrarFeedback("⚠️ As palavras-passe introduzidas não coincidem.", "erro");
+                return;
+            }
+
+            if (btnSubmitPass) {
+                btnSubmitPass.disabled = true;
+                btnSubmitPass.innerText = "A atualizar palavra-passe...";
+            }
+
+            try {
+                // Atualiza a palavra-passe do utilizador autenticado na sessão ativa do Supabase Auth
+                const { data, error } = await supabaseClient.auth.updateUser({
+                    password: novaPassword
+                });
+
+                if (error) throw error;
+
+                mostrarFeedback("🎉 Palavra-passe alterada com sucesso!", "sucesso");
+                document.getElementById("form-alterar-password").reset();
+
+            } catch (erro) {
+                console.error("Erro ao alterar palavra-passe:", erro);
+                mostrarFeedback(`❌ Erro ao atualizar palavra-passe: ${erro.message || "Certifica-te de que iniciaste sessão recentemente."}`, "erro");
+            } finally {
+                if (btnSubmitPass) {
+                    btnSubmitPass.disabled = false;
+                    btnSubmitPass.innerText = "Atualizar Palavra-Passe";
+                }
+            }
+        }
+
+        function toggleVisibilidade(idInput, botao) {
+            const input = document.getElementById(idInput);
+            if (input.type === "password") {
+                input.type = "text";
+                botao.textContent = "🙈";
+            } else {
+                input.type = "password";
+                botao.textContent = "👁️";
             }
         }
 
         function atribuirValorSeguro(idElemento, valor) {
             const elemento = document.getElementById(idElemento);
-            if (elemento) {
-                elemento.value = valor || "";
-            }
+            if (elemento) elemento.value = valor || "";
         }
 
         function mostrarFeedback(texto, tipo) {
             const feedback = document.getElementById("mensagem-feedback");
             if (feedback) {
-                feedback.textContent = texto; // Usar textContent para mitigar XSS de forma nativa
+                feedback.textContent = texto;
                 feedback.className = `feedback-mensagem ${tipo === "sucesso" ? "feedback-sucesso" : "feedback-erro"}`;
                 feedback.style.display = "block";
                 window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -529,7 +628,7 @@
         function irParaEncomendasComSeguranca(event) {
             if (event) event.preventDefault();
             if (usuarioLogado && usuarioLogado.email) {
-                const queryParams = `nome=${encodeURIComponent(usuarioLogado.nome)}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada || "")}&localidade=${encodeURIComponent(usuarioLogado.localidade || "")}&cp=${encodeURIComponent(usuarioLogado.codigo_postal || usuarioLogado.cp || "")}&tipo=${encodeURIComponent(usuarioLogado.tipo || "comprador")}`;
+                const queryParams = `nome=${encodeURIComponent(usuarioLogado.nome || "")}&email=${encodeURIComponent(usuarioLogado.email)}&morada=${encodeURIComponent(usuarioLogado.morada || "")}&localidade=${encodeURIComponent(usuarioLogado.localidade || "")}&cp=${encodeURIComponent(usuarioLogado.codigo_postal || usuarioLogado.cp || "")}&tipo=${encodeURIComponent(usuarioLogado.tipo || "comprador")}`;
                 window.location.href = `encomendas.html?${queryParams}`;
             } else {
                 alert("Por favor, faça login primeiro.");
@@ -540,111 +639,86 @@
         function fazerLogout() {
             localStorage.removeItem("usuario_logado");
             localStorage.removeItem("carrinho");
+            supabaseClient.auth.signOut();
             window.location.href = "index.html";
         }
 
-        document.addEventListener("DOMContentLoaded", function() {
-        const inputCP = document.getElementById("codigo_postal"); // Garante que o ID coincide com o teu HTML
-        const inputTelemovel = document.getElementById("telemovel");
-        const formPerfil = document.getElementById("form-perfil"); // O teu elemento <form>
+        function configurarMascarasEValidacoes() {
+            const inputCP = document.getElementById("perfil-cp");
+            const inputTelemovel = document.getElementById("perfil-telemovel");
 
-        // 1. MÁSCARA EM TEMPO REAL PARA O CÓDIGO POSTAL (Padrão de Portugal: XXXX-XXX)
-        if (inputCP) {
-            inputCP.addEventListener("input", function(e) {
-            // Remove tudo o que não for número
-            let valor = e.target.value.replace(/\D/g, "");
-            
-            // Limita ao máximo de 7 dígitos numéricos
-            if (valor.length > 7) valor = valor.slice(0, 7);
-            
-            // Aplica o hífen após o 4º dígito
-            if (valor.length > 4) {
-                e.target.value = valor.slice(0, 4) + "-" + valor.slice(4);
-            } else {
-                e.target.value = valor;
+            if (inputCP) {
+                inputCP.addEventListener("input", function(e) {
+                    let valor = e.target.value.replace(/\D/g, "");
+                    if (valor.length > 7) valor = valor.slice(0, 7);
+                    
+                    if (valor.length > 4) {
+                        e.target.value = valor.slice(0, 4) + "-" + valor.slice(4);
+                    } else {
+                        e.target.value = valor;
+                    }
+                    validarCampoCP(inputCP);
+                });
             }
-            
-            validarCampoCP(inputCP);
-            });
+
+            if (inputTelemovel) {
+                inputTelemovel.addEventListener("input", function(e) {
+                    let valor = e.target.value.replace(/\D/g, "");
+                    if (valor.length > 9) valor = valor.slice(0, 9);
+                    e.target.value = valor;
+                    validarCampoTelemovel(inputTelemovel);
+                });
+            }
         }
 
-        // 2. MÁSCARA EM TEMPO REAL PARA O TELEMÓVEL (Apenas números, máximo 9 dígitos)
-        if (inputTelemovel) {
-            inputTelemovel.addEventListener("input", function(e) {
-            // Remove qualquer caractere que não seja número
-            let valor = e.target.value.replace(/\D/g, "");
-            
-            // Limita a 9 dígitos (padrão nacional móvel)
-            if (valor.length > 9) valor = valor.slice(0, 9);
-            
-            e.target.value = valor;
-            validarCampoTelemovel(inputTelemovel);
-            });
-        }
-
-        // 3. FUNÇÕES DE VALIDAÇÃO VISUAL (UX)
         function validarCampoCP(input) {
+            if (!input) return true;
             const regexCP = /^\d{4}-\d{3}$/;
             if (regexCP.test(input.value)) {
-            marcarComoValido(input);
-            return true;
+                marcarComoValido(input);
+                return true;
             } else {
-            marcarComoInvalido(input, "O formato deve ser 1234-123");
-            return false;
+                marcarComoInvalido(input, "Formato: 1234-123");
+                return false;
             }
         }
 
         function validarCampoTelemovel(input) {
-            // Valida se tem exatamente 9 dígitos e se começa por 9 (opcional, mas recomendado em PT)
+            if (!input) return true;
             const regexTel = /^9\d{8}$/;
             if (regexTel.test(input.value)) {
-            marcarComoValido(input);
-            return true;
+                marcarComoValido(input);
+                return true;
             } else {
-            marcarComoInvalido(input, "Deve conter 9 dígitos e começar por 9");
-            return false;
+                marcarComoInvalido(input, "Deve ter 9 dígitos (ex: 912345678)");
+                return false;
             }
         }
 
         function marcarComoValido(input) {
-            input.style.borderColor = "#28a745"; // Verde
+            input.style.borderColor = "#28a745";
             input.style.backgroundColor = "#f8fff9";
             const erroElemento = input.nextElementSibling;
             if (erroElemento && erroElemento.classList.contains("erro-mensagem")) {
-            erroElemento.textContent = "";
+                erroElemento.textContent = "";
             }
         }
 
         function marcarComoInvalido(input, mensagem) {
-            input.style.borderColor = "#dc3545"; // Vermelho
+            input.style.borderColor = "#dc3545";
             input.style.backgroundColor = "#fff8f8";
             
-            // Procura ou cria uma pequena label de erro logo abaixo do input
             let erroElemento = input.nextElementSibling;
             if (!erroElemento || !erroElemento.classList.contains("erro-mensagem")) {
-            erroElemento = document.createElement("small");
-            erroElemento.classList.add("erro-mensagem");
-            erroElemento.style.color = "#dc3545";
-            erroElemento.style.display = "block";
-            erroElemento.style.marginTop = "4px";
-            input.parentNode.insertBefore(erroElemento, input.nextSibling);
+                erroElemento = document.createElement("small");
+                erroElemento.classList.add("erro-mensagem");
+                erroElemento.style.color = "#dc3545";
+                erroElemento.style.display = "block";
+                erroElemento.style.marginTop = "4px";
+                input.parentNode.insertBefore(erroElemento, input.nextSibling);
             }
             erroElemento.textContent = mensagem;
         }
-
-        // 4. VALIDAÇÃO FINAL NO SUBMIT DO FORMULÁRIO
-        if (formPerfil) {
-            formPerfil.addEventListener("submit", function(e) {
-            const cpValido = validarCampoCP(inputCP);
-            const telValido = validarCampoTelemovel(inputTelemovel);
-
-            if (!cpValido || !telValido) {
-                e.preventDefault(); // Bloqueia o envio para o Sheets/Supabase se houver erros[cite: 1]
-                alert("Por favor, corrige os campos marcados a vermelho antes de guardar.");
-            }
-            });
-        }
-        });
     </script>
 </body>
 </html>
