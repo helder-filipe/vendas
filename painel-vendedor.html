@@ -668,10 +668,6 @@
                 alert("A data de fim da oferta flash tem de ser futura.");
                 return;
             }
-            if (fimFlash && (!precoOriginal || precoOriginal <= precoVenda)) {
-                alert("Para activar uma oferta flash, indique um preço anterior superior ao preço de venda.");
-                return;
-            }
 
             let informacoesExistentes = {};
             const produtoExistente = (window.produtosInventarioGlobal || []).find(produto => String(produto.id) === String(idProd));
@@ -774,10 +770,6 @@
             }
             if (fimFlash && (!Number.isFinite(fimFlash.getTime()) || fimFlash <= new Date())) {
                 alert("A data de fim da oferta flash tem de ser futura.");
-                return;
-            }
-            if (fimFlash && (!precoOriginal || precoOriginal <= precoVenda)) {
-                alert("Para activar uma oferta flash, indique um preço anterior superior ao preço de venda.");
                 return;
             }
 
