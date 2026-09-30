@@ -240,6 +240,17 @@
                         <input type="number" id="produto-custo-transporte" min="0" step="0.01" placeholder="Ex: 4.90" value="0.00" required style="width: 100%; padding: 8px; margin-bottom: 10px;">
                     </div>
                 </div>
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="preco-original">Preço anterior (opcional, para promoções):</label>
+                        <input type="number" id="preco-original" min="0" step="0.01" placeholder="Ex.: 49,90">
+                    </div>
+                    <div class="form-group">
+                        <label for="oferta-flash-ate">Fim da oferta flash (opcional):</label>
+                        <input type="datetime-local" id="oferta-flash-ate">
+                    </div>
+                </div>
+                <p style="margin-top:-8px; color:#66717c; font-size:12px;">O preço de venda é o preço actual. O preço anterior deve ser superior; a data activa a oferta flash.</p>
                 <div class="form-group">
                     <label for="descricao">Descrição do Produto (Sobre este artigo):</label>
                     <textarea id="descricao" rows="4" required placeholder="Detalhes descritivos do produto..."></textarea>
@@ -366,6 +377,16 @@
                 <div style="flex:1;">
                     <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Stock:</label>
                     <input type="number" id="edit-stock" required style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+            </div>
+            <div style="display:flex; gap:10px; margin-bottom:12px;">
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Preço anterior (opcional):</label>
+                    <input type="number" id="edit-preco-original" min="0" step="0.01" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
+                </div>
+                <div style="flex:1;">
+                    <label style="display:block; font-weight:bold; font-size:12px; margin-bottom:4px;">Fim da oferta flash:</label>
+                    <input type="datetime-local" id="edit-oferta-flash-ate" style="width:100%; padding:8px; box-sizing:border-box; border:1px solid #ccc; border-radius:4px;">
                 </div>
             </div>
             <div style="display:flex; gap:10px; margin-bottom:12px;">
@@ -555,6 +576,13 @@
             }
         }
 
+        function valorParaDataLocal(valor) {
+            if (!valor) return "";
+            const data = new Date(valor);
+            if (!Number.isFinite(data.getTime())) return "";
+            return new Date(data.getTime() - data.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+        }
+
         function abrirModalEdicao(prod) {
             // Os inputs em formato de formulário (.value) aceitam a atribuição com segurança nativa do DOM
             document.getElementById("edit-id").value = prod.id;
@@ -575,6 +603,8 @@
             document.getElementById("edit-fabricante").value = logObj.fabricante || "";
             document.getElementById("edit-peso").value = logObj.peso || "";
             document.getElementById("edit-dimensoes").value = logObj.dimensoes || "";
+            document.getElementById("edit-preco-original").value = logObj.preco_original || "";
+            document.getElementById("edit-oferta-flash-ate").value = valorParaDataLocal(logObj.oferta_flash_ate);
 
             document.getElementById("modal-editar-produto").style.display = "flex";
         }
@@ -626,10 +656,39 @@
             event.preventDefault();
             const idProd = document.getElementById("edit-id").value;
             
+            const precoVenda = parseFloat(document.getElementById("edit-preco").value) || 0;
+            const precoOriginal = parseFloat(document.getElementById("edit-preco-original").value) || null;
+            const fimFlashValor = document.getElementById("edit-oferta-flash-ate").value;
+            const fimFlash = fimFlashValor ? new Date(fimFlashValor) : null;
+            if (precoOriginal && precoOriginal <= precoVenda) {
+                alert("O preço anterior tem de ser superior ao preço de venda.");
+                return;
+            }
+            if (fimFlash && (!Number.isFinite(fimFlash.getTime()) || fimFlash <= new Date())) {
+                alert("A data de fim da oferta flash tem de ser futura.");
+                return;
+            }
+            if (fimFlash && (!precoOriginal || precoOriginal <= precoVenda)) {
+                alert("Para activar uma oferta flash, indique um preço anterior superior ao preço de venda.");
+                return;
+            }
+
+            let informacoesExistentes = {};
+            const produtoExistente = (window.produtosInventarioGlobal || []).find(produto => String(produto.id) === String(idProd));
+            try {
+                const valorExistente = produtoExistente?.informacoes || {};
+                informacoesExistentes = typeof valorExistente === "string" ? JSON.parse(valorExistente || "{}") : valorExistente;
+            } catch (erro) { informacoesExistentes = {}; }
+
             const informacoesObj = {
+                ...informacoesExistentes,
                 fabricante: document.getElementById("edit-fabricante").value.trim(),
                 peso: document.getElementById("edit-peso").value.trim(),
-                dimensoes: document.getElementById("edit-dimensoes").value.trim()
+                dimensoes: document.getElementById("edit-dimensoes").value.trim(),
+                preco_original: precoOriginal,
+                em_promocao: Boolean(precoOriginal && precoOriginal > precoVenda),
+                oferta_flash: Boolean(fimFlash && precoOriginal && precoOriginal > precoVenda),
+                oferta_flash_ate: fimFlash && precoOriginal && precoOriginal > precoVenda ? fimFlash.toISOString() : null
             };
 
             try {
@@ -638,7 +697,7 @@
                     .update({
                         nome: document.getElementById("edit-nome").value.trim(),
                         categoria: document.getElementById("edit-categoria").value.trim(),
-                        preco: parseFloat(document.getElementById("edit-preco").value) || 0,
+                        preco: precoVenda,
                         stock: parseInt(document.getElementById("edit-stock").value) || 0,
                         dias_entrega: parseInt(document.getElementById("edit-dias").value) || 8,
                         custo_transporte: parseFloat(document.getElementById("edit-portes").value) || 0,
@@ -705,10 +764,31 @@
                 }
             });
 
+            const precoVenda = parseFloat(document.getElementById("preco").value) || 0;
+            const precoOriginal = parseFloat(document.getElementById("preco-original").value) || null;
+            const fimFlashValor = document.getElementById("oferta-flash-ate").value;
+            const fimFlash = fimFlashValor ? new Date(fimFlashValor) : null;
+            if (precoOriginal && precoOriginal <= precoVenda) {
+                alert("O preço anterior tem de ser superior ao preço de venda.");
+                return;
+            }
+            if (fimFlash && (!Number.isFinite(fimFlash.getTime()) || fimFlash <= new Date())) {
+                alert("A data de fim da oferta flash tem de ser futura.");
+                return;
+            }
+            if (fimFlash && (!precoOriginal || precoOriginal <= precoVenda)) {
+                alert("Para activar uma oferta flash, indique um preço anterior superior ao preço de venda.");
+                return;
+            }
+
             const informacoesObj = {
                 fabricante: document.getElementById("fabricante").value.trim(),
                 peso: document.getElementById("peso").value.trim(),
-                dimensoes: document.getElementById("dimensoes").value.trim()
+                dimensoes: document.getElementById("dimensoes").value.trim(),
+                preco_original: precoOriginal,
+                em_promocao: Boolean(precoOriginal && precoOriginal > precoVenda),
+                oferta_flash: Boolean(fimFlash && precoOriginal && precoOriginal > precoVenda),
+                oferta_flash_ate: fimFlash && precoOriginal && precoOriginal > precoVenda ? fimFlash.toISOString() : null
             };
 
             const idGerado = "PROD-" + new Date().getTime();
@@ -723,7 +803,7 @@
                     nome: document.getElementById("nome").value.trim(),
                     categoria: document.getElementById("categoria").value.trim(),
                     imagem_url: urlImagemFinal, 
-                    preco: parseFloat(document.getElementById("preco").value) || 0,
+                    preco: precoVenda,
                     stock: parseInt(document.getElementById("stock").value) || 0,
                     descricao: document.getElementById("descricao").value.trim(),
                     detalhes_tecnicos: detalhesTecnicosObj,
