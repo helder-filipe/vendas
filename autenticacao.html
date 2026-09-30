@@ -165,7 +165,6 @@
                                 id: authData.user.id,
                                 nome: nome,
                                 email: email,
-                                password: password,
                                 morada: morada,
                                 localidade: localidade,
                                 codigo_postal: codigo_postal,
@@ -220,7 +219,7 @@
                     // 2. Tentar procurar o perfil completo na tabela pública
                     const { data: perfil, error: dbError } = await supabaseClient
                         .from('utilizadores')
-                        .select('*')
+                        .select('id, nome, email, morada, localidade, codigo_postal, telemovel, tipo')
                         .eq('email', email)
                         .maybeSingle(); 
 
@@ -239,7 +238,7 @@
                             localidade: "Quarteira",
                             codigo_postal: "8125-000",
                             telemovel: "900000000",
-                            tipo: "vendedor" // Forçamos vendedor temporariamente para testares o painel se precisares
+                            tipo: "comprador" // Sem perfil, não atribuir permissões de vendedor
                         };
                     } else {
                         // Perfil encontrado com sucesso
