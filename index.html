@@ -54,9 +54,25 @@
         .saudacao-user { font-size: 14px; font-weight: bold; color: #555; }
         
         /* Categorias */
-        .nav-categorias { display: flex; gap: 10px; margin-bottom: 20px; background: #232f3e; padding: 10px; border-radius: 6px; overflow-x: auto; }
+        .nav-categorias { display: grid; gap: 7px; margin-bottom: 18px; }
+        .nav-categoria-linha { display: flex; align-items: center; gap: 7px; padding: 7px 9px; overflow-x: auto; border-radius: 8px; scrollbar-width: thin; }
+        .nav-categorias-normais { background: #232f3e; }
+        .nav-seleccoes-dinamicas { background: #f7f8fa; border: 1px solid #e4e8ed; }
         .btn-cat { background: transparent; color: white; border: 1px solid transparent; padding: 6px 12px; font-size: 14px; white-space: nowrap; cursor: pointer; }
         .btn-cat:hover, .btn-cat.active { border-color: white; border-radius: 4px; background: rgba(255,255,255,0.1); }
+        .nav-seleccoes-label { padding: 0 5px; color: #66717c; font-size: 10px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; white-space: nowrap; }
+        .btn-colecao { border: 1px solid transparent; border-radius: 999px; padding: 7px 11px; font-size: 12px; font-weight: 700; white-space: nowrap; cursor: pointer; transition: transform .15s ease, box-shadow .15s ease; }
+        .btn-colecao:hover { transform: translateY(-1px); }
+        .btn-colecao.active { border-color: currentColor; box-shadow: 0 0 0 2px rgba(20,35,50,.12); }
+        .colecao-destaques { background:#e8edff; color:#333b91; }
+        .colecao-promocoes { background:#fff1c2; color:#745100; }
+        .colecao-flash { background:#ffe1e1; color:#a51f2a; }
+        .colecao-procurados { background:#f1e4ff; color:#6b3299; }
+        .colecao-avaliados { background:#dcf6ed; color:#176a4b; }
+        .colecao-stock { background:#deedff; color:#1c5791; }
+        .btn-home-reset { background:#e8eaed; color:#35404a; }
+        .home-conteudo-oculto { display:none !important; }
+        #titulo-montra { scroll-margin-top: 18px; }
         
         /* GRID PARA DESKTOP */
         .content-grid { 
@@ -231,7 +247,7 @@
 
     <div class="main-wrapper">
         <div class="top-bar">
-            <div class="logo-container">
+            <div class="logo-container" onclick="window.location.href='index.html'" title="Voltar à página inicial" style="cursor:pointer;">
                 <img src="koolaction.png" alt="Koolaction" onerror="this.style.display='none'; document.getElementById('placeholder-txt').style.display='block';">
                 <div id="placeholder-txt" class="logo-placeholder" style="display: none;">Koolaction</div>
             </div>
@@ -336,18 +352,30 @@
             </div>
         </div>
 
-        <div class="nav-categorias">
-            <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Eletrónicos', this)">Eletrónicos</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Casa e Cozinha', this)">Casa e Cozinha</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Vestuário', this)">Vestuário</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Desporto', this)">Desporto</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Ferramentas', this)">Ferramentas</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Livros', this)">Livros</button>
-            <button class="btn-cat" onclick="filtrarCategoria('Saúde e suplementação', this)">Saúde e suplementação</button>
+        <div class="nav-categorias" aria-label="Explorar a loja">
+            <div class="nav-categoria-linha nav-categorias-normais" aria-label="Categorias de produtos">
+                <button class="btn-cat active" onclick="filtrarCategoria('Todas', this)">Todos os Departamentos</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Eletrónicos', this)">Eletrónicos</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Casa e Cozinha', this)">Casa e Cozinha</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Vestuário', this)">Vestuário</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Desporto', this)">Desporto</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Ferramentas', this)">Ferramentas</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Livros', this)">Livros</button>
+                <button class="btn-cat" onclick="filtrarCategoria('Saúde e suplementação', this)">Saúde e suplementação</button>
+            </div>
+            <div class="nav-categoria-linha nav-seleccoes-dinamicas" aria-label="Selecções rápidas">
+                <span class="nav-seleccoes-label">Descobrir</span>
+                <button class="btn-colecao btn-home-reset" onclick="window.location.href='index.html'">⌂ Início</button>
+                <button class="btn-colecao colecao-destaques" onclick="filtrarColecao('destaques', this)">✨ Destaques</button>
+                <button class="btn-colecao colecao-promocoes" onclick="filtrarColecao('promocoes', this)">🏷️ Promoções</button>
+                <button class="btn-colecao colecao-flash" onclick="filtrarColecao('flash', this)">⚡ Ofertas flash</button>
+                <button class="btn-colecao colecao-procurados" onclick="filtrarColecao('procurados', this)">🔥 Mais procurados</button>
+                <button class="btn-colecao colecao-avaliados" onclick="filtrarColecao('avaliados', this)">⭐ Mais bem avaliados</button>
+                <button class="btn-colecao colecao-stock" onclick="filtrarColecao('stock', this)">📦 Últimas unidades</button>
+            </div>
         </div>
 
-        <section class="home-intro" aria-labelledby="home-title">
+        <section id="home-intro" class="home-intro" aria-labelledby="home-title">
             <div class="home-intro-copy">
                 <span class="home-eyebrow">Descubra a Koolaction</span>
                 <h1 id="home-title">Encontre o seu próximo favorito.</h1>
@@ -593,7 +621,9 @@
         const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         let todosProdutos = []; 
-        let categoryAtual = "Todas"; 
+        let categoryAtual = "Todas";
+        let colecaoAtual = "";
+        let colecoesDinamicas = {}; 
         let carrinho = JSON.parse(localStorage.getItem("carrinho")) || [];
         let metodoSelecionado = 'mbway';
         let referenciaGeradaParaEnvio = "";
@@ -626,6 +656,7 @@
 
                 renderizarVitrinasInicio(todosProdutos, itensEncomendados || [], !errorItens);
                 renderizarVitrine(todosProdutos);
+                if (colecaoAtual || categoryAtual !== "Todas" || document.getElementById("input-pesquisa").value.trim()) executarFiltros();
             } catch (erro) {
                 console.error("Erro inesperado ao carregar produtos:", erro);
             }
@@ -930,6 +961,15 @@
             const ultimasUnidades = produtos.filter(produto => Number(produto.stock) > 0 && Number(produto.stock) <= 5)
                 .sort((a, b) => Number(a.stock) - Number(b.stock)).slice(0, 8);
 
+            colecoesDinamicas = {
+                destaques,
+                promocoes: emPromocao,
+                flash: ofertasFlash,
+                procurados: maisProcurados,
+                avaliados: maisAvaliados,
+                stock: ultimasUnidades
+            };
+
             renderizarPrateleira("shelf-destaques", "Destaques do dia", "Uma selecção diária baseada na disponibilidade e nas avaliações dos clientes.", destaques, { mensagemVazia: "Ainda não há produtos disponíveis para destacar." });
             renderizarPrateleira("shelf-promocoes", "Produtos em promoção", "Artigos com preço anterior e preço actual configurados.", emPromocao, { mensagemVazia: "Ainda não há produtos com preço promocional activo.", cardOptions: () => ({ badge: "PROMOÇÃO" }) });
             renderizarPrateleira("shelf-flash", "Ofertas flash", "Oportunidades temporárias com data de fim definida.", ofertasFlash, { mensagemVazia: "As próximas ofertas flash aparecerão aqui quando forem activadas.", cardOptions: produto => ({ badge: "FLASH", fimFlash: obterFimOfertaFlash(produto) }) });
@@ -940,13 +980,26 @@
             if (!window.intervaloFlashHome) window.intervaloFlashHome = setInterval(atualizarContadoresFlash, 60000);
         }
 
+        function esconderDescobertaInicial() {
+            document.getElementById("home-intro")?.classList.add("home-conteudo-oculto");
+            document.getElementById("home-shelves")?.classList.add("home-conteudo-oculto");
+        }
+
+        function mostrarResultadosFiltrados() {
+            document.getElementById("titulo-montra").scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+
         function executarFiltros() {
             const termoPesquisa = document.getElementById("input-pesquisa").value.toLowerCase().trim();
-            let resultado = todosProdutos;
+            let resultado = colecaoAtual ? (colecoesDinamicas[colecaoAtual] || []) : todosProdutos;
 
-            if (categoriaAtual !== "Todas") resultado = resultado.filter(p => p.categoria === categoriaAtual);
+            if (!colecaoAtual && categoriaAtual !== "Todas") resultado = resultado.filter(p => p.categoria === categoriaAtual);
 
             if (termoPesquisa !== "") {
+                if (!document.getElementById("home-shelves").classList.contains("home-conteudo-oculto")) {
+                    esconderDescobertaInicial();
+                    mostrarResultadosFiltrados();
+                }
                 resultado = resultado.filter(p => {
                     return (p.nome || "").toLowerCase().includes(termoPesquisa) || 
                            (p.descricao || "").toLowerCase().includes(termoPesquisa) || 
@@ -958,11 +1011,33 @@
         }
 
         function filtrarCategoria(categoria, botao) {
-            document.querySelectorAll(".btn-cat").forEach(btn => btn.classList.remove("active"));
+            document.querySelectorAll(".btn-cat, .btn-colecao").forEach(btn => btn.classList.remove("active"));
             botao.classList.add("active");
-            categoriaAtual = categoria;
+            categoryAtual = categoria;
+            colecaoAtual = "";
             document.getElementById("titulo-montra").innerText = categoria === "Todas" ? "Todos os Artigos" : categoria;
+            esconderDescobertaInicial();
             executarFiltros();
+            mostrarResultadosFiltrados();
+        }
+
+        function filtrarColecao(colecao, botao) {
+            const titulos = {
+                destaques: "Destaques do dia",
+                promocoes: "Produtos em promoção",
+                flash: "Ofertas flash",
+                procurados: "Produtos mais procurados",
+                avaliados: "Mais bem avaliados",
+                stock: "Últimas unidades"
+            };
+            document.querySelectorAll(".btn-cat, .btn-colecao").forEach(btn => btn.classList.remove("active"));
+            botao.classList.add("active");
+            categoryAtual = "Todas";
+            colecaoAtual = colecao;
+            document.getElementById("titulo-montra").innerText = titulos[colecao] || "Selecção de produtos";
+            esconderDescobertaInicial();
+            executarFiltros();
+            mostrarResultadosFiltrados();
         }
 
         function toggleCarrinho() { document.getElementById("carrinho-container").classList.toggle("minimizado"); }
