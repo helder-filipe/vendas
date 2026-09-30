@@ -993,7 +993,7 @@
             const termoPesquisa = document.getElementById("input-pesquisa").value.toLowerCase().trim();
             let resultado = colecaoAtual ? (colecoesDinamicas[colecaoAtual] || []) : todosProdutos;
 
-            if (!colecaoAtual && categoriaAtual !== "Todas") resultado = resultado.filter(p => p.categoria === categoriaAtual);
+            if (!colecaoAtual && categoryAtual !== "Todas") resultado = resultado.filter(p => p.categoria === categoryAtual);
 
             if (termoPesquisa !== "") {
                 if (!document.getElementById("home-shelves").classList.contains("home-conteudo-oculto")) {
