@@ -179,6 +179,43 @@
         .btn-logout { background: #6c757d; padding: 8px 15px; font-size: 13px; }
         .btn-vendedor { background: #ff9900; color: #111; font-weight: bold; display: none; }
 
+        /* Secções dinâmicas da página inicial */
+        .home-intro { display:flex; align-items:center; justify-content:space-between; gap:24px; margin:8px 0 22px; padding:clamp(24px,4vw,42px); border-radius:16px; color:#fff; background:linear-gradient(120deg,#162433 0%,#284b62 58%,#ed9c36 145%); box-shadow:0 10px 28px rgba(15,35,50,.14); }
+        .home-intro-copy { max-width:680px; }
+        .home-eyebrow { color:#ffd814; font-size:11px; font-weight:800; letter-spacing:.15em; text-transform:uppercase; }
+        .home-intro h1 { margin:8px 0; font-size:clamp(26px,4vw,42px); line-height:1.08; }
+        .home-intro p { margin:0; color:rgba(255,255,255,.82); line-height:1.55; max-width:560px; }
+        .home-intro-note { flex:0 0 auto; border:1px solid rgba(255,255,255,.28); border-radius:999px; padding:12px 16px; color:#fff; background:rgba(255,255,255,.1); font-size:13px; font-weight:700; }
+        .home-shelves { display:grid; gap:18px; margin:0 0 24px; }
+        .home-shelf { background:#fff; border-radius:12px; padding:18px 20px 20px; box-shadow:0 2px 8px rgba(0,0,0,.055); }
+        .home-shelf-head { display:flex; align-items:end; justify-content:space-between; gap:12px; margin-bottom:14px; }
+        .home-shelf-title { margin:0; color:#17212b; font-size:21px; }
+        .home-shelf-subtitle { margin:4px 0 0; color:#66717c; font-size:13px; }
+        .home-shelf-count { color:#66717c; font-size:12px; white-space:nowrap; }
+        .home-product-rail { display:grid; grid-auto-columns:minmax(175px,205px); grid-auto-flow:column; gap:13px; overflow-x:auto; padding:2px 2px 8px; scroll-snap-type:x mandatory; overscroll-behavior-x:contain; }
+        .home-product-card { position:relative; min-width:0; padding:12px; border:1px solid #e7ebef; border-radius:10px; background:#fff; cursor:pointer; scroll-snap-align:start; transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease; }
+        .home-product-card:hover { transform:translateY(-3px); border-color:#d3dce4; box-shadow:0 8px 18px rgba(20,40,60,.1); }
+        .home-product-image { display:block; width:100%; height:142px; object-fit:contain; border-radius:7px; background:#f7f8f9; }
+        .home-product-badge { position:absolute; top:18px; left:18px; border-radius:999px; padding:5px 8px; color:#fff; background:#c83336; font-size:10px; font-weight:800; letter-spacing:.02em; }
+        .home-product-name { height:38px; margin:10px 0 5px; overflow:hidden; color:#17212b; font-size:14px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+        .home-product-rating { min-height:17px; margin-bottom:8px; color:#a66100; font-size:12px; }
+        .home-product-rating small { color:#707a84; }
+        .home-product-prices { display:flex; flex-wrap:wrap; align-items:baseline; gap:7px; min-height:25px; }
+        .home-product-price { color:#b12704; font-size:17px; font-weight:800; }
+        .home-product-old-price { color:#77818b; font-size:12px; text-decoration:line-through; }
+        .home-product-extra { min-height:30px; margin:7px 0 0; color:#58636e; font-size:11px; line-height:1.35; }
+        .home-product-action { width:100%; margin-top:8px; border:1px solid #f2c200; border-radius:999px; padding:7px 10px; color:#17212b; background:#ffd814; font-size:12px; font-weight:700; cursor:pointer; }
+        .home-product-action:hover { background:#f7ca00; }
+        .home-empty { margin:0; border:1px dashed #d8dee4; border-radius:8px; padding:16px; color:#64707b; background:#fafbfc; font-size:13px; }
+        @media (max-width:680px) {
+            .home-intro { align-items:flex-start; flex-direction:column; }
+            .home-intro-note { font-size:12px; }
+            .home-shelf { padding:15px; }
+            .home-shelf-title { font-size:18px; }
+            .home-product-rail { grid-auto-columns:minmax(155px,44vw); }
+            .home-product-image { height:125px; }
+        }
+
         @media (max-width: 768px) {
             .content-grid { 
                 grid-template-columns: 1fr; 
@@ -297,6 +334,24 @@
                     🚪 Sair
                 </button>
             </div>
+        </div>
+
+        <section class="home-intro" aria-labelledby="home-title">
+            <div class="home-intro-copy">
+                <span class="home-eyebrow">Descubra a Koolaction</span>
+                <h1 id="home-title">Encontre o seu próximo favorito.</h1>
+                <p>Explore selecções actualizadas com os produtos disponíveis, as melhores avaliações e as ofertas activas.</p>
+            </div>
+            <div class="home-intro-note">✨ Novas escolhas todos os dias</div>
+        </section>
+
+        <div id="home-shelves" class="home-shelves" aria-live="polite">
+            <section class="home-shelf" id="shelf-destaques"></section>
+            <section class="home-shelf" id="shelf-promocoes"></section>
+            <section class="home-shelf" id="shelf-flash"></section>
+            <section class="home-shelf" id="shelf-procurados"></section>
+            <section class="home-shelf" id="shelf-avaliados"></section>
+            <section class="home-shelf" id="shelf-stock"></section>
         </div>
 
         <div class="nav-categorias">
@@ -549,7 +604,10 @@
                     return;
                 }
 
-                const { data: avaliacoes, error: errorAval } = await supabaseClient.from('avaliacoes').select('id_produto, nota_produto');
+                const [{ data: avaliacoes, error: errorAval }, { data: itensEncomendados, error: errorItens }] = await Promise.all([
+                    supabaseClient.from('avaliacoes').select('id_produto, nota_produto'),
+                    supabaseClient.from('itens_encomenda').select('id_produto, quantidade')
+                ]);
 
                 todosProdutos = produtos.map(prod => {
                     const listaNotasDoProd = avaliacoes ? avaliacoes.filter(a => String(a.id_produto) === String(prod.id)) : [];
@@ -564,6 +622,7 @@
                     return { ...prod, total_votos: totalVotos, media_avaliacao: mediaAvaliacao };
                 });
 
+                renderizarVitrinasInicio(todosProdutos, itensEncomendados || [], !errorItens);
                 renderizarVitrine(todosProdutos);
             } catch (erro) {
                 console.error("Erro inesperado ao carregar produtos:", erro);
@@ -610,7 +669,10 @@
                     <h3>${escaparHTML(produto.nome)}</h3>
                     ${exibicaoNotasHTML}
                     <p><small style="color: ${corStock}; font-weight: ${stockNum <= 5 ? 'bold' : 'normal'}">${textoStock}</small></p>
-                    <p><strong>${Number(produto.preco).toFixed(2)}€</strong></p>
+                    <p class="home-product-prices">
+                        <strong class="home-product-price">${Number(produto.preco).toFixed(2)}€</strong>
+                        ${obterPrecoAnterior(produto) ? `<span class="home-product-old-price">${obterPrecoAnterior(produto).toFixed(2)}€</span>` : ""}
+                    </p>
                     <p style="font-size: 12px; color: #cc6600; font-weight: bold; margin: 6px 0; display: flex; align-items: center; gap: 4px;">
                         <span>🚚</span> Envio estimado: ${Number(produto.dias_entrega || 8)} dias úteis
                     </p>
@@ -638,6 +700,242 @@
                 `;
                 vitrine.appendChild(card);
             });
+        }
+
+        function lerMetadadosMarketing(produto) {
+            let informacoes = produto.informacoes || {};
+            if (typeof informacoes === "string") {
+                try { informacoes = JSON.parse(informacoes || "{}"); } catch (erro) { informacoes = {}; }
+            }
+            if (!informacoes || typeof informacoes !== "object" || Array.isArray(informacoes)) informacoes = {};
+            const promocao = informacoes.promocao && typeof informacoes.promocao === "object" ? informacoes.promocao : {};
+            return { ...informacoes, ...promocao, ...produto };
+        }
+
+        function valorVerdadeiro(valor) {
+            return valor === true || valor === 1 || ["true", "1", "sim", "yes", "ativo"].includes(String(valor).toLowerCase());
+        }
+
+        function obterPrecoAnterior(produto) {
+            const marketing = lerMetadadosMarketing(produto);
+            const precoAtual = Number(produto.preco);
+            const chaves = ["preco_original", "preco_anterior", "preco_regular", "preco_sem_desconto"];
+            const valor = chaves.map(chave => Number(marketing[chave])).find(preco => Number.isFinite(preco) && preco > precoAtual && precoAtual > 0);
+            if (!valor) return null;
+            const flag = ["em_promocao", "promocao_ativa", "oferta_ativa"].find(chave => marketing[chave] !== undefined && marketing[chave] !== null);
+            if (flag && !valorVerdadeiro(marketing[flag])) return null;
+            return valor;
+        }
+
+        function obterFimOfertaFlash(produto) {
+            const marketing = lerMetadadosMarketing(produto);
+            const flag = ["oferta_flash", "flash_ativa", "em_oferta_flash"].find(chave => marketing[chave] !== undefined && marketing[chave] !== null);
+            if (!flag || !valorVerdadeiro(marketing[flag])) return null;
+            const chavesData = ["oferta_flash_ate", "flash_ate", "data_fim_oferta", "fim_promocao"];
+            const dataValor = chavesData.map(chave => marketing[chave]).find(Boolean);
+            const fim = dataValor ? new Date(dataValor) : null;
+            return fim && Number.isFinite(fim.getTime()) && fim.getTime() > Date.now() ? fim : null;
+        }
+
+        function criarCartaoDestaque(produto, opcoes = {}) {
+            const card = document.createElement("article");
+            card.className = "home-product-card";
+            card.setAttribute("tabindex", "0");
+            card.setAttribute("role", "button");
+            card.setAttribute("aria-label", "Ver " + (produto.nome || "produto"));
+            card.addEventListener("click", () => abrirModalDetalhes(produto));
+            card.addEventListener("keydown", event => {
+                if (event.key === "Enter" || event.key === " ") {
+                    event.preventDefault();
+                    abrirModalDetalhes(produto);
+                }
+            });
+
+            const imagem = document.createElement("img");
+            imagem.className = "home-product-image";
+            imagem.src = produto.imagem_url || "https://via.placeholder.com/300x220?text=Koolaction";
+            imagem.alt = produto.nome || "Produto";
+            imagem.loading = "lazy";
+            imagem.onerror = () => { imagem.src = "https://via.placeholder.com/300x220?text=Koolaction"; };
+            card.appendChild(imagem);
+
+            if (opcoes.badge) {
+                const badge = document.createElement("span");
+                badge.className = "home-product-badge";
+                badge.textContent = opcoes.badge;
+                card.appendChild(badge);
+            }
+
+            const nome = document.createElement("h3");
+            nome.className = "home-product-name";
+            nome.textContent = produto.nome || "Produto";
+            card.appendChild(nome);
+
+            const avaliacao = document.createElement("div");
+            avaliacao.className = "home-product-rating";
+            avaliacao.textContent = produto.total_votos > 0 ? "★ " + Number(produto.media_avaliacao).toFixed(1) + " " : "Sem avaliações ";
+            if (produto.total_votos > 0) {
+                const total = document.createElement("small");
+                total.textContent = "(" + produto.total_votos + ")";
+                avaliacao.appendChild(total);
+            }
+            card.appendChild(avaliacao);
+
+            const precos = document.createElement("div");
+            precos.className = "home-product-prices";
+            const preco = document.createElement("span");
+            preco.className = "home-product-price";
+            preco.textContent = Number(produto.preco || 0).toFixed(2) + " €";
+            precos.appendChild(preco);
+            const anterior = opcoes.precoAnterior || obterPrecoAnterior(produto);
+            if (anterior) {
+                const antigo = document.createElement("span");
+                antigo.className = "home-product-old-price";
+                antigo.textContent = Number(anterior).toFixed(2) + " €";
+                precos.appendChild(antigo);
+            }
+            card.appendChild(precos);
+
+            const extra = document.createElement("p");
+            extra.className = "home-product-extra";
+            if (opcoes.fimFlash) {
+                extra.dataset.flashExpiry = opcoes.fimFlash.toISOString();
+                extra.textContent = "Termina em " + formatarTempoFlash(opcoes.fimFlash);
+            } else if (Number(produto.stock) > 0 && Number(produto.stock) <= 5) {
+                extra.textContent = "Restam " + Number(produto.stock) + " unidade(s)";
+            } else {
+                extra.textContent = produto.categoria || "Disponível para encomenda";
+            }
+            card.appendChild(extra);
+
+            const botao = document.createElement("button");
+            botao.type = "button";
+            botao.className = "home-product-action";
+            botao.textContent = "Ver produto";
+            botao.addEventListener("click", event => {
+                event.stopPropagation();
+                abrirModalDetalhes(produto);
+            });
+            card.appendChild(botao);
+            return card;
+        }
+
+        function formatarTempoFlash(fim) {
+            const restante = Math.max(0, new Date(fim).getTime() - Date.now());
+            const horas = Math.floor(restante / 3600000);
+            const minutos = Math.floor((restante % 3600000) / 60000);
+            return horas > 0 ? horas + " h " + minutos + " min" : minutos + " min";
+        }
+
+        function atualizarContadoresFlash() {
+            document.querySelectorAll("[data-flash-expiry]").forEach(elemento => {
+                const fim = new Date(elemento.dataset.flashExpiry);
+                if (fim.getTime() <= Date.now()) {
+                    const cartao = elemento.closest(".home-product-card");
+                    const prateleira = cartao?.parentElement;
+                    cartao?.remove();
+                    if (prateleira && !prateleira.querySelector(".home-product-card")) {
+                        const vazio = document.createElement("p");
+                        vazio.className = "home-empty";
+                        vazio.textContent = "As próximas ofertas flash aparecerão aqui quando forem activadas.";
+                        prateleira.replaceWith(vazio);
+                    }
+                } else {
+                    elemento.textContent = "Termina em " + formatarTempoFlash(fim);
+                }
+            });
+        }
+
+        function renderizarPrateleira(id, titulo, subtitulo, produtos, opcoes = {}) {
+            const secao = document.getElementById(id);
+            if (!secao) return;
+            secao.innerHTML = "";
+
+            const cabecalho = document.createElement("div");
+            cabecalho.className = "home-shelf-head";
+            const blocoTitulo = document.createElement("div");
+            const heading = document.createElement("h2");
+            heading.className = "home-shelf-title";
+            heading.textContent = titulo;
+            const description = document.createElement("p");
+            description.className = "home-shelf-subtitle";
+            description.textContent = subtitulo;
+            blocoTitulo.append(heading, description);
+            cabecalho.appendChild(blocoTitulo);
+
+            if (produtos.length) {
+                const contador = document.createElement("span");
+                contador.className = "home-shelf-count";
+                contador.textContent = produtos.length + (produtos.length === 1 ? " artigo" : " artigos");
+                cabecalho.appendChild(contador);
+            }
+            secao.appendChild(cabecalho);
+
+            if (!produtos.length) {
+                const vazio = document.createElement("p");
+                vazio.className = "home-empty";
+                vazio.textContent = opcoes.mensagemVazia || "Não há artigos nesta selecção de momento.";
+                secao.appendChild(vazio);
+                return;
+            }
+
+            const rail = document.createElement("div");
+            rail.className = "home-product-rail";
+            produtos.forEach(produto => rail.appendChild(criarCartaoDestaque(produto, opcoes.cardOptions ? opcoes.cardOptions(produto) : {})));
+            secao.appendChild(rail);
+        }
+
+        function renderizarVitrinasInicio(produtos, itensEncomendados, popularidadeDisponivel) {
+            const disponiveis = produtos.filter(produto => Number(produto.stock) > 0);
+            const poolDestaques = disponiveis.length ? disponiveis : produtos.slice();
+            const rankingQualidade = [...poolDestaques].sort((a, b) => {
+                const pontuacaoA = Number(a.media_avaliacao || 0) * Math.log1p(Number(a.total_votos || 0));
+                const pontuacaoB = Number(b.media_avaliacao || 0) * Math.log1p(Number(b.total_votos || 0));
+                return pontuacaoB - pontuacaoA || Number(b.stock || 0) - Number(a.stock || 0);
+            });
+            const agora = new Date();
+            const dia = agora.getFullYear() * 10000 + (agora.getMonth() + 1) * 100 + agora.getDate();
+            const inicio = rankingQualidade.length ? dia % rankingQualidade.length : 0;
+            const destaques = rankingQualidade.length ? [...rankingQualidade.slice(inicio), ...rankingQualidade.slice(0, inicio)].slice(0, 6) : [];
+
+            const emPromocao = produtos.filter(produto => obterPrecoAnterior(produto) !== null).sort((a, b) => {
+                return ((obterPrecoAnterior(b) - Number(b.preco)) / obterPrecoAnterior(b)) -
+                       ((obterPrecoAnterior(a) - Number(a.preco)) / obterPrecoAnterior(a));
+            }).slice(0, 8);
+
+            const ofertasFlash = produtos.map(produto => ({ produto, fim: obterFimOfertaFlash(produto) }))
+                .filter(item => item.fim && obterPrecoAnterior(item.produto) !== null)
+                .sort((a, b) => a.fim - b.fim)
+                .slice(0, 8)
+                .map(item => item.produto);
+
+            const procura = new Map();
+            if (popularidadeDisponivel) {
+                itensEncomendados.forEach(item => {
+                    const id = String(item.id_produto);
+                    procura.set(id, (procura.get(id) || 0) + Math.max(0, Number(item.quantidade) || 0));
+                });
+            }
+            const maisProcurados = popularidadeDisponivel
+                ? produtos.filter(produto => procura.has(String(produto.id)))
+                    .sort((a, b) => (procura.get(String(b.id)) || 0) - (procura.get(String(a.id)) || 0))
+                    .slice(0, 8)
+                : [];
+
+            const maisAvaliados = [...produtos].filter(produto => Number(produto.total_votos) > 0)
+                .sort((a, b) => Number(b.media_avaliacao) - Number(a.media_avaliacao) || Number(b.total_votos) - Number(a.total_votos))
+                .slice(0, 8);
+            const ultimasUnidades = produtos.filter(produto => Number(produto.stock) > 0 && Number(produto.stock) <= 5)
+                .sort((a, b) => Number(a.stock) - Number(b.stock)).slice(0, 8);
+
+            renderizarPrateleira("shelf-destaques", "Destaques do dia", "Uma selecção diária baseada na disponibilidade e nas avaliações dos clientes.", destaques, { mensagemVazia: "Ainda não há produtos disponíveis para destacar." });
+            renderizarPrateleira("shelf-promocoes", "Produtos em promoção", "Artigos com preço anterior e preço actual configurados.", emPromocao, { mensagemVazia: "Ainda não há produtos com preço promocional activo.", cardOptions: () => ({ badge: "PROMOÇÃO" }) });
+            renderizarPrateleira("shelf-flash", "Ofertas flash", "Oportunidades temporárias com data de fim definida.", ofertasFlash, { mensagemVazia: "As próximas ofertas flash aparecerão aqui quando forem activadas.", cardOptions: produto => ({ badge: "FLASH", fimFlash: obterFimOfertaFlash(produto) }) });
+            renderizarPrateleira("shelf-procurados", "Produtos mais procurados", "Ordenados pelo número de unidades registadas nas encomendas.", maisProcurados, { mensagemVazia: popularidadeDisponivel ? "Ainda não há encomendas suficientes para criar este ranking." : "O ranking ficará disponível quando a tabela de artigos encomendados puder ser consultada.", cardOptions: produto => ({ badge: "MAIS PEDIDO" }) });
+            renderizarPrateleira("shelf-avaliados", "Mais bem avaliados", "Os artigos com melhores classificações dos clientes.", maisAvaliados, { mensagemVazia: "As avaliações dos clientes vão preencher esta selecção." });
+            renderizarPrateleira("shelf-stock", "Últimas unidades", "Artigos disponíveis com stock reduzido.", ultimasUnidades, { mensagemVazia: "Não há artigos com stock reduzido de momento.", cardOptions: produto => ({ badge: "STOCK BAIXO" }) });
+            atualizarContadoresFlash();
+            if (!window.intervaloFlashHome) window.intervaloFlashHome = setInterval(atualizarContadoresFlash, 60000);
         }
 
         function executarFiltros() {
