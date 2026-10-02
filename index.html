@@ -240,6 +240,73 @@
             .carrinho-seccao { grid-row: 1; width: 100%; position: static; max-height: none; }
             .vitrine-seccao { grid-row: 2; width: 100%; }
         }
+    
+        /* Melhorias visuais e responsivas da montra */
+        :root { color-scheme:light; --loja-ink:#172435; --loja-line:#e3e8ee; --loja-accent:#ffb21a; --loja-radius:16px; }
+        html { scroll-behavior:smooth; scroll-padding-top:24px; }
+        body { background:#f3f5f8; color:var(--loja-ink); }
+        .main-wrapper { width:min(100%,1600px); margin:0 auto; padding:16px clamp(12px,2.4vw,32px) 28px; }
+        .top-bar { position:sticky; top:10px; z-index:100; border:1px solid var(--loja-line); border-radius:var(--loja-radius); box-shadow:0 8px 28px rgba(19,34,52,.08); backdrop-filter:blur(14px); }
+        .search-container input { min-height:46px; background:#f8fafc; border-color:#d9e0e8; }
+        .nav-categorias { scrollbar-width:thin; scroll-snap-type:x proximity; }
+        .btn-cat { min-height:40px; border-radius:999px; scroll-snap-align:start; }
+        .btn-cat:hover,.btn-cat.active { border-radius:999px; }
+        .hero-loja { display:grid; grid-template-columns:minmax(0,1.35fr) minmax(260px,.65fr); gap:28px; align-items:center; overflow:hidden; margin:0 0 28px; padding:clamp(26px,4vw,52px); border-radius:24px; color:#fff; background:radial-gradient(circle at 90% 15%,rgba(255,178,26,.34),transparent 28%),linear-gradient(120deg,#172435,#263c55); box-shadow:0 16px 38px rgba(23,36,53,.16); }
+        .hero-copy { max-width:680px; }
+        .hero-etiqueta { display:inline-flex; padding:7px 11px; border:1px solid rgba(255,255,255,.2); border-radius:999px; color:#ffe0a0; background:rgba(255,255,255,.08); font-size:12px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; }
+        .hero-loja h1 { max-width:650px; margin:18px 0 12px; font-size:clamp(32px,4.5vw,56px); line-height:1.04; letter-spacing:-.035em; }
+        .hero-loja p { max-width:590px; margin:0 0 24px; color:#d7e0e9; font-size:clamp(15px,1.5vw,18px); line-height:1.65; }
+        .hero-cta { display:inline-flex; align-items:center; gap:12px; min-height:46px; padding:0 19px; border-radius:999px; color:#182433; background:var(--loja-accent); font-weight:700; text-decoration:none; transition:transform .2s ease,background .2s ease; }
+        .hero-cta:hover { color:#182433; background:#ffc44d; transform:translateY(-2px); }
+        .hero-destaques { display:grid; gap:10px; }
+        .hero-destaque { display:flex; align-items:center; gap:13px; padding:14px 16px; border:1px solid rgba(255,255,255,.13); border-radius:14px; background:rgba(255,255,255,.08); }
+        .hero-destaque > span { display:grid; place-items:center; width:36px; height:36px; flex:0 0 36px; border-radius:11px; color:#172435; background:#ffd477; font-size:20px; font-weight:700; }
+        .hero-destaque strong,.hero-destaque small { display:block; }
+        .hero-destaque strong { margin-bottom:3px; font-size:14px; }
+        .hero-destaque small { color:#d4dde7; font-size:12px; line-height:1.4; }
+        .content-grid { grid-template-columns:minmax(0,1fr) 340px; gap:clamp(18px,2.4vw,32px); }
+        .vitrine-seccao > h2 { margin:0 0 16px; font-size:clamp(22px,2.2vw,30px); letter-spacing:-.025em; }
+        .vitrine { grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:18px; }
+        .produto-card { min-width:0; padding:16px; border:1px solid var(--loja-line); border-radius:15px; box-shadow:0 4px 16px rgba(19,34,52,.045); }
+        .produto-card:hover { transform:translateY(-4px); box-shadow:0 12px 26px rgba(19,34,52,.11); }
+        .produto-card img { height:190px; border-radius:10px; background:#f7f8fa; }
+        .carrinho-seccao { top:106px; border:1px solid var(--loja-line); border-radius:var(--loja-radius); box-shadow:0 8px 28px rgba(19,34,52,.08); }
+        .carrinho-titulo { background:transparent; color:#172435; padding:0; font-size:18px; text-align:left; }
+        .carrinho-header { cursor:default; }
+        .carrinho-titulo:focus-visible,.hero-cta:focus-visible,button:focus-visible,a:focus-visible,input:focus-visible { outline:3px solid #2676cf; outline-offset:3px; }
+        @media (max-width:900px) {
+            .top-bar { gap:14px; } .logo-container { min-width:130px; } .logo-container img { height:78px; max-width:170px; }
+            .user-menu { flex-wrap:wrap; justify-content:flex-end; gap:8px; }
+            .content-grid { grid-template-columns:minmax(0,1fr) 300px; }
+            .vitrine { grid-template-columns:repeat(auto-fill,minmax(205px,1fr)); }
+        }
+        @media (max-width:700px) {
+            .main-wrapper { padding:8px 12px 24px; } .top-bar { top:6px; gap:10px; padding:10px 12px; }
+            .logo-container { min-width:0; } .logo-container img { height:58px; max-width:145px; }
+            .search-container { order:3; flex-basis:100%; max-width:none; min-width:0; }
+            .user-menu { flex:1; justify-content:flex-end; gap:6px; } .saudacao-user { display:none; }
+            .user-menu button,.user-menu a { padding:8px 10px !important; font-size:12px !important; }
+            .nav-categorias { margin:12px 0 16px; padding:8px; gap:6px; } .btn-cat { padding:7px 11px; font-size:13px; }
+            .hero-loja { grid-template-columns:1fr; gap:22px; margin-bottom:22px; padding:26px 22px; border-radius:18px; }
+            .hero-loja h1 { font-size:clamp(30px,9vw,42px); }
+            .content-grid { grid-template-columns:minmax(0,1fr); gap:20px; }
+            .vitrine-seccao { grid-row:1; }
+            .carrinho-seccao { grid-row:2; width:100%; position:static; max-height:none; padding:16px; }
+            .vitrine { grid-template-columns:repeat(2,minmax(0,1fr)); gap:11px; }
+            .produto-card { padding:11px; border-radius:12px; } .produto-card img { height:132px; }
+            .produto-card h3 { height:auto; min-height:38px; font-size:14px; }
+            .produto-card > p { margin:5px 0; font-size:13px; }
+            .produto-card > div[style*="display:flex"] { gap:4px !important; }
+            .produto-card input[type="number"] { width:38px !important; } .produto-card button { min-height:38px; }
+            .footer-container { padding:20px 16px; }
+        }
+        @media (max-width:360px) {
+            .vitrine { grid-template-columns:1fr; } .produto-card img { height:180px; }
+            .user-menu { flex-basis:100%; justify-content:flex-start; }
+        }
+        @media (prefers-reduced-motion:reduce) {
+            *,*::before,*::after { scroll-behavior:auto !important; animation-duration:.01ms !important; animation-iteration-count:1 !important; transition-duration:.01ms !important; }
+        }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
@@ -253,7 +320,7 @@
             </div>
             
             <div class="search-container">
-                <input type="text" id="input-pesquisa" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
+                <input type="search" id="input-pesquisa" aria-label="Pesquisar produtos" oninput="executarFiltros()" placeholder="Pesquisar por produto, marca ou descrição...">
             </div>
 
             <div class="user-menu">
@@ -395,6 +462,20 @@
 
 
         
+                <section class="hero-loja" aria-labelledby="hero-titulo">
+            <div class="hero-copy">
+                <span class="hero-etiqueta">Koolaction · Marketplace</span>
+                <h1 id="hero-titulo">Boas escolhas para o seu dia a dia.</h1>
+                <p>Explore produtos de várias categorias, consulte avaliações e encontre rapidamente o que procura.</p>
+                <a class="hero-cta" href="#titulo-montra">Explorar produtos <span aria-hidden="true">→</span></a>
+            </div>
+            <div class="hero-destaques" aria-label="O que pode fazer na Koolaction">
+                <div class="hero-destaque"><span aria-hidden="true">⌕</span><div><strong>Pesquise</strong><small>por nome, marca ou descrição</small></div></div>
+                <div class="hero-destaque"><span aria-hidden="true">★</span><div><strong>Compare</strong><small>detalhes e avaliações</small></div></div>
+                <div class="hero-destaque"><span aria-hidden="true">↗</span><div><strong>Acompanhe</strong><small>as suas encomendas</small></div></div>
+            </div>
+        </section>
+
         <div class="content-grid">
             <div class="vitrine-seccao">
                 <h2 id="titulo-montra">Todos os Artigos</h2>
@@ -402,15 +483,15 @@
             </div>
             
             <div id="carrinho-container" class="carrinho-seccao">
-                <div class="carrinho-header" onclick="toggleCarrinho()">
-                    <div class="carrinho-titulo">
+                <div class="carrinho-header">
+                    <button type="button" class="carrinho-titulo" aria-expanded="true" aria-controls="carrinho-conteudo" onclick="toggleCarrinho()">
                         🛒 Carrinho <span id="carrinho-badge" class="badge-contador">0</span>
-                    </div>
+                    </button>
                     <button id="btn-esvaziar-tudo" class="btn-esvaziar" onclick="event.stopPropagation(); esvaziarCarrinhoCompleto();" style="display: none;">Esvaziar</button>
                     <span class="seta-toggle">▼</span>
                 </div>
                 
-                <div class="carrinho-conteudo">
+                <div id="carrinho-conteudo" class="carrinho-conteudo">
                     <div id="carrinho-itens">O carrinho está vazio.</div>
                     <h3 style="margin-top: 20px; text-align: right;">Total: <span id="carrinho-total">0.00</span>€</h3>
                     
@@ -1040,7 +1121,12 @@
             mostrarResultadosFiltrados();
         }
 
-        function toggleCarrinho() { document.getElementById("carrinho-container").classList.toggle("minimizado"); }
+        function toggleCarrinho() {
+            const carrinhoContainer = document.getElementById("carrinho-container");
+            const minimizado = carrinhoContainer.classList.toggle("minimizado");
+            const botaoCarrinho = document.querySelector(".carrinho-titulo");
+            if (botaoCarrinho) botaoCarrinho.setAttribute("aria-expanded", String(!minimizado));
+        }
 
         // =========================================================================
         // ABRIR MODAL DETALHES - PREVENÇÃO NAS TABELAS DE ESPECIFICAÇÃO DO SUPABASE
